@@ -14,6 +14,9 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * [Organizing and Visualizing Data / データのハンドリングと可視化](https://kurodaecon.github.io/dasp/organizing_data.html)
    * `tydyverse` パッケージを用いたデータのハンドリング：`filter`, `mutate`, `group_by`, etc.
    * `ggplot2` パッケージを用いたデータの可視化：散布図，ヒストグラム，棒グラフ，箱ひげ図
+* [Regression Analysis / 回帰分析](https://kurodaecon.github.io/dasp/regression.html)
+   * 基礎：最小二乗法 … `lm` 関数による推定，`lm` 関数を利用しない推定（数値計算による最適化および行列演算を含む）
+   * 応用：二次項・交差項の利用，ダミー変数の利用，結合有意性検定，頑健な標準誤差，加重最小二乗法
 * Replication
    * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/bertrand2004.html)
       * 手法：記述統計，母比率の検定，プロビット回帰（演習では扱わない）
