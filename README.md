@@ -19,8 +19,8 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
    * 応用：二次項・交差項の利用，ダミー変数の利用，結合有意性検定，頑健な標準誤差，加重最小二乗法
 * Replication
    * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/bertrand2004.html)
-      * 手法：記述統計，母比率の検定，プロビット回帰（演習では扱わない）
-   * [Miller et al. (AJPS 2016)](https://kurodaecon.github.io/dasp/bertrand2004.html)
+      * 手法：記述統計，母比率の検定，離散回帰（プロビット・モデル）
+   * [Miller et al. (AJPS 2016)](https://kurodaecon.github.io/dasp/miller2016.html)
       * 手法：記述統計，t 検定，回帰分析（交差項を含む）
 
 注：講義スライドは Moodle の授業ページからアクセスしてください．履修者以外（学外者を含む）で講義スライドをご覧になりたい方は黒田までお問い合わせください．
