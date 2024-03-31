@@ -6,21 +6,34 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 
 ## Main materials
 
-* [Basic Operation of R / Rの基本的な操作](https://kurodaecon.github.io/dasp/basic.html)
+* [Basic Operation of R / Rの基本的な操作](https://kurodaecon.github.io/dasp/html/basic.html)
    * 演算，オブジェクト，ベクトル，データフレーム，描画，CSVファイルからのデータ読み込み，関数，繰り返し処理，行列
-* [Descriptive statistics / 記述統計](https://kurodaecon.github.io/dasp/descriptive_stat.html)
+* [Descriptive statistics / 記述統計](https://kurodaecon.github.io/dasp/html/descriptive_stat.html)
    * 質的データ：度数分布表，棒グラフ，円グラフ，分割表
    * 量的データ：ヒストグラム，平均，分位点・中央値，分散・標準偏差，散布図，共分散・相関係数
-* [Organizing and Visualizing Data / データのハンドリングと可視化](https://kurodaecon.github.io/dasp/organizing_data.html)
+* [Organizing and Visualizing Data / データのハンドリングと可視化](https://kurodaecon.github.io/dasp/html/organizing_data.html)
    * `tydyverse` パッケージを用いたデータのハンドリング：`filter`, `mutate`, `group_by`, etc.
    * `ggplot2` パッケージを用いたデータの可視化：散布図，ヒストグラム，棒グラフ，箱ひげ図
-* [Regression Analysis / 回帰分析](https://kurodaecon.github.io/dasp/regression.html)
+* [Regression Analysis / 回帰分析](https://kurodaecon.github.io/dasp/html/regression.html)
    * 基礎：最小二乗法 … `lm` 関数による推定，`lm` 関数を利用しない推定（数値計算による最適化および行列演算を含む）
    * 応用：二次項・交差項の利用，ダミー変数の利用，結合有意性検定，頑健な標準誤差，加重最小二乗法
+* [Discrete Regression Analysis / 離散回帰分析](https://kurodaecon.github.io/dasp/html/discrete_regression.html)
+   * 最尤法：ベルヌーイ分布，正規分布，線形回帰モデル
+   * 離散回帰モデル：二項プロビット・モデル（数値計算による最適化を含む），二項ロジット・モデル，限界効果
 * Replication
-   * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/bertrand2004.html)
+   * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/html/bertrand2004.html)
       * 手法：記述統計，母比率の検定，離散回帰（プロビット・モデル）
-   * [Miller et al. (AJPS 2016)](https://kurodaecon.github.io/dasp/miller2016.html)
+   * [Miller et al. (AJPS 2016)](https://kurodaecon.github.io/dasp/html/miller2016.html)
       * 手法：記述統計，t 検定，回帰分析（交差項を含む）
+   * [Card and Krueger (AER 1994)](https://kurodaecon.github.io/dasp/html/card1994.html)
+      * 手法：記述統計，t 検定，DID，回帰分析
 
 注：講義スライドは Moodle の授業ページからアクセスしてください．履修者以外（学外者を含む）で講義スライドをご覧になりたい方は黒田までお問い合わせください．
+
+## Learning resources for R programming, focusing on statistics and causal inference, developed by others 
+
+* Bauer (2020) [Applied Causal Analysis (with R)](https://bookdown.org/paul/applied-causal-analysis/)
+* Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/)
+* Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/)
+* 浅野正彦 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
+* 安藤道人，三田匡能 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
