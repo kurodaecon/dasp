@@ -20,20 +20,25 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * [Discrete Regression Analysis / 離散回帰分析](https://kurodaecon.github.io/dasp/html/discrete_regression.html)
    * 最尤法：ベルヌーイ分布，正規分布，線形回帰モデル
    * 離散回帰モデル：二項プロビット・モデル（数値計算による最適化を含む），二項ロジット・モデル，限界効果
-* Replication
+* [Panel Data Analysis and DID / パネルデータ分析とDID](https://kurodaecon.github.io/dasp/html/did.html)
+   * パネルデータ分析：個体固定効果（Within 推定，LSDV 推定，First difference 推定），個体・時間固定効果，パネルデータの Long ⇔ Wide の変換
+   * DID（差分の差分法）：DID table の作成，回帰モデルの推定による DID 分析
+* Replication 
    * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/html/bertrand2004.html)
       * 手法：記述統計，母比率の検定，離散回帰（プロビット・モデル）
    * [Miller et al. (AJPS 2016)](https://kurodaecon.github.io/dasp/html/miller2016.html)
       * 手法：記述統計，t 検定，回帰分析（交差項を含む）
    * [Card and Krueger (AER 1994)](https://kurodaecon.github.io/dasp/html/card1994.html)
-      * 手法：記述統計，t 検定，DID，回帰分析
+      * 手法：記述統計，t 検定，DID（差分の差分法），回帰分析
 
 注：講義スライドは Moodle の授業ページからアクセスしてください．履修者以外（学外者を含む）で講義スライドをご覧になりたい方は黒田までお問い合わせください．
 
 ## Learning resources for R programming, focusing on statistics and causal inference, developed by others 
 
+* Heiss (2020) [Using R for Introductory Econometrics](https://www.urfie.net/)
 * Bauer (2020) [Applied Causal Analysis (with R)](https://bookdown.org/paul/applied-causal-analysis/)
 * Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/)
 * Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/)
-* 浅野正彦 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
 * 安藤道人，三田匡能 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
+* 矢内勇生 (2023) [計量経済学応用](https://yukiyanai.github.io/jp/classes/econometrics2/contents/)
+* 浅野正彦 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
