@@ -1,10 +1,10 @@
-# Data Analysis Using Statistical Packages
+# Data Analysis Using Statistical Packages 
 
-Graduate School of Commerce and Graduate School of Accountancy, Waseda University
+Graduate School of Commerce and Graduate School of Accountancy, Waseda University 
 
 「統計ソフトによるデータ解析」（早稲田大学商学研究科・会計研究科）
 
-## Main materials
+## Main materials 
 
 * [Basic Operation of R / Rの基本的な操作](https://kurodaecon.github.io/dasp/html/basic.html)
    * 演算，オブジェクト，ベクトル，データフレーム，描画，CSVファイルからのデータ読み込み，関数，繰り返し処理，行列
@@ -22,7 +22,9 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
    * 離散回帰モデル：二項プロビット・モデル（数値計算による最適化を含む），二項ロジット・モデル，限界効果
 * [Panel Data Analysis and DID / パネルデータ分析とDID](https://kurodaecon.github.io/dasp/html/did.html)
    * パネルデータ分析：個体固定効果（Within 推定，LSDV 推定，First difference 推定），個体・時間固定効果，パネルデータの Long ⇔ Wide の変換
-   * DID（差分の差分法）：DID table の作成，回帰モデルの推定による DID 分析
+   * DID（差分の差分法）：DID table の作成，回帰モデルの推定による DID 分析，Event study 
+* [Instrumental Variables / 操作変数法](https://kurodaecon.github.io/dasp/html/iv.html)
+   * IV推定，2SLS（二段階最小二乗法），モンテカルロシミュレーション
 * Replication 
    * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/html/bertrand2004.html)
       * 手法：記述統計，母比率の検定，離散回帰（プロビット・モデル）
