@@ -1486,11 +1486,15 @@ Basic Operation of R</h1>
 </div>
 
 
+<p>詳細は <a href="https://intro2r.com/">An Introduction to R</a>
+を参照．</p>
 <div id="basic-operating-instructions-基本的な操作" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Basic operating
 instructions / 基本的な操作</h1>
-<p>詳細は <a href="https://intro2r.com/">An Introduction to R</a>
-を参照．</p>
+<p>Rコード（Rスクリプト or Rプログラム）の例 ↓</p>
+<pre class="r"><code>1 + 1</code></pre>
+<pre><code>## [1] 2</code></pre>
+<p>Rコード（薄い灰色で塗りつぶされた箇所）を実行した結果 ↑</p>
 <p>このページのRコードをどのように実行すればよいか？</p>
 <ul>
 <li>Rを利用：<a href="https://cran.ism.ac.jp/">Rをダウンロード</a>
@@ -1503,7 +1507,7 @@ instructions / 基本的な操作</h1>
 <li>RStudioを利用：Rをダウンロードしてから<a href="https://posit.co/download/rstudio-desktop/">RStudioをダウンロード</a>
 <ul>
 <li>コンソールに直接コピーアンドペーストして「Enter」</li>
-<li>スクリプトページを作成してコピーアンドペーストして，実行する箇所を選択
+<li>作成したスクリプトページにコピーアンドペーストして，実行する箇所を選択
 → 「Ctrl」＋「Enter」</li>
 <li><a href="https://github.com/kurodaecon/dasp/tree/main/rmd">GitHub</a>から
 .rmd ファイルをダウンロードして，チャンクの右上にある「▶」(Run Current
@@ -1579,7 +1583,7 @@ x + 1</code></pre>
 <pre><code>## [1] 2</code></pre>
 <pre class="r"><code>x + 2</code></pre>
 <pre><code>## [1] 3</code></pre>
-<pre class="r"><code>x &lt;- 10  # override 
+<pre class="r"><code>x &lt;- 10  # overwrite (override) 
 x + 5</code></pre>
 <pre><code>## [1] 15</code></pre>
 <p>オブジェクト名はアルファベットではじめる．
@@ -1970,7 +1974,9 @@ write.csv(titanic_head, &quot;c://ws_stat/new_dir/titanic_first_6_rows.csv&quot;
 自作の関数</h1>
 <p><code>log</code> や <code>exp</code>
 のような既に定義されている関数の他に，自作の関数を定義して使用することができる．</p>
-<pre class="r"><code>return_squared &lt;- function (x) x^2
+<pre class="r"><code>return_squared &lt;- function (x) {
+  x^2
+}
 return_squared(x = 5)</code></pre>
 <pre><code>## [1] 25</code></pre>
 <div id="examine-whether-it-is-a-leap-year-or-not-閏年の判定" class="section level2" number="5.1">
@@ -2051,28 +2057,27 @@ examine_leap(year = 2024)</code></pre>
 ## [1] 2
 ## [1] 3</code></pre>
 <p><code>for</code> 文の中で何らかの演算をしてもよい．</p>
+<p><span class="math display">\[ \sum_{i=1}^{3} i = 1 + 2 + 3 = 6
+\]</span></p>
 <pre class="r"><code>i_cumulative &lt;- 0  # initialize 
 for (i in 1:3) {
-  i_cumulative &lt;- i_cumulative + i + i^2
+  i_cumulative &lt;- i_cumulative + i
   print(i_cumulative)
 }</code></pre>
-<pre><code>## [1] 2
-## [1] 8
-## [1] 20</code></pre>
-<p>答え合わせ：</p>
-<ul>
-<li>i=1: 0 + 1 + 1^2 = 2</li>
-<li>i=2: 2 + 2 + 2^2 = 8</li>
-<li>i=3: 8 + 3 + 3^2 = 20</li>
-</ul>
+<pre><code>## [1] 1
+## [1] 3
+## [1] 6</code></pre>
 <div id="combine-with-a-custom-function" class="section level2" number="6.1">
 <h2><span class="header-section-number">6.1</span> Combine with a custom
 function</h2>
 <p>自作の関数と組み合わせて使ってもよい．</p>
 <p>まずは，閏年のときに <code>TRUE</code> を返す関数を定義．</p>
 <pre class="r"><code>is_leap &lt;- function (year) {
-  if (year %% 4 == 0 &amp; !(year %% 100 == 0 &amp; year %% 400 != 0)) TRUE
-  else FALSE
+  if (year %% 4 == 0 &amp; !(year %% 100 == 0 &amp; year %% 400 != 0)) {
+    TRUE
+  } else {
+    FALSE
+  }
 }</code></pre>
 <p>そもそも，<code>if</code> 文の条件の TRUE/FALSE と返り値の TRUE/FALSE
 は対応しているので，<code>if</code>
@@ -2084,16 +2089,24 @@ function</h2>
 <p>Tips. <code>{ }</code> の中が1行だけの場合は <code>{ }</code>
 を省略できる．</p>
 <pre class="r"><code>for (y in 2090:2110) 
-  if (is_leap(year = y)) print(y)</code></pre>
+  if (is_leap(year = y)) 
+    print(y)</code></pre>
 <pre><code>## [1] 2092
 ## [1] 2096
 ## [1] 2104
 ## [1] 2108</code></pre>
+<!--
+中級者向け
+(2090:2110)[sapply(2090:2110, is_leap)]
+-->
 </div>
 </div>
 <div id="matrix-行列" class="section level1" number="7">
 <h1><span class="header-section-number">7</span> Matrix / 行列</h1>
 <p>ベクトルを束ねて行列を作成できる．</p>
+<p><span class="math display">\[ \left[ \left[ \matrix{1 \\ 2 \\ 3}
+\right] , \left[ \matrix{5 \\ 6 \\ 7} \right] \right] = \left[ \matrix{1
+&amp; 5 \\ 2 &amp; 6 \\ 3 &amp; 7} \right] \]</span></p>
 <pre class="r"><code>cbind(c(1, 2, 3), c(5, 6, 7))  # bind by columns </code></pre>
 <pre><code>##      [,1] [,2]
 ## [1,]    1    5
@@ -2115,9 +2128,11 @@ mat2</code></pre>
 <pre><code>##      [,1] [,2] [,3]
 ## [1,]    1    2    3
 ## [2,]    5    6    7</code></pre>
+<p>要素の抽出．</p>
+<pre class="r"><code>mat[2, 2]</code></pre>
+<pre><code>## [1] 6</code></pre>
 <p>要素の書き換え．</p>
-<pre class="r"><code>mat &lt;- matrix(c(1, 2, 3, 5, 6, 7), nrow = 3, ncol = 2)
-mat[2, 2] &lt;- 100
+<pre class="r"><code>mat[2, 2] &lt;- 100
 mat</code></pre>
 <pre><code>##      [,1] [,2]
 ## [1,]    1    5
@@ -2182,6 +2197,11 @@ mat</code></pre>
 <li><span class="math inline">\(\mathbf{E}\)</span>
 は単位行列（対角成分だけが1でそれ以外のすべての要素が0）</li>
 </ul>
+<p>2×2 の行列については次の公式で計算できる．</p>
+<p><span class="math display">\[ \left[ \matrix{1 &amp; 3 \\ 2 &amp; 4 }
+\right]^{-1} = \frac{1}{1 \times 4 - 3 \times 2} \left[ \matrix{4 &amp;
+-3 \\ -2 &amp; 1} \right] = \left[ \matrix{-2 &amp; 1.5 \\ 1 &amp; -0.5}
+\right] \]</span></p>
 <p>逆行列は <code>solve</code> で計算できる．</p>
 <pre class="r"><code>mat3 &lt;- matrix(1:4, nrow = 2)
 solve(mat3)</code></pre>
@@ -2202,6 +2222,9 @@ solve(mat3)</code></pre>
 <pre><code>##      [,1] [,2]
 ## [1,]    1    0
 ## [2,]    0    1</code></pre>
+<p>行列の determinant が 0 の場合は逆行列を計算できない．</p>
+<pre class="r"><code>solve(matrix(c(1, 1, 0, 0), nrow = 2))</code></pre>
+<p>（エラーが出る）</p>
 <p>.</p>
 </div>
 </div>
