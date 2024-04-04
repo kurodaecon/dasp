@@ -25,6 +25,8 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
    * DID（差分の差分法）：DID table の作成，回帰モデルの推定による DID 分析，Event study 
 * [Instrumental Variables / 操作変数法](https://kurodaecon.github.io/dasp/html/iv.html)
    * IV推定，2SLS（二段階最小二乗法），モンテカルロシミュレーション
+* [Regression Discontinuity Design / 回帰不連続デザイン](https://kurodaecon.github.io/dasp/html/rdd.html)
+   * RDD 用のパッケージを使用しない推定，`rdrobust` パッケージを用いた推定
 * Replication 
    * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/html/bertrand2004.html)
       * 手法：記述統計，母比率の検定，離散回帰（プロビット・モデル）
@@ -38,9 +40,12 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 ## Learning resources for R programming, focusing on statistics and causal inference, developed by others 
 
 * Heiss (2020) [Using R for Introductory Econometrics](https://www.urfie.net/)
+* Carilli (2021) [R Companion to Real Econometrics](https://bookdown.org/carillitony/bailey/)
 * Bauer (2020) [Applied Causal Analysis (with R)](https://bookdown.org/paul/applied-causal-analysis/)
 * Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/)
 * Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/)
+* 川田恵介 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
+* 宋財泫 (2023) [方法論特殊講義III](https://www.jaysong.net/kobe-ci/)
 * 安藤道人，三田匡能 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
 * 矢内勇生 (2023) [計量経済学応用](https://yukiyanai.github.io/jp/classes/econometrics2/contents/)
 * 浅野正彦 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
