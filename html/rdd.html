@@ -1714,11 +1714,11 @@ Regression Discontinuity Design</h1>
 <div id="data" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Data</h1>
 <p>Angrist and Pischke (2014) Mastering ’Metrics, Princeton University
-Press. が提供する<a href="https://www.masteringmetrics.com/resources/">法廷飲酒年齢のRD分析のデータとコード</a>
+Press. が提供する <a href="https://www.masteringmetrics.com/resources/">法廷飲酒年齢のRD分析のデータとコード</a>
 を用いる． このデータは <a href="https://www.aeaweb.org/articles?id=10.1257/app.1.1.164">Carpenter
 and Dobkin (AEJ: Applied 2009)</a> に基づく．</p>
-<p>注：このページは Carpenter and Doblin (2009) の replication
-というわけではない．</p>
+<p>注：このページは Carpenter and Dobkin (2009) の
+reproduction/replication というわけではない．</p>
 <p>上のサイトでは AEJfigs.dta というファイル名． Moodle には
 MMch4_RD.dta というファイル名でアップロードしている．</p>
 <p>主な変数</p>
@@ -1733,6 +1733,8 @@ MMch4_RD.dta というファイル名でアップロードしている．</p>
 22.93</li>
 </ul></li>
 </ul>
+<p>つまり，個人レベルのデータではなく，年齢の cell
+を単位として集計されたデータである．</p>
 <!--
    * `internal`: mortality rate from internal causes 
    * `external`: mortality rate from external causes 
@@ -1746,9 +1748,9 @@ nrow(mm)</code></pre>
     age = agecell - 21,  # centering 
     over21 = ifelse(agecell &gt;= 21, 1, 0),
   )</code></pre>
-<div id="replication-by-others" class="section level2" number="1.1">
-<h2><span class="header-section-number">1.1</span> Replication by
-others</h2>
+<div id="reproductionreplication-by-others" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span>
+Reproduction/Replication by others</h2>
 <ul>
 <li>Philipp Leppert (2020) <a href="https://rpubs.com/phle/r_tutorial_regression_discontinuity_design">R
 Tutorial: Regression Discontinuity Design</a>
@@ -2120,11 +2122,11 @@ counterfactual outcome の条件付き期待値の連続性である．
 を「操作」できる場合 (sorting)，この仮定は満たされない場合がある．</p>
 <p>そこで，<a href="https://doi.org/10.1016/j.jeconom.2007.05.005">McCrary (JE
 2008)</a> が提案した密度検定を行いこの仮定を検証する． 閾値の前後で
-running variable が不連続に多くなっていれば</p>
+running variable が不連続に多くなっていれば何らかのメカニズムによって
+sorting が生じていることになり，連続性の仮定を満たさない．</p>
 <p>検定には <code>rdd</code> パッケージの <code>DCdensity</code>
 関数を用いる．</p>
-<p>注：検定方法を見てわかる通り Carpenter and Doblin (2009) の running
-variable は cell
+<p>注：Carpenter and Dobkin (2009) の running variable は cell
 であるためこの検定方法は不適であるし，そもそも年齢を直接操作することはできない．</p>
 <p>以下にパッケージの help に書かれているサンプルコードを示す． Running
 variable <code>running_variable</code> が処置を受ける閾値を 0
