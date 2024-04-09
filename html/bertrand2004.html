@@ -1490,21 +1490,22 @@ Bertrand and Mullainathan (AER 2004)</h1>
 <h1><span class="header-section-number">1</span> Overview</h1>
 <p><a href="https://www.aeaweb.org/articles?id=10.1257/0002828042002561">Bertrand
 and Mullainathan (AER 2004)</a></p>
-<p>Randomly assign a name typical of blacks (Lakisha or Jamal) and a
-name typical of whites (Emily or Greg) when sending a resume to a job
-posting and compare the response rates (callback rate).</p>
-<p>求人広告に履歴書を送るときに，黒人に典型的な名前と白人に典型的な名前をランダムに割り当て，返信率を比較する．</p>
+<p>求人広告に履歴書を送るときに，黒人に典型的な名前と白人に典型的な名前をランダムに割り当て，返信率を比較する．
+<!--
+Randomly assign a name typical of blacks (Lakisha or Jamal) and a name typical of whites (Emily or Greg) when sending a resume to a job posting and compare the response rates (callback rate). 
+--></p>
 <div id="data" class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Data</h2>
 <p><a href="http://doi.org/10.3886/E116023V1">Replication data in
 openICPSR</a></p>
 <p>LICENSE.txt ファイルに記載されている通り，データセットは Creative
-Commons Attribution 4.0 International Public License
-で公開されている．</p>
+Commons Attribution 4.0 International Public License で公開されている．
+Moodle には Bertrand2004.dta
+というファイル名でアップロードしている．</p>
 <p>注：分析コードは公開されていない．</p>
 <pre class="r"><code>setwd(&quot;c://ws_stat&quot;)
 library(tidyverse)
-bm &lt;- haven::read_dta(&quot;lakisha_aer.dta&quot;)
+bm &lt;- haven::read_dta(&quot;Bertrand2004.dta&quot;)
 nrow(bm)  # sample size </code></pre>
 <pre><code>## [1] 4870</code></pre>
 <pre class="r"><code>attr(bm$call, &quot;label&quot;)  # definition of &quot;call&quot; </code></pre>
