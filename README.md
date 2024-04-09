@@ -14,6 +14,9 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * [Organizing and Visualizing Data / データのハンドリングと可視化](https://kurodaecon.github.io/dasp/html/organizing_data.html)
    * `tydyverse` パッケージを用いたデータのハンドリング：`filter`, `mutate`, `group_by`, etc.
    * `ggplot2` パッケージを用いたデータの可視化：散布図，ヒストグラム，棒グラフ，箱ひげ図
+* [Inferential Statistics / 推測統計学](https://kurodaecon.github.io/dasp/html/inferential_stat.html)
+   * 確率：確率変数の期待値と分散，乱数の生成，中心極限定理
+   * 信頼区間（母平均，母比率），統計的仮説検定（母平均，多重検定の問題に関するシミュレーション）
 * [Regression Analysis / 回帰分析](https://kurodaecon.github.io/dasp/html/regression.html)
    * 基礎：最小二乗法 … `lm` 関数による推定，`lm` 関数を利用しない推定（数値計算による最適化および行列演算を含む）
    * 応用：二次項・交差項の利用，ダミー変数の利用，結合有意性検定，頑健な標準誤差，加重最小二乗法
@@ -26,8 +29,8 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * [Instrumental Variables / 操作変数法](https://kurodaecon.github.io/dasp/html/iv.html)
    * IV推定，2SLS（二段階最小二乗法），モンテカルロシミュレーション
 * [Regression Discontinuity Design / 回帰不連続デザイン](https://kurodaecon.github.io/dasp/html/rdd.html)
-   * RDD 用のパッケージを使用しない推定，`rdrobust` パッケージを用いた推定
-* Replication 
+   * RDD 用のパッケージを使用しない推定，`rdrobust` パッケージを用いた推定，McCrary の密度検定
+* Reproduction 
    * [Bertrand and Mullainathan (AER 2004)](https://kurodaecon.github.io/dasp/html/bertrand2004.html)
       * 手法：記述統計，母比率の検定，離散回帰（プロビット・モデル）
    * [Miller et al. (AJPS 2016)](https://kurodaecon.github.io/dasp/html/miller2016.html)
