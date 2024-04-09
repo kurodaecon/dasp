@@ -1,0 +1,227 @@
+---
+title: "Data Analysis Using Statistical Packages: Miller et al. (AJPS 2016)"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2024年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview 
+
+[Miller, Saunders, and Farhart (AJPS 2016)](https://onlinelibrary.wiley.com/doi/full/10.1111/ajps.12234) [Open access]
+
+Question. イデオロギーに動機付けられた陰謀論（例：保守派が好む陰謀論）を支持するのはどのような人々か？
+
+この論文では政治的な要因に焦点を当てサーベイデータを用いた実証分析を行う．
+
+<!--
+Do those who self-identify as conservatives believe more in conspiracy theories such as "Obama was not born in the U.S." than those who self-identify as liberals?
+
+自らを保守と自認する人は，自らをリベラルと自認する人と比較して，「オバマは米国で生まれなかった」などの陰謀論をより信じているのか？
+-->
+
+## Data
+
+[Data in Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/O3A06T)
+
+分析プログラム（Stata, .do）とデータ（Stata, .dta）は Creative Commons CC0 ライセンスで配布されている．
+
+授業の履修者は Moodle から Miller2016_MTurk.dta （元ファイル：MTurk.dta）をダウンロード可能．
+
+注：MTurk (Mechanical Turk) はAmazonが提供するクラウドソーシングサービスで，オンライン調査（アンケート）などが可能．
+
+意欲のある履修者向けの宿題（提出不要）：論文で使用しているもう一方のデータセット (American National Election Study, ANES) で以下と同様の分析をする．
+
+```{r data_read, message = F}
+setwd("c://ws_stat")
+library(tidyverse)
+cons <- haven::read_dta("Miller2016_MTurk.dta")
+# str(cons)
+```
+
+主な変数：
+
+* 自認する立場
+   * `Conservative`: dummy variable for self-identified as conservative 
+* 陰謀論をどの程度信じているか
+   * `conspiracy1`: Conspiracy: Obama was not born in the U.S. 
+   * `conspiracy3`: Conspiracy: Government knew about 9/11 prior to attacks 
+   * `con_index_rep2`: Conservative conspiracy index
+   * `con_index_dem4`: Liberal conspiracy index
+   * `negdemindex`: -1 × (Liberal conspiracy index)
+* 回答者の知識・態度
+   * `polknow_alt`: political knowledge index （例：ロシアの大統領の名前を正答できるか）
+   * `trust_comb`: trust index （連邦政府やメディアが正しいことを行っていると信頼するか）
+
+```{r data_sum_cons}
+summary(cons[, c("con_index_rep2", "polknow_alt", "trust_comb")])
+table(cons$Conservative)  # frequency distribution table 
+table(cons$conspiracy1)
+table(cons$conspiracy3)
+summary(cons$age)
+table(cons$female)
+```
+
+注：Stata では `.` が欠損値を表すが，`read_dta` で読み込むと `NA` として認識される．
+
+.dta ファイルに含まれていた変数のラベルは以下のように確認できる（ただし，ラベルが長すぎてRに読み込む際に途中で切れてしまっている）．
+
+```{r see_dta_label}
+attr(cons$Conservative, "label")
+attr(cons$con_index_rep2, "label")
+```
+
+諸事情により（交互作用項の効果を描画するため）ラベルを短くしておく．
+
+```{r dta_label_change}
+attr(cons$Conservative, "label") <- "Self-identified Ideology"
+attr(cons$con_index_rep2, "label") <- "Conservative Conspiracy Index"
+attr(cons$con_index_dem4, "label") <- "Liberal Conspiracy Index"
+```
+
+# Hypothesis 1 / 仮説1：保守派はリベラル派よりもイデオロギー的に一貫した陰謀を支持する
+
+## Descriptive evidence (Table 1) 
+
+保守派はリベラル派よりも「保守層が好む陰謀論」を支持し，その逆にリベラル派は保守派よりも「リベラル層が好む陰謀論」を支持する．
+
+ポイントはその程度の差．
+保守派とリベラル派の「保守派が好む陰謀論」の支持率の差が大きく，保守派とリベラル派の「リベラル派が好む陰謀論」の支持率の差が小さいなら，仮説１は支持される．
+
+### Descriptive statistics 
+
+`conservative_conspiracy`: 「保守層が好む陰謀論」の支持率の平均 ― 保守派 vs. リベラル派
+
+`liberal_conspiracy`: 「リベラル層が好む陰謀論」の支持率の平均 ― 保守派 vs. リベラル派
+
+```{r mean_con_index_by_conlib}
+cons %>%
+  group_by(Conservative) %>%
+  summarise(conservative_conspiracy = mean(con_index_rep2, na.rm = TRUE),
+            liberal_conspiracy = mean(con_index_dem4, na.rm = TRUE))
+```
+
+合成されたインデックスの差は，「保守派が好む陰謀論」では 0.19 - 0.45 = -0.26，「リベラル派が好む陰謀論」では 0.50 - 0.33 = 0.17 なので，仮説1とは整合している．
+
+### Test 
+
+Stata: `ttest conspiracy1, by(Conservative) level(95) unequal` etc. 
+
+保守派とリベラル派の「保守派が好む陰謀論」の支持率の差の検定．
+
+```{r ttest_conserv_consp}
+t.test(conspiracy1 ~ Conservative, data = cons)  # Obama 
+t.test(con_index_rep2 ~ Conservative, data = cons)  # index 
+```
+
+保守派とリベラル派の「リベラル派が好む陰謀論」の支持率の差の検定．
+
+```{r ttest_liberal_consp}
+t.test(conspiracy3 ~ Conservative, data = cons)  # 9/11 
+t.test(con_index_dem4 ~ Conservative, data = cons)  # index 
+```
+
+## Formal test: Regression (Table 2) 
+
+個人属性（年齢，性別，人種，所得，政治に関する知識，etc.）を制御したもとで，保守派かどうかが「保守派が好む陰謀論」に与える影響と，保守派かどうかが「リベラル派が好む陰謀論」に与える影響の大きさを比べる．
+
+影響の大きさは回帰式の回帰係数として定量化する．
+
+$$ \mbox{Conservative conspiracy} = \beta_0 + \beta_1 \mbox{Self-identified as conservative} + \beta_2 \mbox{Political knowledge} + \beta_3 \mbox{Trust} + \cdots $$
+
+懸念：教育や所得など bad control となっている可能性のある変数がコントロールに含まれる．
+
+Stata: `reg con_index_rep2 Conservative polknow_alt ...` etc. 
+
+```{r h1_reg}
+lm_cons <- lm(con_index_rep2 ~ Conservative + polknow_alt + trust_comb + extraversion + agreeableness + conscientiousness + emostab + openness + auth + efficacy + needcog_comb + needeval_comb_alt + ideo_extr + fed_power + religiosity + educ_alt + income + female + age_alt + latino + white, data = cons)
+# summary(lm_cons)
+lm_lib <- lm(con_index_dem4 ~ Conservative + polknow_alt + trust_comb + extraversion + agreeableness + conscientiousness + emostab + openness + auth + efficacy + needcog_comb + needeval_comb_alt + ideo_extr + fed_power + religiosity + educ_alt + income + female + age_alt + latino + white, data = cons)
+# summary(lm_lib)
+```
+
+推定結果（一部の変数のみ）をまとめて表示する．
+
+```{r h1_modelsum, warning = FALSE, message = FALSE}
+# install.packages("modelsummary")  # run only the first time 
+library(modelsummary)
+msummary(list(lm_cons, lm_lib), gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", 
+         stars = TRUE, coef_omit = c(5:16, 21:22))
+```
+
+`Conservative` ダミーの回帰係数は，「保守派が好む陰謀論」をアウトカムとした場合の方が大きい．
+
+注：論文では Seemingly Unrelated Regression と呼ばれる分析手法を用いて `Conservative` ダミーの回帰係数の大きさを統計的に比較している．
+<!--
+https://www.stata.com/manuals/rsuest.pdf
+Section: Testing cross-model hypotheses
+-->
+
+
+# Hypothesis 2 / 仮説2：知識が豊富なほどイデオロギー的に一貫した陰謀を支持する
+
+イデオロギーと知識の交互作用項（交差項）を導入する．
+
+$$ \mbox{Conservative conspiracy} = \beta_0 + \beta_1 \mbox{Self-identified as conservative} + \beta_2 \mbox{Political knowledge} \\ + \beta_3 \mbox{Self-identified as conservative} \times \mbox{Political knowledge} + \beta_4 \mbox{Trust} + \cdots $$
+
+Stata: `reg con_index_rep2 i.Conservative##c.polknow_alt trust_comb ...` etc. 
+
+`w*z` で「w + z + w×z」が説明変数として加えられる．
+
+`w:z` は「w×z」に対応する．
+つまり `w*z` と `w + z + w:z` は同じ．
+
+```{r h2_reg}
+lm_cons_h2 <- lm(con_index_rep2 ~ Conservative + polknow_alt + Conservative:polknow_alt + trust_comb + extraversion + agreeableness + conscientiousness + emostab + openness + auth + efficacy + needcog_comb + needeval_comb_alt + ideo_extr + fed_power + religiosity + educ_alt + income + female + age_alt + latino + white, data = cons)
+# summary(lm_cons_h2)
+lm_lib_h2 <- lm(con_index_dem4 ~ Conservative + polknow_alt + Conservative:polknow_alt + trust_comb + extraversion + agreeableness + conscientiousness + emostab + openness + auth + efficacy + needcog_comb + needeval_comb_alt + ideo_extr + fed_power + religiosity + educ_alt + income + female + age_alt + latino + white, data = cons)
+# summary(lm_lib_h2)
+```
+
+推定結果（一部の変数のみ）をまとめて表示する．
+
+```{r h2_modelsum, warning = FALSE}
+msummary(list(lm_cons_h2, lm_lib_h2), gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", 
+         stars = TRUE, coef_omit = c(5:16, 21:22))
+```
+
+知識によってイデオロギーの効果がどのように異なるかを可視化する（Figure 1）．
+
+Stata: `marginsplot` ect. 
+
+```{r h2_marginplot}
+# install.packages("sjPlot")
+library(sjPlot)
+plot_model(model = lm_cons_h2, type = "pred", terms = c("polknow_alt", "Conservative"), ci.lvl = 0.95)
+plot_model(model = lm_lib_h2, type = "pred", terms = c("polknow_alt", "Conservative"), ci.lvl = 0.95)
+```
+
+知識が豊富なほどイデオロギーに一貫した陰謀論をより支持する現象は，保守層でのみ確認される．
+
+注：論文のFigure 1とは信頼区間が僅かに異なる．
+
+
+
+# Hypothesis 3 / 仮説3：イデオロギーに一貫した知識の交互作用効果が信頼によって消える
+
+本演習では省略するが，3要因の交互作用項を用いることで分析する．
+
+Stata: `reg con_index_rep2 i.Conservative##c.trust_comb##c.polknow_alt ...` etc. 
+
+R: 
+
+```{r h3_reg, eval = FALSE}
+lm_cons_h3 <- lm(con_index_rep2 ~ Conservative*polknow_alt*trust_comb + extraversion + agreeableness + conscientiousness + emostab + openness + auth + efficacy + needcog_comb + needeval_comb_alt + ideo_extr + fed_power + religiosity + educ_alt + income + female + age_alt + latino + white, data = cons)
+summary(lm_cons_h3)
+```
+
+.

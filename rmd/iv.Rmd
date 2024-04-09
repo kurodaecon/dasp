@@ -1,0 +1,297 @@
+---
+title: "Data Analysis Using Statistical Packages: Instrumental Variables"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年4月 (Last update: 2024年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_pck, message = FALSE}
+library(tidyverse)
+```
+
+# Data 
+
+Heiss (2020) [Using R for Introductory Econometrics](https://www.urfie.net/downloads/PDF/URfIE_web.pdf), Section 15.1 に依拠して，[Mroz (ECMA 1987)](https://www.jstor.org/stable/1911029) の既婚女性に関する賃金データ `mroz` を利用する．
+
+このデータは Wooldridge の教科書で使用されており，[`wooldridge` パッケージ](https://cran.r-project.org/package=wooldridge) に収められている．
+
+主な変数
+
+* `wage`: estimated wage rate (per hour), 賃金率
+   * `inlf = 0` (in labor force) の個人は NA
+* `educ`: years of schooling, 教育年数
+* `exper`: actual labor market experience 
+* `motheduc`: mother's years of schooling, 母親の教育年数
+* `fatheduc`: father's years of schooling, 父親の教育年数
+
+```{r mroz_data}
+# install.packages("wooldridge")
+data(mroz, package = "wooldridge")  # load data 
+nrow(mroz)  # sample size 
+hist(mroz$wage)
+summary(mroz$wage)
+```
+
+推定には `fixest` パッケージを用いる．
+`fixest` はパネルデータ分析だけではなく操作変数推定も可能．
+使い方は [パッケージの公式Vignette：Fast Fixed-Effects Estimation: Short Introduction](https://cran.r-project.org/web/packages/fixest/vignettes/fixest_walkthrough.html) を参照．
+
+```{r load_fixest}
+# install.packages("fixest")
+library(fixest)
+```
+
+注：以前は `AER::ivreg` が主流だった．
+
+
+# IV estimation: One endogenous, one instrument 
+
+$$ \mbox{First stage:} \quad x = \gamma_0 + \gamma_1  z + v $$
+$$ \mbox{Second stage:} \quad y = \beta_0 + \beta_1 x + u $$
+
+IV 推定量
+
+$$ \hat{\beta}_{IV} = \frac{cov(z, y)}{cov(z, x)} $$
+
+`mroz` データを用いて教育の収益率を推定する．
+
+* アウトカム `log(wage)` を `educ` に回帰したとき，`educ` の回帰係数 $\beta$ が半弾力性（`educ` が1単位増加したとき賃金率が $100 \times \beta$ % 増加する）として解釈できる
+* しかし `educ` は内生変数なので，`fatheduc` で instrument する
+
+$$ \mbox{First stage:} \quad \log(\mbox{Education}) = \gamma_0 + \gamma_1  (\mbox{Father's education}) + v $$
+$$ \mbox{Second stage:} \quad \log(\mbox{Wage}) = \beta_0 + \beta_1 (\mbox{Education}) + u $$
+
+## Estimation by hand 
+
+```{r by_hand_1end_1inst_iv}
+mroz_with_complete_wage <- mroz %>% 
+  filter(!is.na(wage))
+y <- log(mroz_with_complete_wage$wage)
+x <- mroz_with_complete_wage$educ
+z <- mroz_with_complete_wage$fatheduc
+cov(z, y) / cov(z, x)
+```
+
+IV推定量は教育年数が1年増加することで賃金率が 6% 上昇することを示す．
+ただし，この計算からは統計的に有意かどうかは分からない．
+
+
+# 2SLS (Two-stage least squares): One endogenous, one instrument 
+
+## Estimation by hand 
+
+### First stage 
+
+内生変数 `x` を操作変数 `z` に回帰し fitted value $\hat{x}$ を計算する．
+
+* この例では first stage の説明変数は `z` のみなので，F 値は `summary(lmオブジェクト)` で確認できる
+* Fitted value は `lm` オブジェクトに `$fitted.values` として格納されている
+* `lm` オブジェクトを構成する要素は `str(lmオブジェクト)` で確認できる
+
+```{r by_hand_1end_1inst_2s_first_stage}
+first_stage <- lm(x ~ z)
+summary(first_stage)
+x_hat <- first_stage$fitted.values
+summary(x_hat)
+```
+
+計算された回帰係数から計算して確認する．
+
+$$ \hat{x} = \hat{\gamma}_0 + \hat{\gamma}_1 z $$
+
+```{r by_hand_1end_1inst_2s_first_stage_by_hand}
+first_stage$coefficients
+x_hat2 <- first_stage$coefficients[1] + first_stage$coefficients[2] * z  # fitted value 
+summary(x_hat2)
+```
+
+### Second stage 
+
+アウトカム `y` を first stage で計算された $\hat{x}$ に回帰する．
+
+```{r by_hand_1end_1inst_2s_second_stage}
+lm(y ~ x_hat)
+```
+
+`summary` 関数を使えば `x_hat` 変数の標準誤差が出力されるが，これは不正確であるため，以下のセクションのように専用の関数を使用するべき．
+
+## `fixest::feols` 関数で推定
+
+`fixest::feols` 関数では `アウトカム ~ 外生変数 | 内生変数 ~ 操作変数` の形式で変数を指定する．
+
+今回は外生変数がないため以下のように `1` と書く．
+
+```{r feols_1end_1inst, message = FALSE}
+iv1 <- feols(log(wage) ~ 1 | educ ~ fatheduc, data = mroz)
+iv1
+```
+
+First stage は以下で表示できる．
+
+F 統計量もレポートされる．
+F 値が10を超えているので，内生変数と操作変数の関連性条件は満たされているだろう．
+
+```{r feols_1end_1inst_first_stage, message = FALSE}
+summary(iv1, stage = 1)
+```
+
+`feols` 関数では `vcov = "hetero"` 引数を指定することで不均一分散に頑健な標準誤差を計算できる．
+
+以下のように操作変数を使用しない場合を含めて比較する．
+頑健な標準誤差を用いると，教育年数変数は有意ではない．
+
+```{r feols_1end_1inst_comparison, message = FALSE}
+ols1 <- feols(log(wage) ~ educ, data = mroz)
+iv2 <- feols(log(wage) ~ 1 | educ ~ fatheduc, data = mroz, vcov = "hetero")
+library(modelsummary)
+modelsummary(list(OLS = ols1, summary(iv1, stage = 1:2), summary(iv2, stage = 1:2)), 
+             gof_omit = "AIC|BIC|RMSE", stars = TRUE)
+```
+
+注：「OLS」とはモデルをデータに当てはめる原理の名称であり，「IV」の counterpart を表すラベルとして使うことは本来は適切ではない．
+しかし，実際には（少なくとも経済学の論文では）操作変数を使っていないナイーブなモデルという意味で「OLS」というラベルが便宜的に用いられている．
+
+外生変数として `exper` など を追加．
+
+```{r feols_1end_1inst_exo, message = FALSE}
+iv3 <- feols(log(wage) ~ exper + I(exper^2) | educ ~ fatheduc, data = mroz, vcov = "hetero")
+iv3
+```
+
+# 2SLS (Two-stage least squares): One endogenous, multiple instrument 
+
+## `fixest::feols` 関数で推定
+
+操作変数が複数ある場合，`fixest::feols` 関数では `アウトカム ~ 外生変数 | 内生変数 ~ 操作変数1 + 操作変数2` の形式で指定する．
+
+```{r feols_1end_2inst, message = FALSE}
+iv4 <- feols(log(wage) ~ exper + I(exper^2) | educ ~ motheduc + fatheduc, data = mroz, vcov = "hetero")
+```
+
+比較する．
+
+```{r feols_1end_2inst_comparison, message = FALSE}
+library(modelsummary)
+modelsummary(list(summary(iv3, stage = 1:2), summary(iv4, stage = 1:2)), 
+             gof_omit = "AIC|BIC|RMSE", stars = TRUE)
+```
+
+複数の操作変数がある場合は過剰識別検定を行うことができる．
+
+```{r feols_1end_2inst_overid}
+fitstat(iv4, "sargan")
+```
+
+`p = 0.5386` であるため，「すべての操作変数は外生」という帰無仮説を棄却することはできない．
+言い換えれば，操作変数のいずれかが invalid という証拠はこの検定からは得られていない．
+
+ただし，操作変数の外生性を直接的に検証しているわけではない点に要注意．
+
+
+# Simulation: OLS vs. IV 
+
+中級者向け．
+
+除外変数バイアスがある場合に操作変数を利用しないと推定値にバイアスが生じることをモンテカルロシミュレーションによって確認する．
+
+## Basic 
+
+* 「Step 1. データ生成 → Step 2. 推定 → Step 3. 推定値を記録」を100回繰り返す
+* 記録する推定値は，OLS の内生変数の係数，IV の内生変数の係数，内生変数と操作変数の相関係数，First stage の F 値
+   * 推定値は `coefs` オブジェクト（matrix 型）に記録．Iteration のたびに推定値の行を追加．
+   * First stage の F 値は `fitstat(iv_iter, "ivf")` で出力される．`$ivf1$stat` で F 値を抽出
+* Data generating process は以下の通り
+
+$$ z_i = \begin{cases} 1 \quad \mbox{if } \ \eta_i > 0 \\ 0 \quad \mbox{if } \ \eta_i \le 0 \end{cases}, \quad \eta_i \sim N(0, 1) $$
+
+$$ x_i = \begin{cases} 1 \quad \mbox{if } \ 0.5 (\mbox{omitted var.})_i + 5 z_i + \xi_i > 0 \\ 0 \quad \mbox{if } \ 0.5 (\mbox{omitted var.})_i + 5 z_i + \xi_i \le 0 \end{cases}, \quad (\mbox{omitted var.})_i \sim N(0, 1), \quad \xi_i \sim N(0, 1) $$
+
+$$ y_i = 5 x_i + 3 (\mbox{omitted var.})_i + \zeta_i, \quad \zeta_i \sim N(0, 1) $$
+
+```{r sim_base, message = FALSE}
+n <- 1000
+coefs <- NULL  # 推定値を格納するオブジェクト
+for (iter in 1:100) { 
+  # Step 1. Generate data 
+  set.seed(iter)  # 再現性のため
+  sample_iter <- tibble::tibble(
+    omitted = rnorm(n),  # omitted variable 
+    inst = 1*(rnorm(n) > 0),  # instrument, same as [rbinom(n, 1, .5)] 
+    endog = 1*(0.5 * omitted + 5 * inst + rnorm(n) > 0),  # endogenous variable 
+    outcome = 5 * endog + 3 * omitted + rnorm(n)  # true coeff. = 5
+    )
+  # Step 2. Estimate 
+  ols_iter <- feols(outcome ~ endog, data = sample_iter)
+  iv_iter <- feols(outcome ~ 1 | endog ~ inst, data = sample_iter)
+  # Step 3. Keep track of estimated values 
+  coefs <- rbind(coefs, c(ols = as.numeric(ols_iter$coefficients[2]), 
+                          iv = as.numeric(iv_iter$coefficients[2]),
+                          cor_xz = cor(sample_iter$inst, sample_iter$endog),
+                          iv_f = fitstat(iv_iter, "ivf")$ivf1$stat))
+}
+summary(coefs[, "cor_xz"])
+summary(coefs[, "iv_f"])
+ggplot() + 
+  geom_histogram(aes(x = coefs[, "ols"], linetype = "OLS"), alpha = 0.5) + 
+  geom_histogram(aes(x = coefs[, "iv"], linetype = "IV"), alpha = 0.3, fill = "blue") + 
+  geom_vline(xintercept = 5, color = "red") +  # true value 
+  xlab("Coefficient")
+```
+
+操作変数を使わないと系統的なバイアスが生じる．
+操作変数を使うと平均的には概ね正しく推定される．
+
+## With defier 
+
+上の例ではサンプルの 100% が complier であることを仮定している（単調性の仮定を満たす）．
+
+たとえば，サンプルの 30% が defier の場合は次の通り．
+
+$$ x_{i: \ 30 \% \ of \ the \ sample} = \begin{cases} 1 \quad \mbox{if } \ 0.5 (\mbox{omitted var.})_i + 5 z_i + \xi_i < 0 \\ 0 \quad \mbox{if } \ 0.5 (\mbox{omitted var.})_i + 5 z_i + \xi_i \ge 0 \end{cases} $$
+
+```{r sim_late, message = FALSE}
+n <- 1000
+coefs <- NULL
+for (iter in 1:100) {
+  set.seed(iter)
+  sample_iter <- tibble::tibble(
+    id = 1:n, 
+    omitted = rnorm(n), 
+    inst = 1*(rnorm(n) > 0), 
+    endog = 1*(0.5 * omitted + 5 * inst + rnorm(n) > 0) 
+    ) %>% 
+    mutate(
+      endog = ifelse(id %in% 1:(n*.3), 1*(0.5 * omitted + 5 * inst + rnorm(n) < 0), endog),  # defier (30%) 
+      outcome = 5 * endog + 3 * omitted + rnorm(n)
+    )
+  ols_iter <- feols(outcome ~ endog, data = sample_iter)
+  iv_iter <- feols(outcome ~ 1 | endog ~ inst, data = sample_iter)
+  coefs <- rbind(coefs, c(ols = as.numeric(ols_iter$coefficients[2]), 
+                          iv = as.numeric(iv_iter$coefficients[2]),
+                          cor_xz = cor(sample_iter$inst, sample_iter$endog),
+                          iv_f = fitstat(iv_iter, "ivf")$ivf1$stat))
+}
+summary(coefs[, "cor_xz"])
+summary(coefs[, "iv_f"])
+ggplot() + 
+  geom_histogram(aes(x = coefs[, "ols"], linetype = "OLS"), alpha = 0.5) + 
+  geom_histogram(aes(x = coefs[, "iv"], linetype = "IV"), alpha = 0.3, fill = "blue") + 
+  geom_vline(xintercept = 5, color = "red") +  # true value 
+  xlab("Coefficient")
+```
+
+F 値が 10 を超えていても推定値にはかなりのばらつきがある．
+ましてや weak instrument だったら，まともな推定を期待するのは無理があるだろう．
+
+
+.

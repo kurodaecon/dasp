@@ -1,0 +1,574 @@
+---
+title: "Data Analysis Using Statistical Packages: Panel Data Analysis and DID"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2024年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_pck, message = FALSE}
+library(tidyverse)
+```
+
+# Panel data analysis / パネルデータ分析
+
+Heiss (2020) [Using R for Introductory Econometrics](https://www.urfie.net/downloads/PDF/URfIE_web.pdf), Section 13.5 に依拠して，1981年から1987年までの郡レベルの年次パネルデータ `crime4` を利用する．
+
+## Data 
+
+このデータは Wooldridge の教科書で使用されており，[`wooldridge` パッケージ](https://cran.r-project.org/package=wooldridge) に収められている．
+
+主な変数
+
+* `crmrte`: crime rate (crimes committed per person), 犯罪率
+* `lprbarr`: log of probability of arrest, 逮捕確率
+* `lprbconv`: log of probability of conviction, 有罪判決の確率
+* `lpolpc`: log of police per capita, 警察官の人数
+
+<!--
+* `lprbpris`: log of probability pf prison sentence, 実刑判決の確率
+* `lavgsen`: log of average sentence [days], 刑期
+-->
+
+```{r crime4_data}
+# install.packages("wooldridge")
+data(crime4, package = "wooldridge")  # load data 
+nrow(crime4)  # sample size 
+table(crime4$year)  # year 
+length(unique(crime4$county))  # number of county 
+head(table(crime4$county, crime4$year), 3)  # cross table of county x year
+```
+
+変数の作成や推定には `fixest` パッケージを用いる．
+使い方は [パッケージの公式Vignette：Fast Fixed-Effects Estimation: Short Introduction](https://cran.r-project.org/web/packages/fixest/vignettes/fixest_walkthrough.html) を参照．
+
+```{r load_fixest}
+# install.packages("fixest")
+library(fixest)
+```
+
+注：以前は `plm` パッケージが主流だった．
+
+
+## Without fixed effects （参考）
+
+固定効果を含めない場合は？
+
+```{r crime4_naive, message = FALSE}
+summary(lm(crmrte ~ lprbarr + lprbconv + lpolpc, data = crime4))
+```
+
+なお，実際には変数間に複雑・動学的な相互作用が生じていると思われるが，この演習ではその可能性について考えないこととする．
+
+
+## Oneway: Individual-fixed effect 
+
+Individual-level の固定効果を導入する．
+
+$$ y_{it} = \beta_0 + \beta_1 x_{it} + \alpha_i + \epsilon_{it} $$
+
+* $i$ は county を表す index で，$\alpha_i$ は county-level の固定効果
+
+### Within (fixed effect) estimation 
+
+$\dot{y}$ を demean (over individual) した変数 ($\dot{y}_{it} = y_{it} - \bar{y}_i$) とすると，モデルは以下のようになる．
+
+$$ \dot{y}_{it} = \beta_1 \dot{x}_{it} + \dot{\epsilon}_{it} $$
+
+#### Demean by hand 
+
+County ごとに平均値を計算して差し引けばよい．
+
+```{r crime4_one_demean_hand}
+crime4_ow_demean <- crime4 %>% 
+  group_by(county) %>% 
+  mutate(crmrte_demean = crmrte - mean(crmrte), 
+         lprbarr_demean = lprbarr - mean(lprbarr), 
+         lprbconv_demean =  lprbconv- mean(lprbconv),
+         lpolpc_demean =  lpolpc- mean(lpolpc)) %>% 
+  ungroup()  # グループ化の解除
+```
+
+実際に $\sum_t \dot{y}_{it} = 0 \ (\forall i)$ になっていることを確認する．
+
+```{r crime4_one_demean_check_t}
+crime4_ow_demean %>% 
+  group_by(county) %>% 
+  summarise(crmrte_sum = sum(crmrte), 
+            crmrte_demean_sum = sum(crmrte_demean)) %>% 
+  slice(1:3)
+```
+
+Demean された変数を用いて OLS で推定する．
+
+```{r crime4_one_within_lm, message = FALSE}
+summary(lm(crmrte_demean ~ lprbarr_demean + lprbconv_demean + lpolpc_demean + lpolpc_demean, 
+           data = crime4_ow_demean))
+```
+
+#### Demean by `demean` function 
+
+`fixest::demean` 関数を使うことで容易に demean 変数を作成できる．
+
+```{r crime4_one_demean_func}
+crime4_ow_demean2 <- demean(X = crime4[, c("crmrte", "lprbarr", "lprbconv", "lpolpc")], 
+                            f = crime4[, c("county")])
+str(crime4_ow_demean2)
+```
+
+Demean された変数を用いて OLS で推定する．
+
+```{r crime4_one_within_lm2, message = FALSE}
+summary(lm(crmrte ~ lprbarr + lprbconv + lpolpc, data = crime4_ow_demean2))
+```
+
+#### `fixest::feols` 関数で推定
+
+固定効果は `アウトカム ~ 説明変数1 + 説明変数2 | 固定効果` のように `|` (vertical bar) の後ろで指定する．
+
+```{r crime4_within_one_fixest}
+feols(crmrte ~ lprbarr + lprbconv + lpolpc | factor(county), data = crime4)
+```
+
+回帰係数は明示的に demean した変数を用いた場合の推定量と同じ値が推定されていることが確認できる．
+
+一方で，標準誤差については county レベルのクラスターロバスト標準誤差が自動で計算されるため，値が異なる点に注意．
+
+
+### LSDV (least square dummy variable) estimation 
+
+郡の固定効果をモデルに含める．
+
+$$ y_{it} = \beta_0 + \beta_1 x_{it} + \alpha_i + \epsilon_{it} $$
+
+`county` 変数は数値型のため，そのまま回帰モデルに含めると連続変数として扱われてしまう．
+
+```{r crime4_lsdv_one_lm_false, message = FALSE}
+lm(crmrte ~ county + lprbarr + lprbconv + lpolpc, data = crime4)
+```
+
+そこで，`factor` 関数で因子型に変換することでダミー変数として使用する．
+
+```{r crime4_lsdv_one_lm, message = FALSE}
+panel_lsdv_ow_lm <- lm(crmrte ~ factor(county) + lprbarr + lprbconv + lpolpc, data = crime4)
+# panel_lsdv_lm
+library(modelsummary)
+modelsummary(list(panel_lsdv_ow_lm), coef_omit = 1:90, fmt = 5, 
+             gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", stars = TRUE)
+```
+
+
+### First difference estimation 
+
+郡の固定効果 $\alpha_i$ は差分を取ることで消える．
+
+$$ \Delta y_{it} = \beta_0 + \beta_1 \Delta x_{it} + \epsilon_{it} $$
+
+差分を取るには `d(変数名)` とする．
+
+```{r crime4_one_fd, message = FALSE}
+feols(d(crmrte) ~ d(lprbarr) + d(lprbconv) + d(lpolpc), data = crime4, panel.id = ~ county + year)
+```
+
+
+## Twoway: Individual- and Time- fixed effect 
+
+Individual-level と time-level の2つの固定効果を同時に導入する場合．
+
+$$ y_{it} = \beta_0 + \beta_1 x_{it} + \alpha_i + \lambda_t + \epsilon_{it} $$
+
+* $i$ は county を表す index で，$\alpha_i$ は county-level の固定効果
+* $t$ は year を表す index で，$\lambda_t$ は year-level の固定効果
+
+### Within estimation 
+
+$\dot{y}$ を demean した変数 ($\dot{y} = y_{it} - \bar{y}_i - \bar{y}_t + \bar{\bar{y}}$) とすると，モデルは以下のようになる．
+
+$$ \dot{y}_{it} = \beta_1 \dot{x}_{it} + \dot{\epsilon}_{it} $$
+
+#### Demean by hand 
+
+以下のように `demean` 関数を使わずに計算することもできるが，見ての通りコードが煩雑になる．
+
+```{r crime4_demean_hand_crmrte}
+crime4 %>% 
+  group_by(county) %>% 
+  mutate(crmrte_mean_i = mean(crmrte)) %>% 
+  ungroup() %>% 
+  group_by(year) %>% 
+  mutate(crmrte_mean_y = mean(crmrte)) %>% 
+  ungroup() %>% 
+  mutate(crmrte_mean = mean(crmrte),
+         crmrte_demean = crmrte - crmrte_mean_i - crmrte_mean_y + crmrte_mean) %>% 
+  select(county, year, starts_with("crmrte"))
+```
+
+#### Demean by `demean` function 
+
+Two-way fixed effect の場合は `demean` 関数のありがたみをより感じることができる．
+
+```{r crime4_demean}
+crime4_demean <- demean(X = crime4[, c("crmrte", "lprbarr", "lprbconv", "lpolpc")], 
+                        f = crime4[, c("county", "year")])
+str(crime4_demean)
+```
+
+実際に $\sum_i \dot{y}_{it} = 0 \ (\forall t)$ になっていることを確認する．
+
+```{r crime4_demean_check_t}
+data.frame(year = crime4$year, crime4_demean) %>% 
+  group_by(year) %>% 
+  summarise(crmrte_sum = sum(crmrte)) %>% 
+  slice(1:3)
+```
+
+$\sum_t \dot{y}_{it} = 0 \ (\forall i)$ も同様に確認．
+
+```{r crime4_demean_check_i}
+data.frame(county = crime4$county, crime4_demean) %>% 
+  group_by(county) %>% 
+  summarise(crmrte_sum = sum(crmrte)) %>% 
+  slice(1:3)
+```
+
+Demean された変数を用いて OLS で推定する．
+
+```{r crime4_within_lm, message = FALSE}
+summary(lm(crmrte ~ lprbarr + lprbconv + lpolpc, data = crime4_demean))
+```
+
+
+#### `fixest::feols` 関数で推定
+
+```{r crime4_within_fixest, eval = FALSE}
+feols(crmrte ~ lprbarr + lprbconv + lpolpc | factor(county) + factor(year), data = crime4)
+```
+
+（出力は省略）
+
+この演習では詳しく扱わないが，標準誤差を変更することができる．
+たとえば，[Newey and West (ECMA 1987)](https://www.jstor.org/stable/1913610) が提案した標準誤差を適用するには，パネルデータの構造を `panel.id` 引数で指定したうえで以下のようにする．
+
+```{r crime4_within_twoway_fixest_se}
+crime4_within_twoway <- feols(crmrte ~ lprbarr + lprbconv + lpolpc | factor(county) + factor(year), 
+                              data = crime4, panel.id = ~ county + year)
+summary(crime4_within_twoway, "newey_west")
+```
+
+
+### LSDV estimation 
+
+年と郡それぞれの固定効果をモデルに含める．
+
+$$ y_{it} = \beta_0 + \beta_1 x_{it} + \alpha_i + \lambda_t + \epsilon_{it} $$
+
+```{r crime4_lsdv_lm, message = FALSE, eval = FALSE}
+panel_lsdv_lm <- lm(crmrte ~ factor(county) + factor(year) + lprbarr + lprbconv + lpolpc, data = crime4)
+# panel_lsdv_lm
+library(modelsummary)
+modelsummary(list(panel_lsdv_lm), coef_omit = 1:96, fmt = 5,
+             gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", stars = TRUE)
+```
+
+（出力は省略）
+
+
+### First difference estimation 
+
+郡の固定効果 $\alpha_i$ は差分を取ることで消える．
+
+$$ \Delta y_{it} = \beta_0 + \beta_1 \Delta x_{it} + \lambda_t + \epsilon_{it} $$
+
+```{r crime4_fd, message = FALSE, eval = FALSE}
+feols(d(crmrte) ~ d(lprbarr) + d(lprbconv) + d(lpolpc) | factor(year), 
+      data = crime4, panel.id = ~ county + year)
+```
+
+（出力は省略）
+
+
+# Convert data format 
+
+パネルデータは wide 形式と long 形式という2つの形式をとりうる．
+
+ここまで使ってきたデータは long 形式と呼ばれるもので，ユニークな individual-time が1行に対応する．
+
+（参考：ユニークな individual-time-variable または individual-time を1行に対応させたデータを long 形式と呼ぶ場合もある．）
+
+Long 形式：1行＝1観測（すなわち，1行には1時点のデータしか含まれない）
+
+| County | Year | Crime rate | Prob. arrest | 
+| :---: | :---: | :---: | :---: | 
+| 1 | 1981 | 0.0399 | 0.2897 | 
+| 1 | 1982 | 0.0383 | 0.3381 | 
+| 3 | 1981 | 0.0164 | 0.2029 | 
+| 3 | 1982 | 0.0191 | 0.1622 | 
+| ... | ... | ... | ... | 
+
+もう一つの形式は wide．
+ユニークな Individual を1行に対応させる形式で，縦に長い long 形式と比べて横に長く（文字通りワイドに）なる．
+
+Wide 形式：1行＝1郡（すなわち，1行に複数時点のデータが含まれる）
+
+| County | Crime rate 1981 | Crime rate 1982 | Prob. arrest 1981 | Prob. arrest 1982 | 
+| :---: | :---: | :---: | :---: | :---: | 
+| 1 | 0.0399 | 0.0383 | 0.2897 | 0.3381 | 
+| 3 | 0.0164 | 0.0191 | 0.2029 | 0.1622 | 
+| ... | ... | ... | ... | ... | 
+
+一般的には tidy データ（1つの行に1つの observation が対応する）をベースにハンドリング・分析することが望ましく，パネルデータの文脈では long 形式が tidy である．
+
+以下のように long ⇔ wide の変換が可能だが，関数の使い方が複雑なので ChatGPT に教えてもらうのがベター．
+
+## Long to Wide 
+
+注：通常は long 形式のまま分析を行うのでこのセクションを理解しなくても差し支えない．
+
+Long から wide に変換するには `tidyr::pivot_wider` 関数を用いる．
+
+注：`tidyr` パッケージは `tidyverse` を構成するパッケージの一つなので，`tidyverse` を（インストール＆）ロードすれば使うことができる．
+
+```{r crime4_long_to_wide}
+crime4_wide <- crime4 %>% 
+  select(county, year, crmrte, lprbarr, lprbconv, lpolpc) %>% 
+  pivot_wider(names_from = "year", values_from = c(crmrte, lprbarr, lprbconv, lpolpc))
+crime4_wide %>% slice(1:3)
+```
+
+2期間しかない場合は wide 形式のデータを用いて簡単に first difference 推定が可能．
+
+```{r crime4_wide_fd}
+crime4_wide_diff <- crime4_wide %>% 
+  mutate(crmrte = crmrte_87 - crmrte_81,  # first difference 
+         lprbarr = lprbarr_87 - lprbarr_81,
+         lprbconv = lprbconv_87 - lprbconv_81,
+         lpolpc = lpolpc_87 - lpolpc_81)
+lm(crmrte ~ lprbarr + lprbconv + lpolpc, data = crime4_wide_diff)
+```
+
+Long 型のデータのまま推定する場合（答え合わせ）．
+
+```{r crime4_long_fd, message = FALSE}
+crime4_8187 <- crime4 %>% 
+  filter(year %in% c(81, 87))  # same as [year == 81 | year == 87]
+feols(d(crmrte) ~ d(lprbarr) + d(lprbconv) + d(lpolpc), data = crime4_8187, panel.id = ~ county + year)
+```
+
+## Wide to Long 
+
+Wide から long に変換するには `tidyr::pivot_longer` 関数を用いる．
+
+`(.*)` などは正規表現と呼ばれるもので，このテクニックを文字列のパターン認識と変数名の作成に利用している．
+正規表現は文字データの処理をする上で非常に有用なテクニックだが，統計分析とは直接関係がないのでこの授業では理解しなくてよい．
+
+```{r crime4_wide_to_long}
+crime4_long <- crime4_wide %>% 
+  pivot_longer(cols = -county,
+               names_to = c(".value", "year"), 
+               names_pattern = "(.*)_(\\d+)")
+crime4_long %>% slice(1:3)
+```
+
+元のデータと比較．
+
+```{r crime4_original_long_check}
+crime4 %>% 
+  select(county, year, crmrte, lprbarr, lprbconv, lpolpc) %>% 
+  slice(1:3)
+```
+
+
+
+# Difference-in-differences / 差分の差分法
+
+Heiss (2020) [Using R for Introductory Econometrics](https://www.urfie.net/downloads/PDF/URfIE_web.pdf), Section 13.2 に依拠して，[Kiel and McClain (JEEM 1995)](https://doi.org/10.1006/jeem.1995.1016) のデータを用いた DID 分析を行う．
+ただし，Kiel and McClain (1995) 自体は DID を行っているわけではない．
+
+## Data 
+
+ごみ焼却施設 (garbage incinerator) の建設が近隣の住宅価格に与える影響を調べるために，焼却炉建設の噂が出回る前の1978年と建設が始まった1981年の2時点のデータを用いて DID 分析を行う．
+
+このデータは Wooldridge の教科書で使用されており，[`wooldridge` パッケージ](https://cran.r-project.org/package=wooldridge)に `kielmc` という名前でデータセットが収められている．
+
+主な変数
+
+* `rprice`: 取引価格
+* `nearinc`: 焼却施設に近いところ（処置群）で 1 をとるダミー変数
+* `y81`: 1981年（処置後）に 1 をとるダミー変数
+
+```{r kielmc_data}
+data(kielmc, package = "wooldridge")
+head(kielmc, 2)
+kielmc %>% select(rprice, nearinc, y81) %>% summary
+```
+
+## DID table 
+
+以下のように difference をとる．
+
+```{r kielmc, message = FALSE}
+kielmc %>% 
+  group_by(nearinc, y81) %>% 
+  summarise(rprice = mean(rprice)) %>% 
+  print.data.frame(digits = 6)
+101307.5 - 82517.2  # difference in control group [nearinc == 0]
+70619.2 - 63692.9  # difference in treatment group [nearinc == 1]
+(70619.2 - 63692.9) - (101307.5 - 82517.2)  # DID 
+```
+
+| Variable | Control (`nearinc == 0`) | Treatment (`nearinc == 1`) | Difference: NJ-PA | 
+| :---: | :---: | :---: | :---: | 
+| Price: Before (1978) | 82,517.2 | 63,692.9 | -18,824.3 | 
+| Price: After (1981) | 101,307.5 | 70,619.2 | -30,688.3 | 
+| Change in Price: After-Before | 18,790.3 | 6,926.3 | -11,864 | 
+
+すなわち，焼却施設の建設によって \$11,864 だけ価格が下落する．
+
+中級者向け：以下のように計算してもよい．
+
+```{r kielmc_2, message = FALSE}
+kielmc %>% 
+  group_by(nearinc, y81) %>% 
+  summarise(rprice = mean(rprice)) %>% 
+  group_by(nearinc) %>% 
+  summarise(diff = diff(rprice)) %>% 
+  mutate(diff_in_diff = diff(diff)) %>% 
+  slice(2)  # extract 2nd row 
+```
+
+## Regression 
+
+$$ y = \beta_0 + \beta_1 \mbox{Treated} + \beta_2 \mbox{After} + \beta_3 \mbox{Treated} \times \mbox{After} + \epsilon $$
+
+`nearinc:y81` は `nearinc` (Treat) と `y81` (After) の交差項．
+この係数が DID 推定量で，上のセクションで計算した値と同じになる．
+
+```{r keilmc_reg1}
+lm(formula = rprice ~ nearinc + y81 + nearinc:y81, data = kielmc)
+```
+
+`treat * after` は `treat + after + treat:after` と同じ．
+
+```{r kielmc_reg2}
+did_reg_i <- lm(formula = rprice ~ nearinc*y81, data = kielmc)
+did_reg_i
+```
+
+<!--
+アウトカムに log をとった変数が既に `lrprice` という変数名で格納されている．
+```{r kielmc_reg_log}
+lm(formula = lrprice ~ nearinc * y81, data = kielmc)
+```
+-->
+
+説明変数として，家屋の築年数 `age`，州間高速道路出入口までの距離 `intst`，土地面積 `land`，家屋面積 `area`，部屋数 `rooms`，bathroom の数 `baths` を加える．
+
+```{r kielmc_reg_log_control}
+did_reg_ii <- lm(formula = rprice ~ nearinc * y81 + age + I(age^2 / 100) + 
+                   log(intst) + log(land) + log(area) + rooms + baths, data = kielmc)
+did_reg_iii <- lm(formula = I(rprice/area) ~ nearinc * y81 + age + I(age^2 / 100) + 
+                   log(intst) + log(land) + log(area) + rooms + baths, data = kielmc)
+did_reg_iv <- lm(formula = log(rprice) ~ nearinc * y81 + age + I(age^2 / 100) + 
+                   log(intst) + log(land) + log(area) + rooms + baths, data = kielmc)
+```
+
+まとめて出力．
+
+```{r kielmc_reg_sum, message = FALSE}
+library(modelsummary)
+modelsummary(list(Price = did_reg_i, Price = did_reg_ii, 
+                  `Unit Price` = did_reg_iii, `ln(Price)` = did_reg_iv), 
+             gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", stars = TRUE)
+```
+
+物件属性をコントロール変数としてモデルに追加した場合，DID 推定量は -$17,768 となり，統計的にも有意になる．
+アウトカムに自然対数を取った場合に係数は -0.132 と推定され，これは焼却施設の建設が価格を 13.2% 低下させることを意味する．
+
+
+# Event study 
+
+`fixest` パッケージに含まれているサンプルデータ `base_did` を利用する．
+
+主な変数
+
+* `y`: outcome 
+* `x1`: explanatory variable 
+* `period`: from 1 to 10
+* `post`: = 1 if period >= 6
+   * つまり，処置群の個体はすべて同じタイミングで処置を受けるため，staggered の設定ではない
+* `treat`: = 1 if treatment group 
+
+```{r es_data}
+nrow(base_did)
+head(base_did)
+table(base_did$period)
+```
+
+## Twoway fixed effect model 
+
+```{r es_twoway_fe}
+feols(y ~ x1 + post:treat | id + period, data = base_did) 
+```
+
+## Event study: Estimation by hand 
+
+Period = 6 で処置が始まるので，その直前の Period = 5 を reference point として推定する．
+
+$$ y_{it} = \beta_0 + \beta_1 x_{it1} + \sum_{t \in \{1, \ldots, 4,6,\ldots,10 \}} \gamma_t (\mbox{Treat})_i \times 1(\mbox{Period}_t = 1) + \alpha_i + \lambda_t + \epsilon_{it} $$
+
+```{r es_twoway_hand}
+base_did_mod <- base_did %>% 
+  mutate(
+    treat_p1 = treat * (period == 1), 
+    treat_p2 = treat * (period == 2), 
+    treat_p3 = treat * (period == 3), 
+    treat_p4 = treat * (period == 4), 
+    treat_p6 = treat * (period == 6), 
+    treat_p7 = treat * (period == 7), 
+    treat_p8 = treat * (period == 8), 
+    treat_p9 = treat * (period == 9), 
+    treat_p10 = treat * (period == 10)
+    )
+feols_es_hand <- feols(y ~ x1 + treat_p1 + treat_p2 + treat_p3 + treat_p4 + treat_p6 + treat_p7 + 
+                         treat_p8 + treat_p9 + treat_p10 | id + period, data = base_did_mod) 
+feols_es_hand
+```
+
+95%信頼区間（Estimate ± 1.96×SE）とあわせて描画する．
+
+```{r es_twoway_hand_plot}
+feols_es_coef <- data.frame(period = c(1:4, 6:10), feols_es_hand$coeftable[-1, ])
+head(feols_es_coef, 2)
+ggplot(feols_es_coef, aes(x = period, y = Estimate)) +
+  geom_point() + 
+  geom_errorbar(aes(ymin = Estimate - 1.96*Std..Error, ymax = Estimate + 1.96*Std..Error), width = .2) + 
+  geom_hline(yintercept = 0, color = "gray")
+```
+
+## Event study: Using `feols`+`i` and `iplot` 
+
+`fixest::feols` 関数の中で interaction 変数を作成する `fixest::i` 関数を使用すれば，`fixest::iplot` と以下のように組み合わせることで容易に event study graph が作成できる．
+
+* `i` 関数は `i(factor_var = time, var = treat, ref = ref_time)` の形式で使う
+   * 1つ目の引数は factor 型として扱われる変数（時間），2つ目が treatment dummy を表す変数
+   * Period = 6 で処置が始まるため，その直前の Period = 5 を `ref` 引数として指定
+
+```{r es_twoway_i}
+feols_es <- feols(y ~ x1 + i(period, treat, ref = 5) | id + period, data = base_did) 
+feols_es
+iplot(feols_es)
+```
+
+
+
+
+.

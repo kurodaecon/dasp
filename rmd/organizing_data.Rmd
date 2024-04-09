@@ -1,0 +1,680 @@
+---
+title: "Data Analysis Using Statistical Packages: Organizing and Visualizing Data"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2024年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Packages in R 
+
+パッケージには大別すると次の3種類がある：
+
+1. Rをインストールした時に自動的にインストールされており，Rを起動したときにデフォルトで使えるように設定されているもの（`base::c`, `utils::str`, etc.）
+1. Rをインストールした時に自動的にインストールされているが，Rを起動したときにデフォルトでは読み込まれていないもの（`MASS::Boston`, `Matrix::Cholesky`, etc.）
+   - `library(パッケージ名)` で読み込んで `関数名` で呼び出すか，パッケージを読み込まずに `パッケージ名::関数名` で呼び出す
+1. ユーザーが自分でインストールしなければ使えないもの（`tidyverse`, `data.table`, etc.）
+   - `install.packages("パッケージ名")` でインストールし（最初の一度だけ実行），`library(パッケージ名)` で読み込む（Rを起動する度に実行）
+   - Rstudio で `install.packages` が使えない場合，PC がインターネットに接続されていることを確認したうえで，CRAN レポジトリを変更してリトライ：Tools > Global Options > Packages > Primary CRAN repository を 「Japan (Tokyo)」 などに変更（参考：[Setting CRAN repository options](https://blog.djnavarro.net/posts/2022-01-10_setting-cran-repositories/)）
+
+補足：同じ名前の関数が複数のパッケージで使用されている場合があるので，常に `パッケージ名::関数名` の形式でパッケージを指定するのを好む人もいる．
+
+## `tidyverse` package 
+
+データの整理・操作は `tidyverse` というパッケージに含まれる関数を使うのが一般的．
+<!--
+Load the `tidyverse`, a package (or more precisely, a bundle of packages) for manipulating, extracting, and processing data.
+-->
+
+* 正確には，`tidyverse` は `dplyr` (読み方："dee-ply-er") や `ggplot2` などの複数のパッケージを束ねたもの
+* `tidyverse` をインストール／ロードすれば `dplyr` や `ggplot2` などが同時にインストール／ロードされる
+
+パッケージのインストールは R のインストール後に一度だけ実行する．
+
+```{r tidyverse_install, eval = FALSE}
+install.packages("tidyverse")  # run for the first time only
+```
+
+インストール後に R に読み込む．
+こちらはパッケージのインストールと異なり，R （または RStudio）を起動するたびに実行する．
+
+```{r tidyverse_load, message = FALSE}
+library(tidyverse)
+```
+
+`dplyr` パッケージの重要な関数
+<!--
+Important function in `dplyr` (pronounced "dee-ply-er") package:
+-->
+
+* `filter` ... 条件に合致する行を抽出
+* `select` ... 条件に合致する列（変数）を抽出
+* `mutate` ... 新しい列（変数）を作成
+* `rename` ... 列（変数）の名前を変更
+* `left_join` ... 2つのデータセットを統合
+* `summarise` ... データを要約
+* `group_by` ... 行をグルーピング
+   * Note: `group_by` はそれ単体で使われるわけではなく，通常は `summarise` 関数と併用される
+
+<!--
+* `filter` ... fetch only the subset (rows) we're interested in
+* `select` ... select one or multiple columns (variables)
+* `mutate` ... creates new columns (variables)
+* `rename` ... change columns (variables) name
+* `left_join` ... join (merge) two datasets
+* `summarise` ... summarize data
+* `group_by` ... group the rows
+   * Note: `group_by` alone will not give any output; it should be followed by `summarise` (or `mutate`) function. 
+-->
+
+## `ggplot2` package
+
+データ可視化のためのパッケージ．
+`plot` のようなデフォルトで使える関数と比べて文法に癖があるが，慣れれば論文に使える程度に綺麗な図を出力できる．
+
+`plot` 関数はこれ単体でグラフを描画してくれるが，ggplot2 パッケージを使用する場合は `ggplot` 関数でデータと属性（X軸の変数，Y軸の変数，色に対応する変数，サイズに対応する変数）を指定し，次いで `geom_xxx` 関数でジオメトリ（点，線，棒，etc.）を指定するという2段階で描画する．
+
+<!--
+https://rstudio-conf-2020.github.io/r-for-excel/ggplot2.html
+-->
+
+<!--
+`library(tidyverse)` を実行すると `ggplot2` も自動的に読み込まれる．
+-->
+
+
+# Example of The Beatles data frame 
+
+## Create "tibble" object 
+
+`data.frame` で作成したデータフレームのオブジェクトよりも少し扱いやすいデータフレーム型オブジェクトを `tibble::tibble` 関数で作成できる．
+
+```{r beatles_create}
+beatles <- tibble::tibble(
+  name = c("John", "Paul", "George", "Ringo"), 
+  born = c(1940, 1942, 1943, 1940),
+  decease = c(1980, NA, NA, NA), 
+  height = c(179, 180, 178, 170)
+  )
+beatles
+```
+
+## `filter` 
+
+残す行（observation）の条件を指定する．
+
+```{r beatles_filter}
+beatles %>% filter(born >= 1941)
+```
+
+`filter` を適用した後のデータセットを新しいオブジェクトに割り当てるには `<-` を用いる（上書きも可；以下同様）．
+
+```{r beatles_filter_assign}
+beatles_ver2 <- beatles %>% filter(born >= 1941)
+beatles_ver2
+```
+
+複数の条件を指定することもできる．
+
+```{r beatles_filter_multi}
+beatles %>% filter(born >= 1941 & height < 180)
+```
+
+## `select` 
+
+残す列（変数）の名前を指定する．
+
+```{r beatles_select}
+beatles %>% select(name)
+beatles %>% select(name, born)
+```
+
+マイナス記号 `-` を使って「`-変数名`」と指定すると当該変数以外が残る．
+
+```{r beatles_select_minus}
+beatles %>% select(-height)
+```
+
+## `mutate` 
+
+新しく列（変数）を作成する．
+
+```{r beatles_mutate}
+beatles %>% mutate(primary_role = c("vocal", "vocal", "guitar", "drum"))
+```
+
+既存の変数を利用して新しい変数を作成することもできる．
+
+```{r beatles_mutate_age_at_debut}
+beatles %>% mutate(age_at_debut = 1962 - born)
+```
+
+## `rename` 
+
+列（変数）の名前を変える．
+
+```{r beatles_rename}
+beatles %>% rename(birth_year = born)
+```
+
+## `left_join` 
+
+別のデータセットと統合する．
+
+```{r beatles_new_df}
+beatles_primary_role <- tibble::tibble(name = c("John", "Paul", "George", "Ringo"), 
+                                       primary_role = c("vocal", "vocal", "guitar", "drum"))
+beatles_primary_role
+beatles %>% left_join(beatles_primary_role, by = "name")
+```
+
+### If either data frame contains NA / いずれかのデータフレームに欠損値がある場合 
+
+一方のデータフレームにしかない行がある場合，主たるデータフレーム（マージされる側）の行はそのまま残る．
+
+補足：コードの文法上左側にあるデータセットに合わせてマージするので `left_join` という関数名が使われている．右側に合わせる場合は `right_join`，積集合でマージするのは `inner_join`，和集合でマージするのは `full_join`．
+
+Case 1. 担当楽器のデータセットに欠損がある場合．
+
+```{r beatles_new_df_right_na}
+beatles_primary_role_wo_paul <- tibble::tibble(name = c("John", "George", "Ringo"), 
+                                               primary_role = c("vocal", "guitar", "drum"))
+beatles_primary_role_wo_paul
+beatles %>% left_join(beatles_primary_role_wo_paul, by = "name")
+```
+
+Case 2. 逆に，主なデータフレームの方に欠損がある場合．
+
+```{r beatles_new_df_left_na}
+beatles %>% 
+  filter(name != "Paul") %>% 
+  left_join(beatles_primary_role, by = "name")
+```
+
+## `summarise` 
+
+データを要約する．
+
+```{r beatles_summarise}
+beatles %>% summarise(mean_height = mean(height), 
+                      std_dev_height = sd(height),
+                      sample_size = n())
+```
+
+## `group_by` 
+
+`summarise` 関数と組み合わせて使うことで，グループごとの要約統計量を計算したり何らかの統計処理を行うことができる．
+
+```{r beatles_group_by}
+beatles %>% 
+  group_by(born) %>% 
+  summarise(mean_height = mean(height), 
+            std_dev_height = sd(height),
+            sample_size = n())
+```
+
+## Scatter plot 
+
+まずは `ggplot` だけ実行してみる．
+データが何も描かれていないキャンバスだけが表示される．
+
+```{r beatles_ggplot}
+ggplot(data = beatles, mapping = aes(x = born, y = height))
+```
+
+ここに点のレイヤーを `geom_point` 関数で追加する．
+
+```{r beatles_point}
+ggplot(data = beatles, mapping = aes(x = born, y = height)) + 
+  geom_point()
+```
+
+<!--
+下のようにコーディングしてもよい．
+
+```{r beatles_point2}
+ggplot() + 
+  geom_point(data = beatles, mapping = aes(x = born, y = height))
+```
+-->
+
+軸のラベルを変更する．
+
+```{r beatles_lab}
+ggplot(data = beatles, mapping = aes(x = born, y = height)) + 
+  geom_point() + 
+  xlab("Year of birth")
+```
+
+キャンバスのテーマを変える．
+
+```{r beatles_classic}
+ggplot(data = beatles, mapping = aes(x = born, y = height)) + 
+  geom_point() + 
+  theme_classic()
+```
+
+
+
+
+# Example of `swiss` data 
+
+R をインストールした際にビルトインされているデータセットは `data()` で確認できる．
+
+そのうちの一つ「`swiss`」データを用いて `tidyverse` と `ggplot2` の基本的な使い方を確認する．
+
+* 理解しやすいように，`swiss` データセットの最初の6行（provinces）と最初の4列（variables）だけを切り出して，「`swiss2`」という名前の新しいデータセットとして定義する．
+
+<!--
+Learn the basic usage of the tidyverse using the `swiss` data built-in to R.
+
+You can find the other built-in datasets using `data()`.
+
+For ease of understanding, we cut out only the first six rows (provinces) and the first four columns (variables) of the `swiss` dataset and define it as a new dataset named `swiss2`.
+-->
+
+```{r create_swiss2}
+swiss2 <- swiss[1:6, 1:4]  # Extract a portion of `swiss` dataset
+swiss2
+```
+
+## `filter`, `select`, `mutate`, `rename`, and `summarise` 
+
+```{r swiss_filter_etc}
+swiss2 %>% filter(Fertility > 80)  # Keep only provinces with a "Fertility" greater than 80
+filter(swiss2, Fertility > 80)  # same as above
+swiss2 %>% filter(Fertility > 80, Examination > 10)  # multiple conditions
+swiss2 %>% select(Fertility, Examination)  # select specified variables
+swiss2 %>% mutate(Exam_Edu = (Examination + Education)/2)  # creates new variable as the mean
+swiss2 %>% rename(Exam = Examination)  # new name is `Exam`, old name is `Examination`
+swiss2 %>% summarise(mean_fert = mean(Fertility), sd_fert = sd(Fertility), 
+                     median_fert = median(Fertility), mean_educ = mean(Education))
+```
+
+`summarise` を使わないで計算する場合は以下のようになる．
+
+```{r swiss_sum_primitive_function}
+mean(swiss2$Fertility); sd(swiss2$Fertility); median(swiss2$Fertility); mean(swiss2$Education)
+```
+
+
+
+## `group_by` and `summarise` 
+
+出生率が高いか低いかでグループを分けて，そのグループごとに平均値や分散などを計算することもできる．
+
+* 出生率が高いかどうかを示す `high_fertility_province` という変数を作成し，それを `group_by` 関数に使用する．
+
+<!--
+We can also compare states with high fertility rates with provinces with low fertility rates. To do so, add a variable called `high_fertility_province` that indicates whether the province has a high fertility rate or not, and use the `group_by` function with this variable. 
+-->
+
+```{r swiss_group_by}
+swiss2 %>%
+  mutate(high_fertility_province = Fertility > mean(Fertility)) %>%
+  group_by(high_fertility_province) %>%
+  summarize(mean_fert = mean(Fertility), mean_exam = mean(Examination))
+```
+
+先ほどと同様に `group_by` や `summarise` 関数を使わずに同じものを計算しようとすると以下のようになる．
+`group_by` 関数の便利さと可読性がおわかりいただけるだろう．
+
+```{r swiss_sum_without_group_by}
+mean(swiss2$Fertility[swiss2$Fertility > mean(swiss2$Fertility)])
+mean(swiss2$Fertility[swiss2$Fertility <= mean(swiss2$Fertility)])
+mean(swiss2$Examination[swiss2$Fertility > mean(swiss2$Fertility)])
+mean(swiss2$Examination[swiss2$Fertility <= mean(swiss2$Fertility)])
+```
+
+上記の操作を行ったデータセットを今後の分析に使用する場合，元のデータセットを上書きしてもよいし，新しいデータセットを作成してもよいが，上書きすると元のデータはR上から消えるので注意．
+
+<!--
+If the dataset organized as described above is to be used for future analysis, the original dataset may be overwritten or a new dataset may be created (create a new object called `swiss2_new`).
+
+Overwriting the original dataset (`swiss2`) will cause the original dataset to disappear from R, so I recommend assigning it to a new object (`swiss2_new`).
+-->
+
+```{r swiss_override}
+swiss2_new <- swiss2 %>% filter(Fertility > 90)  # create new
+swiss2 <- swiss2 %>% filter(Fertility > 90)  # overwrite
+```
+
+
+## `left_join` 
+
+2つのデータセットがある場合，`left_join` 関数を使って統合することができる．
+
+例：`swiss` データに人口の変数を統合する．
+
+<!--
+Two datasets can be merged using the `left_join` function. For example, the dataset swiss2_pop contains two variables: province name and population. 
+-->
+
+* マージする key として province の名前を用いる
+* `swiss` データセットには province の名前が列としてではなく rownames として記録されているので，統合される側のデータに province の名前を表す `prov` 変数を作成
+
+```{r merge_create_swiss2}
+swiss2 <- swiss[1:6, 1:4]
+swiss2b <- swiss2 %>% mutate(prov = rownames(swiss2))  # add province names as a column "prov"
+swiss2b
+```
+
+（仮想の）人口変数を含む `swiss2_pop` というデータセットを作成する．
+
+```{r merge_create_pop_data}
+swiss2_pop <- data.frame(prov = c("Courtelary", "Delemont", "Franches-Mnt", 
+                                  "Moutier", "Neuveville", "Porrentruy"),
+                         pop = c(100, 200, 300, 400, 500, 600))
+swiss2_pop
+```
+
+統合．
+
+```{r merge_left_join}
+swiss2b %>% left_join(swiss2_pop, by = "prov")
+```
+
+上記の例では，`swiss2b` というデータセットの州の並びと `swiss2_pop` というデータセットの州の並びが同じだったが，異なっている場合でもマージ可能．
+また，`swiss2_pop` にデータが欠損している州があったとしてもマージ可能．
+
+<!--
+In the above example, the state order in the dataset named `swiss2b` and the state order in the dataset named `swiss2_pop` are the same, but they can be merged even if they are different. It is also possible to merge even if there is not all the data in `swiss2_pop`. 
+-->
+
+```{r merge_left_join2}
+swiss2_pop <- data.frame(prov = c("Porrentruy", "Courtelary", "Delemont", 
+                                  "Franches-Mnt", "Neuveville"),
+                         pop = c(600, 100, 200, 300, 500))
+swiss2_pop
+swiss2b %>% left_join(swiss2_pop, by = "prov")
+```
+
+## Scatter plot using `ggplot2` 
+
+ビートルズのデータと同様に散布図を描いてみる．
+
+```{r swiss_point}
+ggplot(data = swiss, mapping = aes(x = Education, y = Fertility)) + 
+  geom_point()
+```
+
+マーカーの色をカトリック教徒の割合（%）で指定するには `aes` 内で指定する．
+
+```{r swiss_point_maker}
+ggplot(data = swiss, mapping = aes(x = Education, y = Fertility, color = Catholic)) + 
+  geom_point()
+```
+
+`swiss` データを加工して描画に使用する場合は下のようにコーディングしてもよい．
+このとき，`ggplot` 関数の一つ目の引数 `data` として `ggplot` 関数の直前のデータが指定される．
+
+```{r swiss_point_filter}
+swiss %>% 
+  filter(Education <= 20) %>% 
+  ggplot(mapping = aes(x = Education, y = Fertility)) + 
+  geom_point()
+```
+
+データポイントにフィットする曲線のレイヤーを追加する．
+
+```{r swiss_point_smooth, message = FALSE}
+ggplot(data = swiss, mapping = aes(x = Education, y = Fertility)) + 
+  geom_point() + 
+  geom_smooth()
+```
+
+
+
+
+# Example of Titanic data 
+
+```{r titanic_read}
+titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/titanic3_csv.csv")
+```
+
+## `filter` 
+
+```{r titanic_filter}
+titanic %>% filter(age > 75)
+```
+
+## `group_by` and `summarise` 
+
+性別ごとの生存率．
+
+```{r titanic_group_by_summarise_sex}
+titanic %>% 
+  group_by(sex) %>%
+  summarize(survival_rate = mean(survived), 
+            sample_size = n())
+```
+
+性別と客室等級ごとの生存率．
+
+```{r titanic_group_by_summarise_sex_pclass, message = FALSE}
+titanic %>% 
+  group_by(sex, pclass) %>%
+  summarize(survival_rate = mean(survived), 
+            sample_size = n())
+```
+
+性別と年齢層ごとの生存率．
+
+```{r titanic_group_by_summarise_sex_age, message = FALSE}
+titanic %>% 
+  mutate(age_group = cut(age, breaks = c(0, 20, 60, 100), right = FALSE)) %>% 
+  group_by(sex, age_group) %>%
+  summarize(survival_rate = mean(survived), 
+            sample_size = n())
+```
+
+性別と客室等級と年齢層ごとの生存率．
+
+```{r titanic_group_by_summarise_sex_pclass_age, message = FALSE}
+titanic %>% 
+  mutate(age_group = cut(age, breaks = c(0, 20, 60, 100), right = FALSE)) %>% 
+  group_by(sex, pclass, age_group) %>%
+  summarize(survival_rate = mean(survived), 
+            sample_size = n()) 
+```
+
+カテゴリー数が多いためにすべて表示されていない．
+以下のように表示数を調整できる．
+
+```{r titanic_group_by_summarise_sex_pclass_age_print30, message = FALSE}
+titanic %>% 
+  mutate(age_group = cut(age, breaks = c(0, 20, 60, 100), right = FALSE)) %>% 
+  group_by(sex, pclass, age_group) %>%
+  summarize(survival_rate = mean(survived), 
+            sample_size = n()) %>% 
+  print(n = 30)
+```
+
+年齢の平均を計算しようとすると `NA` が返ってくる．
+
+```{r titanic_sum_age}
+titanic %>% 
+  summarise(age_mean = mean(age))
+```
+
+これは年齢変数 `age` に `NA` が含まれるため．
+`na.rm = TRUE` 引数を追加する．
+
+```{r titanic_sum_age_narm}
+titanic %>% 
+  summarise(age_mean = mean(age, na.rm = TRUE))
+```
+
+## Correlation matrix 
+
+相関係数行列．
+
+```{r titanic_cor}
+titanic %>% 
+  select(age, fare, parch) %>% 
+  cor(use = "complete.obs")
+```
+
+## Histogram using `ggplot2` 
+
+年齢．
+
+```{r titanic_hist, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = age)) + 
+  geom_histogram()
+```
+
+性別ごとに分ける．
+
+```{r titanic_hist_by_sex, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = age, fill = sex)) + 
+  geom_histogram(position = "dodge") + 
+  scale_fill_grey() +  # grey scale 
+  theme_classic()
+```
+
+## Bar plot using `ggplot2` 
+
+出港地ごとの人数．
+
+```{r titanic_bar_emb, message = FALSE, warning = FALSE}
+titanic %>% 
+  filter(embarked != "") %>% 
+  group_by(embarked) %>% 
+  summarise(person = n()) %>% 
+  ggplot(mapping = aes(x = embarked, y = person)) + 
+  geom_bar(stat = "identity") + 
+  theme_classic()
+```
+
+性別ごとに分ける．
+ついでにX軸のラベルも修正しておく．
+
+```{r titanic_bar_emb_by_sex, message = FALSE, warning = FALSE}
+titanic %>% 
+  filter(embarked != "") %>% 
+  group_by(embarked, sex) %>% 
+  summarise(person = n()) %>% 
+  ggplot(mapping = aes(x = embarked, y = person, fill = sex)) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_x_discrete(labels = c("Cherbourg", "Queenstown", "Southampton")) + 
+  scale_fill_grey() + 
+  theme_classic()
+```
+
+## Pie chart using `ggplot2` 
+
+出港地ごとの人数．
+
+```{r titanic_pie, message = FALSE, warning = FALSE}
+titanic %>% 
+  filter(embarked != "") %>% 
+  group_by(embarked) %>% 
+  summarise(person = n()) %>% 
+  ggplot(mapping = aes(x = "x", y = person, fill = embarked)) + 
+  geom_bar(stat = "identity", position = "stack") + 
+  coord_polar(theta = "y") + 
+  scale_fill_brewer(labels = c("Cherbourg", "Queenstown", "Southampton")) + 
+  theme_classic()
+```
+
+## Boxplot using `ggplot2` 
+
+年齢．
+
+```{r titanic_box, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = sex, y = age)) + 
+  geom_boxplot()
+```
+
+客室等級ごとの年齢．
+
+```{r titanic_box_by_pclass, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = sex, y = age, fill = factor(pclass))) + 
+  geom_boxplot() + 
+  scale_fill_grey(start = 0.4, end = 0.9) + 
+  theme_classic()
+```
+
+データの分布が複雑な場合（多峰など），バイオリンプロットという選択肢がある．
+
+```{r titanic_viol, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = sex, y = age)) + 
+  geom_violin()
+```
+
+
+## Scatter plot using `ggplot2` 
+
+ビートルズやSwissデータと同様に散布図を描き，スムージング曲線を追加する．
+
+点同士が重なってしまうため `geom_jitter` 関数でY軸方向にばらつかせて描画．
+
+```{r titanic_point_smooth, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = age, y = survived)) + 
+  geom_point() + 
+  geom_jitter(height = .05, width = 0) + 
+  geom_smooth() 
+```
+
+Y軸の `survived` は 0/1 の binary 変数なので jitter は違和感がある．
+Binned plot はよい代替案だろう．
+
+```{r titanic_binned, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = age, y = survived)) + 
+  stat_summary_bin()
+```
+
+性別による死亡率の違いを示す．
+
+```{r titanic_point_smooth_by_sex, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = age, y = survived, color = sex, shape = sex)) + 
+  geom_point(size = 0.5) + 
+  geom_jitter(height = .05, width = 0) + 
+  geom_smooth(aes(color = sex, linetype = sex), se = FALSE) + 
+  scale_color_brewer(palette = "Dark2") + # colorblind-friendly palette 
+  theme_classic()
+```
+
+50歳代からサンプルサイズが大きく低下するため，フィッティングの曲線は参考にならない点に注意．
+
+客室等級による死亡率の違いを示す．
+
+* `pclass` は連続変数なので `factor` 関数で因子型の変数に変換して使う．
+
+```{r titanic_point_smooth_by_pclass, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), shape = factor(pclass))) + 
+  geom_point() + 
+  geom_jitter(height = .05, width = 0) + 
+  geom_smooth(aes(color = factor(pclass), linetype = factor(pclass)), se = FALSE) + 
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()
+```
+
+性別ごとに独立した散布図を作成してそれぞれのパネルを並べた図を作ることもできる．
+
+* `facet_wrap(~ グループ変数)` を利用
+
+```{r titanic_point_smooth_by_pclass_sep_by_sex, message = FALSE, warning = FALSE}
+ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), shape = factor(pclass))) + 
+  geom_point() + 
+  geom_jitter(height = .05, width = 0) + 
+  geom_smooth(aes(color = factor(pclass), linetype = factor(pclass)), se = FALSE) + 
+  facet_wrap(~ sex) + 
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()
+```
+
+
+
+.

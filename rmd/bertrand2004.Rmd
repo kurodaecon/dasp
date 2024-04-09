@@ -1,0 +1,239 @@
+---
+title: "Data Analysis Using Statistical Packages: Bertrand and Mullainathan (AER 2004)"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2024年3月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+[Bertrand and Mullainathan (AER 2004)](https://www.aeaweb.org/articles?id=10.1257/0002828042002561) 
+
+求人広告に履歴書を送るときに，黒人に典型的な名前と白人に典型的な名前をランダムに割り当て，返信率を比較する．
+<!--
+Randomly assign a name typical of blacks (Lakisha or Jamal) and a name typical of whites (Emily or Greg) when sending a resume to a job posting and compare the response rates (callback rate). 
+-->
+
+## Data 
+
+[Replication data in openICPSR](http://doi.org/10.3886/E116023V1) 
+
+LICENSE.txt ファイルに記載されている通り，データセットは Creative Commons Attribution 4.0 International Public License で公開されている．
+Moodle には Bertrand2004.dta というファイル名でアップロードしている．
+
+注：分析コードは公開されていない．
+
+```{r read_data_packages, message = FALSE}
+setwd("c://ws_stat")
+library(tidyverse)
+bm <- haven::read_dta("Bertrand2004.dta")
+nrow(bm)  # sample size 
+attr(bm$call, "label")  # definition of "call" 
+```
+
+主な変数
+
+* `race`: `w` = White-sounding name, `b` = Black-sounding name 
+* `call`: 1 = applicant was called back 
+* `h`: 1 = high quality resume 
+* `adid`: employment ad identifier 
+
+人種 `race` (b: black, w: white) とcall back `call` (1: yes, 0: no) のクロス表．
+
+```{r cross}
+table(bm$race, bm$call)
+```
+
+# Is There a Racial Gap in Callback? (Section III.A.) 
+
+比率 (callback rate) が白人（に典型的な名前が割り当てられた履歴書．以下同様）と黒人でどのように異なるかを計算する．
+
+```{r prop}
+whole_table <- bm %>% select(race, call) %>% table  # whole sample 
+whole_table
+c(157, 235) / c(157+2278, 235+2200)
+whole_table[, 2] / rowSums(whole_table)  # same as above 
+```
+
+つまり，白人で9.65%，黒人で6.45%，その差は3.2%ポイント．
+
+## Proportion test 
+
+この比率の差は統計的に有意なのか？
+
+検討の対象は比率なので，t-検定ではなく母比率の差の検定を行う．
+
+関数は `prop.test`．
+1つ目の引数に call back の数，2つ目の引数に resume を送った数を（それぞれベクトルで）わたす．
+
+```{r prop_test}
+prop.test(whole_table[, 2], rowSums(whole_table))
+```
+
+同様にして，女性のサブサンプル，男性のサブサンプルについて検定．
+
+```{r prop_test_sex}
+female_table <- bm %>% filter(sex == "f") %>% select(race, call) %>% table  # female sample 
+prop.test(female_table[, 2], rowSums(female_table))
+male_table <- bm %>% filter(sex == "m") %>% select(race, call) %>% table  # male sample 
+prop.test(male_table[, 2], rowSums(male_table))
+```
+
+## Distribution of callbacks at the employment-ad level (Table 2) 
+
+Employment ad レベルで集計して，白人へのcallback数と黒人へのcallback数の組み合わせをカウントする．
+
+```{r ad_level}
+length(unique(bm$adid))  # employment ad identifier 
+bm %>% 
+  group_by(adid) %>% 
+  summarise(callback_w = sum(call & race == "w"),
+            callback_b = sum(call & race == "b")) %>%
+  mutate(w0b0 = ifelse(callback_w == 0 & callback_b == 0, 1, 0),
+         w1b1 = ifelse(callback_w == 1 & callback_b == 1, 1, 0),
+         w2b2 = ifelse(callback_w == 2 & callback_b == 2, 1, 0),
+         w1b0 = ifelse(callback_w == 1 & callback_b == 0, 1, 0),
+         w2b0 = ifelse(callback_w == 2 & callback_b == 0, 1, 0),
+         w2b1 = ifelse(callback_w == 2 & callback_b == 1, 1, 0),
+         w0b1 = ifelse(callback_w == 0 & callback_b == 1, 1, 0),
+         w0b2 = ifelse(callback_w == 0 & callback_b == 2, 1, 0),
+         w1b2 = ifelse(callback_w == 1 & callback_b == 2, 1, 0)) %>%
+  select(starts_with("w")) %>%  # select variables that starts with "w"
+  apply(2, sum)
+(74 + 19 + 18) / length(unique(bm$adid))  # % of White favored ad 
+(33 + 6 + 7) / length(unique(bm$adid))  # $ of African-American favored ad 
+```
+
+White favored な ad は8.4%，African-American favored は3.5%．
+
+<!--
+```{r t_test}
+t.test(call ~ race, data = bm)  # whole sample
+t.test(call ~ race, data = bm %>% filter(sex == "f"))  # female sample
+```
+-->
+
+## Binary regression model (original) 
+
+人種，性別，その他応募者の経験などを説明変数としてプロビットモデルを推定する．
+
+```{r binary_glm}
+formula_binary <- call ~ race + yearsexp + honors + volunteer + military + empholes + workinschool + email + computerskills + specialskills + sex + city
+probit <- glm(formula = formula_binary, family = binomial("probit"), data = bm)
+summary(probit)
+```
+
+`mfx` パッケージを用いて限界効果を計算．
+
+```{r binary_me, message = FALSE}
+library(mfx)
+probitmfx(formula = formula_binary, data = bm)
+```
+
+白人 `race = w` は黒人と比較して3%ポイント程度 callback rate が高い．
+
+Employment holes (`empholes`) の係数は正に推定されている．
+別の効果を拾っているのかもしれない．
+
+ここで，人種はランダムに割り当てられていることを思い出せば，人種のみを説明変数として推定しても限界効果は概ね同じになると考えられる（除外変数バイアスが生じないため）．
+
+```{r binary_me2}
+probitmfx(formula = call ~ race, data = bm)
+```
+
+
+# Do African-Americans Receive Different Returns to Resume Quality?  (Section III.B.) 
+
+履歴書が high quality かどうかによって，人種と callback rate の関係がどのように異なるか．
+
+## Subjective measure of quality 
+
+```{r by_resume_quality, message = FALSE}
+bm %>% 
+  group_by(h, race) %>% 
+  summarise(call_back_rate = mean(call))
+```
+
+母比率の差の検定．
+
+```{r by_resume_quality_prop}
+white_table <- bm %>%  # White name 
+  filter(race == "w") %>%
+  dplyr::select(h, call) %>% 
+  table()
+prop.test(white_table[, 2], rowSums(white_table))
+black_table <- bm %>%  # Black name 
+  filter(race == "b") %>%
+  dplyr::select(h, call) %>% 
+  table()
+prop.test(black_table[, 2], rowSums(black_table))
+```
+
+注：論文の Table 4 とは p 値が異なる．
+Yates' continuity correction を行わない設定にしても（引数 `correct = FALSE`）再現できない．
+<!-- cf
+t.test(call ~ h, data = bm %>% filter(race == "w"))
+t.test(call ~ h, data = bm %>% filter(race == "b"))
+-->
+
+## Predicted measure of quality 
+
+履歴書の predicted measure of quality を用いると，黒人の履歴書が callback を受ける確率は履歴書の quality によって有意に異なる（Table 4, Panel B）．
+
+授業内で説明する予定はないが，興味がある履修者は以下を参照．
+
+サンプルの分割によって結果が大きく異なる．
+プロビットモデルの特定化が間違っているのか，あるいは論文でも不安定な推定をしているのかは不明．
+
+```{r predict_quality, message = FALSE}
+set.seed(1)
+bm2 <- bm %>%  # サンプルを「パラメタ推定用」と「分析用」に分割
+  mutate(runif_for_sampling = runif(nrow(bm), 0, 1),
+         for_train = ifelse(runif_for_sampling <= 1/3, 1, 0),
+         college_degree = ifelse(education == 4, 1, 0))
+table(bm2$college_degree)
+bm_train <- bm2 %>%  # パラメタ推定用（元のサンプルの 1/3）
+  filter(for_train == 1)
+bm_test <- bm2 %>%  # 分析用（元のサンプルの 2/3）
+  filter(for_train == 0)
+# nrow(bm_train); nrow(bm_test)
+# probit model of callback dummy 
+probit_call <- glm(formula = call ~ college_degree + yearsexp + honors + volunteer + military + empholes + workinschool + email + computerskills + specialskills + sex + city + manuf + transcom + bankreal + trade + busservice + expreq + comreq + educreq + compreq + orgreq, family = binomial("probit"), data = bm_train)
+# summary(probit_call)
+# predicted callback rate (= predicted quality of resume) 
+bm_test$predicted_call <- predict(object = probit_call, newdata = bm_test, type = "response")
+summary(bm_test$predicted_call)
+bm_test %>% 
+  mutate(h_predicted = ifelse(predicted_call >= median(predicted_call), 1, 0)) %>%
+  group_by(h_predicted, race) %>% 
+  summarise(call_back_rate = mean(call))
+```
+
+# Whether and how an applicant’s residential address, all else equal, affects the callback (Section III.C.) 
+
+履歴書は名前だけではなく住所もランダムに割り当てられている．
+
+住所によって callback がどの程度異なるかを知ることで，黒人の応募者がより裕福な地域に居住することによる影響を知ることができる（Table 6）．
+
+残念ながら論文の結果を全く再現できないためコードは表示のみ．
+
+```{r probit_zip_char, eval = FALSE}
+bm3 <- bm %>% 
+  mutate(black = ifelse(race == "b", 1, 0))
+probit_zip_call <- glm(formula = call ~ black*fracwhite + city, family = binomial("probit"), data = bm3)
+summary(probit_zip_call)
+```
+
+
+
+.

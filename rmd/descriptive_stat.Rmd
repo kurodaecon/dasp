@@ -1,0 +1,556 @@
+---
+title: "Data Analysis Using Statistical Packages: Descriptive Statistics"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2024年3月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading data / データの読み込み
+
+タイタニック号乗客データを読み込む．
+
+```{r read_csv_external}
+titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/titanic3_csv.csv")
+```
+
+# Qualitative data / 質的データ
+
+性別変数 `sex` を例に利用．
+
+```{r sex_head}
+head(titanic$sex)
+```
+
+## Frequency distribution table / 度数分布表
+
+`table(ベクトル)` で1変数の度数分布表を作成できる．
+
+```{r ft}
+table(titanic$sex)
+```
+
+`female` と `male` それぞれを数える場合．
+
+```{r ft_manual}
+head(titanic$sex == "female")  # logical ... TRUE or FALSE
+sum(titanic$sex == "female")  # the number of TRUE = the number of female
+sum(titanic$sex == "male")  # the number of male
+```
+
+### Count missing values / 欠損値をカウントする
+
+この `table` 関数を利用してデータに欠損値 (NA) があるかを確認するとよい．
+欠損値である場合に TRUE を返す関数 `is.na` を併用する．
+
+```{r ft_na}
+is.na(NA)
+is.na(c(1, 10, NA, 1000))
+table(is.na(c(1, 10, NA, 1000)))
+table(is.na(titanic$sex))
+```
+
+## Bar chart / 棒グラフ
+
+`barplot(度数分布表または度数ベクトル)` で作成．
+
+```{r bar}
+barplot(table(titanic$sex))
+```
+
+## Pie chart / 円グラフ
+
+棒グラフと同様に `pie(度数分布表または度数ベクトル)` で作成．
+
+```{r pie}
+pie(table(titanic$sex))
+```
+
+### Add percentage to labels 
+
+ラベルに「%」を追加する．
+
+```{r pie2}
+titanic_sex_table <- table(titanic$sex)
+titanic_sex_label <- paste(names(titanic_sex_table), " ", 
+                     round(100 * titanic_sex_table / sum(titanic_sex_table), 1), "%", sep = "")
+pie(titanic_sex_table, labels = titanic_sex_label)
+```
+
+このコードはどのように動いているのか？
+
+```{r pie2_detail}
+paste("female", " ", 35.6, "%", sep = "")
+titanic_sex_table / sum(titanic_sex_table)
+round(100 * titanic_sex_table / sum(titanic_sex_table), 1)
+```
+
+注：ちょっとしたグラフを作成する程度ならExcelの方が便利という場合もよくある．
+
+
+## Contingency table / 分割表
+
+2つの質的変数の分割表（クロス集計表）も `table` 関数で作成できる．
+
+`table(1つ目のベクトル, 2つ目のベクトル)` のように2つの変数を引数として指定する．
+
+<!--
+Specify two arguments, e.g., sex and survived, in the `table` function.
+-->
+
+```{r ct}
+table(titanic$sex, titanic$survived)
+table(titanic[, c("sex", "survived")])  # same as above 
+```
+
+セルを1つずつカウントすることもできる．
+
+```{r ct2}
+sum(titanic$sex == "female" & titanic$survived == 0)
+sum(titanic$sex == "female" & titanic$survived == 1)
+sum(titanic$sex == "male" & titanic$survived == 0)
+sum(titanic$sex == "male" & titanic$survived == 1)
+```
+
+## Mode / 最頻値
+
+出港地 `embarked` を例として．
+
+* C＝Cherbourg（仏・シェルブール）, Q＝Queenstown（アイルランド）, S＝Southampton（英）
+
+```{r mode}
+table(titanic$embarked)
+table(titanic$embarked == "")  # 中身のない空の観測値がある
+names(which.max(table(titanic$embarked)))
+```
+
+
+
+# Quantitative data / 量的データ
+
+年齢変数 `age` を例に利用．
+欠損値もある．
+
+```{r age_count_na}
+head(titanic$age)
+table(is.na(titanic$age))
+```
+
+## Histogram / ヒストグラム
+
+`hist(ベクトル)` で作成．
+`breaks` 引数でセルの数を調整できる．
+
+```{r hist}
+hist(titanic$age)
+hist(titanic$age, breaks = 30)  # set the number of cells
+```
+
+度数ではなく相対度数（全体に占める割合）で表示する場合は `freq = FALSE` という引数を追加する．
+
+（おまけ）滑らかな曲線をフィットさせるには `density` 関数でカーネル密度推定を行って `lines` 関数で重ね描きする．
+
+```{r hist_density}
+hist(titanic$age, freq = FALSE)
+lines(density(titanic$age, na.rm = TRUE))
+```
+
+
+## Frequency distribution table of quantitative data / 数量データの度数分布表
+
+[0, 20), [20, 60), [60, 100) の3区間で作成する．
+そのために，`cut` 関数を利用して実数データを上の3区間に変換する．
+
+* `breaks` 引数で区間の区切り値のベクトルを指定
+* 「[0, 20)」は 0 以上 20 未満．右は閉じない（左側が閉じる）ので `right = FALSE` 引数を追加
+
+```{r titanic_fd}
+titanic_age_interval <- cut(titanic$age, breaks = c(0, 20, 60, 100), right = FALSE)
+# [right = F] means intervals should not be closed on the right
+table(titanic_age_interval)
+table(titanic_age_interval) / sum(table(titanic_age_interval))  # relative frequency
+```
+
+## Mean / 平均
+
+標本平均
+
+$$ \bar{x} = \frac{1}{n} \sum_i x_i $$
+
+```{r mean}
+x <- c(1, 2, 6)
+1 + 2 + 6  # sum (1+2+6=9)
+sum(x)  # sum
+sum(x) / 3  # definition of mean
+mean(x)
+mean(c(1, 2, 6))  # same as above 
+```
+
+### Example of age variable of Titanic data / タイタニック号乗客データの年齢変数
+
+欠損値 `NA` があると計算結果も `NA` になる．
+その場合は `NA` を除外して平均を計算するために `na.rm = TRUE` 引数を追加する．
+
+```{r mean_age}
+mean(titanic$age)
+mean(titanic$age, na.rm = TRUE)
+```
+
+
+## Quantiles, median / 分位数，中央値
+
+`quantile` 関数は，デフォルトでは 0%（最小値）, 25%（第1四分位数）, 50%（中央値）, 75%（第3四分位数）, 100%（最大値） を出力．
+
+```{r quantiles}
+quantile(c(1, 2, 4, 7, 8, 11, 13, 13, 15, 16, 18))  # returns quartiles as default 四分位数
+quantile(titanic$age, na.rm = TRUE)
+summary(titanic$age)
+```
+
+summary関数も四分位点を報告するが，quantile関数を使った場合と少し値が違う場合もある．
+<!--
+The `summary` function also reports the quartiles.
+-->
+
+`probs` 引数で percentile を指定できる．
+
+```{r apple_quantiles2}
+seq(0.1, 0.9, by = 0.1)  # 0.1, 0.2, ..., 0.9
+quantile(titanic$age, probs = seq(0.1, 0.9, by = 0.1), na.rm = TRUE)  # deciles 十分位数
+quantile(titanic$age, probs = 0.35, na.rm = TRUE)  # 35th percentile
+median(titanic$age, na.rm = TRUE)  # median 中央値
+```
+
+
+## Maximum, Minimum, Range / 最大値，最小値，範囲
+
+```{r max_min_range}
+max(titanic$age, na.rm = TRUE); min(titanic$age, na.rm = TRUE)
+max(titanic$age, na.rm = TRUE) - min(titanic$age, na.rm = TRUE)  # range
+```
+
+
+## Variance and standard deviation / 分散と標準偏差
+
+母分散，母標準偏差 （$\mu$ は母平均）
+
+$$ \sigma^2 = \frac{1}{N} \sum_i (x_i - \mu)^2, \quad \sigma = \sqrt{\sigma^2} $$
+
+標本分散，標本標準偏差
+
+$$ s^2 = \frac{1}{n-1} \sum_i (x_i - \bar{x})^2, \quad s = \sqrt{s^2} $$
+
+```{r var}
+x <- c(1, 2, 6)
+x - 3
+x - mean(x)
+(x - mean(x))^2
+mean((x - mean(x))^2)  # definition of population variance
+sum((x - mean(x))^2) / 3  # same as above
+sum((x - mean(x))^2) / (3-1)  # definition of sample variance 
+var(x)  # variance defined as sample variance
+sqrt(var(x))  # definition of standard deviation
+sd(x)
+```
+
+
+### Example of age variable of Titanic data / タイタニック号乗客データの年齢変数
+
+欠損値 `NA` があると計算結果も `NA` になる．
+その場合は `NA` を除外して平均を計算するために `na.rm = TRUE` 引数を追加する．
+
+```{r var_age}
+var(titanic$age)
+var(titanic$age, na.rm = TRUE)
+sd(titanic$age, na.rm = TRUE)
+```
+
+
+### Why is the denominator of the sample variance $n-1$? 
+
+なぜ標本分散の分母は $n-1$ なのか？
+
+平均1，分散1の乱数を生成する `rnorm` 関数を使ってシミュレーションを行って確認してみる．
+
+```{r sample_var_rnorm}
+var(rnorm(n = 5, mean = 0, sd = 1))
+```
+
+シミュレーション
+
+* `rnorm(n = サンプルサイズ, mean = 平均, sd = 標準偏差)` 関数で正規分布と呼ばれる確率分布に従う乱数を生成
+   * 標準偏差を `sd = 1` と設定し，分散の平均値が 1 に近いかどうかを確認する
+   * シミュレーション結果の再現性のために `set.seed` 関数を使って乱数を固定する
+* `for` 文を利用して「乱数の生成，分散を計算，記録」を1000回繰り返す
+* 分散は母分散と標本分散の2種類を計算し，`rnorm_pop_var, rnorm_sample_var` それぞれのベクトルに記録
+
+```{r sample_var_sim}
+rnorm_pop_var <- rnorm_sample_var <- NULL
+for (i in 1:1000) {
+  # Step 1. 乱数の生成
+  set.seed(i)  # 再現性のため
+  rnorm_i <- rnorm(n = 5, mean = 0, sd = 1)
+  # Step 2. 分散を計算
+  pop_var_i <- sum((rnorm_i - mean(rnorm_i))^2) / length(rnorm_i)
+  sample_var_i <- sum((rnorm_i - mean(rnorm_i))^2) / (length(rnorm_i)-1)
+  # Step 3. 記録
+  rnorm_pop_var <- c(rnorm_pop_var, pop_var_i)
+  rnorm_sample_var <- c(rnorm_sample_var, sample_var_i)
+}
+summary(rnorm_pop_var)
+summary(rnorm_sample_var)
+```
+
+中級者向け：以下のように `sapply` 関数を使うことで `for` 文を使わずに計算できる．
+
+* `sapply(X = ベクトルやリスト, FUN = 関数)`：X の各要素に対して関数を適用し，実行結果をベクトルで返す
+* シンプルな演算を大量のデータに対して行う場合，`for` 文よりも計算速度が速い可能性が高い
+
+```{r}
+summary(sapply(X = 1:1000, FUN = function (x) {
+  rnorm_i <- rnorm(n = 5, mean = 0, sd = 1)
+  sum((rnorm_i - mean(rnorm_i))^2) / length(rnorm_i)  # population variance 
+}))
+```
+
+### Box plot / 箱ひげ図
+
+`boxplot(ベクトル)` で作成．
+
+```{r box_age}
+boxplot(titanic$age) 
+```
+
+男女別に箱ひげ図を描く場合は，`boxplot(女性の年齢ベクトル, 男性の年齢ベクトル)` のように指定する．
+
+```{r box_multiple}
+titanic_age_female <- titanic$age[titanic$sex == "female"]  # age of female 
+titanic_age_male <- titanic$age[titanic$sex == "male"]  # age of male 
+boxplot(titanic_age_female, titanic_age_male, names = c("Female", "Male"), ylab = "Age") 
+```
+
+`boxplot(連続変数 ~ グループ変数, data = データフレーム名)` でもグループで分けた箱ひげ図を作成できる．
+
+```{r box_multiple2}
+boxplot(age ~ sex, titanic)
+```
+
+
+## Scatter plot / 散布図
+
+`plot(1つ目のベクトル, 2つ目のベクトル)` で作成．
+
+```{r scatter}
+plot(x = titanic$age, y = titanic$fare, xlab = "Age", ylab = "Fare", pch = 20)
+```
+
+### Scale does matter
+
+同じデータだが縦軸（Y軸）のスケールが異なる例．
+<!--
+Same data but difference scale (on y-axis). 
+-->
+
+```{r scatter_scaleismatter}
+tempx <- 1:10
+set.seed(1)
+tempy <- tempx + rnorm(10, sd = 4)
+par(mfrow = c(1, 2))
+plot(tempx, tempy, xlab = "x", ylab = "y", pch = 20)
+plot(tempx, tempy, xlab = "x", ylab = "y", pch = 20, ylim = c(-50, 50))
+```
+
+左の図は正の相関を示しているように見えるが，右の図は弱い正の相関（または無相関）に見えるだろう．
+<!--
+The left figure appears to show a positive correlation, while the right figure will look uncorrelated. 
+-->
+
+### Non-linear relationship
+
+Y軸のみ対数変換する場合は `log = "y"`，X軸とY軸の両方を対数変換する場合は `log = "xy"` を引数に追加する．
+
+```{r plot_non_linear, message = FALSE, warning = FALSE}
+plot(x = titanic$age, y = titanic$fare, xlab = "Age", ylab = "Fare", pch = 20, log = "y")
+table(titanic$fare <= 0)  # omitted from the plot 
+```
+
+### Data points overlap: 透過度を指定してプロット 
+
+`col = "red"` のように引数を追加することでマーカーの色を指定できる．
+
+`col = rgb(red, green, blue)` のように引数を追加すれば，RGB形式で色を指定できる．
+
+`col = rgb(red, green, blue, alpha)` のように引数を追加すれば，RGB形式で色を指定したうえに，透過水準を alpha 値（0以上1以下）として指定できる．
+
+
+```{r plot_overlap}
+plot(x = titanic$age, y = titanic$fare, xlab = "Age", ylab = "Fare", pch = 20, col = rgb(0, 0, 0, .3))
+```
+
+### Scatter plot with jitter: データポイントをずらしてプロット 
+
+Without jitter
+
+```{r plot_no_jitter}
+plot(x = titanic$pclass, y = titanic$parch, xlab = "Ticket class", 
+     ylab = "# of parents and children", pch = 20)
+```
+
+With jitter
+
+```{r plot_jitter}
+plot(x = jitter(titanic$pclass), y = jitter(titanic$parch), xlab = "Ticket class", 
+     ylab = "# of parents and children", pch = 20, cex = .5)
+```
+
+### Binned scatter plot: Bin ごとの平均値をプロット 
+
+Raw plot
+
+```{r plot_no_bin}
+plot(x = titanic$age, y = titanic$survived, xlab = "Age", ylab = "Survived", pch = 20)
+```
+
+Binned plot
+
+```{r plot_bin}
+titanic_with_age <- titanic[!is.na(titanic$age), ]  # remove obs. with no age 
+titanic_age_6 <- cut(titanic_with_age$age, breaks = 6)  # convert age into 6 intervals
+levels(titanic_age_6)
+titanic_mean_age <- c((0.0902+13.5)/2, (13.5+26.8)/2, (26.8+40.1)/2, 
+                      (40.1+53.4)/2, (53.4+66.7)/2, (66.7+80.1)/2)
+titanic_mean_survived <- c(
+ mean(titanic_with_age$survived[titanic_age_6 == levels(titanic_age_6)[1]]),
+ mean(titanic_with_age$survived[titanic_age_6 == levels(titanic_age_6)[2]]),
+ mean(titanic_with_age$survived[titanic_age_6 == levels(titanic_age_6)[3]]),
+ mean(titanic_with_age$survived[titanic_age_6 == levels(titanic_age_6)[4]]),
+ mean(titanic_with_age$survived[titanic_age_6 == levels(titanic_age_6)[5]]),
+ mean(titanic_with_age$survived[titanic_age_6 == levels(titanic_age_6)[6]]) )
+plot(x = titanic_mean_age, y = titanic_mean_survived, 
+     xlab = "Age (binned)", ylab = "Survival rate", pch = 20)
+```
+
+注：Binned plot を計算するための便利なパッケージが幾つかあるため，実際に描画する際にはそれを利用するとよい．
+
+### Scatterplot Matrix / 散布図行列
+
+3つ以上の連続変数の散布図の組み合わせを行列形式で表示する．
+Draftman's display や Pair plot とも呼ばれる．
+
+```{r pair}
+pairs(swiss[, c("Fertility", "Examination", "Education")])
+```
+
+
+## Covariance and correlation / 共分散と相関係数
+
+母共分散
+
+$$ \sigma_{x, y} = \frac{1}{N} \sum_i (x_i - \mu_{x})(y_i - \mu_{y}) $$
+
+標本共分散
+
+$$ Cov(x, y) = \frac{1}{n-1} \sum_i (x_i - \bar{x})(y_i - \bar{y}) $$
+
+```{r cov}
+x <- c(1, 2, 6)
+y <- c(1, 3, 4)
+plot(x, y)  # scatter plot
+(x - mean(x)) * (y - mean(y))
+sum((x - mean(x)) * (y - mean(y))) / 3  # definition of population covariance
+sum((x - mean(x)) * (y - mean(y))) / (3-1)  # definition of sample covariance
+cov(x, y)  # sample covariance
+```
+
+相関係数
+
+$$ Cor(x, y) = \frac{Cov(x, y)}{\sqrt{s^2_x} \cdot \sqrt{s^2_y}} $$
+
+```{r cor}
+cov(x, y) / (sd(x) * sd(y))  # definition of correlation coef.
+cor(x, y)  # correlation coefficient
+```
+
+相関係数が 1 や -1 になるのは，一方の変数がもう一方の変数の定数倍・定数加算によって得られるような場合．
+<!--
+Correlation coefficients of 1 or -1 are obtained when one variable is a constant multiple or constant addition of the other variable.
+-->
+
+```{r cov2}
+x3 <- x * 2 + 3
+x4 <- x * (-0.5) + 3
+par(mfrow = c(1, 2))
+plot(x, x3); abline(lm(x3 ~ x), col = "red")  # Add regression line (red line) / 回帰直線を追加
+plot(x, x4); abline(lm(x4 ~ x), col = "red")
+cor(x, x3)
+cor(x, x4)
+```
+
+### Anscombe's quartet / アンスコムの数値例
+
+See <https://en.wikipedia.org/wiki/Anscombe%27s_quartet>
+
+変数の関係が互いに異なるが平均・分散・相関係数が概ね同じ {x, y} という変数の組が4セット含まれる．
+<!--
+Four sets of variables {x, y} are included, whose mean, variance, and correlation coefficients are approximately the same, although the relationship between the variables is different from each other.
+-->
+
+```{r sampledata_anscombe}
+str(anscombe)  # display structure of object
+summary(anscombe)
+# Standard deviation of x 
+c(sd(anscombe$x1), sd(anscombe$x2), sd(anscombe$x3), sd(anscombe$x4))
+# Standard deviation of y 
+c(sd(anscombe$y1), sd(anscombe$y2), sd(anscombe$y3), sd(anscombe$y4))
+# Correlation of x and y 
+c(cor(anscombe$x1, anscombe$y1), cor(anscombe$x2, anscombe$y2), 
+  cor(anscombe$x3, anscombe$y3), cor(anscombe$x4, anscombe$y4))
+par(mfrow = c(2, 2))
+plot(anscombe$x1, anscombe$y1)
+plot(anscombe$x2, anscombe$y2)
+plot(anscombe$x3, anscombe$y3)
+plot(anscombe$x4, anscombe$y4)
+```
+
+この例は，記述統計だけを見るのではなく，生のデータを描画することの重要性を我々に教えてくれる．
+<!--
+This example shows us the importance of drawing raw data, rather than just looking at descriptive statistics. 
+-->
+
+See also: Same Stats, Different Graphs <https://www.research.autodesk.com/publications/same-stats-different-graphs/>
+
+
+### Example of age variable of Titanic data / タイタニック号乗客データの年齢変数
+
+少なくとも一方の変数に欠損値 `NA` がある場合は，欠損値がない観測値のみを使って相関係数を計算するために `use = "complete.obs"` 引数を追加する．
+
+```{r cor_titanic}
+cor(titanic$age, titanic$fare, use = "complete.obs")
+```
+
+複数の変数に対して相関係数行列を計算することもできる．
+
+```{r cor_titanic_multi}
+cor(titanic[, c("age", "fare", "parch")], use = "complete.obs")
+```
+
+
+# Take home messages 
+
+* 度数分布表は `table(ベクトル)` 
+* ヒストグラムは `hist(ベクトル)` 
+* 平均は `mean(ベクトル)` 
+* 散布図は `plot(x = X軸のベクトル, y = Y軸のベクトル)` 
+* 相関係数は `cor(1つ目のベクトル, 2つ目のベクトル)` 
+
+
+.

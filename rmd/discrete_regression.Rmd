@@ -1,0 +1,308 @@
+---
+title: "Data Analysis Using Statistical Packages: Discrete Regression Analysis"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2024年3月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_tidyverse, message = FALSE}
+library(tidyverse)
+```
+
+# Maximum likelihood / 最尤法
+
+## Bernoulli distribution / ベルヌーイ分布
+
+5回の試行で3回成功（成功確率 $p$），2回失敗（失敗確率 $1-p$）した場合の尤度関数と対数尤度関数．
+
+$$ L(p) = (1-p)^2 p^3, \quad \log L(p) = 2 \log (1-p) + 3 \log (p) $$
+
+一階の条件（$L(\hat{p})=0$ または $\log L(\hat{p})=0$）より $\hat{p} = 0.6$ が得られる．
+
+```{r ml_b}
+l_func <- function (p) (1-p)^2 * p^3
+ll_func <- function (p) 2 * log(1-p) +3 * log(p)
+plot(l_func, xlim = c(0, 1)); abline(v = .6, lty = 2, col = 2)
+plot(ll_func, xlim = c(0, 1)); abline(v = .6, lty = 2, col = 2)
+```
+
+
+## Normal distribution / 正規分布
+
+対数尤度関数．
+
+$$ f = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left[- \frac{(y_i - \mu)^2}{2 \sigma^2} \right] , \quad \log f = - \frac{1}{2} \log 2 \pi - \frac{1}{2} \log \sigma^2 - \frac{(y_i - \mu)^2}{2 \sigma^2} $$
+
+$$ \log L = - \frac{n}{2} \log 2 \pi - \frac{n}{2} \log \sigma^2 - \frac{1}{2 \sigma^2} \sum_i (y_i - \mu)^2 $$
+
+よって，最尤推定量は次のように解析的に求められる．
+
+$$ \hat{\mu} = \frac{1}{n} \sum_i y_i , \quad \hat{\sigma}^2 = \frac{1}{n} \sum_i (y_i - \bar{y}) $$
+
+```{r ml_n}
+y <- c(-3, -2, 0.5, 0.5, 1.5)  # この標本を正規母集団からのサンプリングとみなす
+mean(y)  # 標本平均（mu の最尤推定量と同じ）
+var(y)  # 標本分散
+sum((y - mean(y))^2) / length(y)  # 分散（sigma^2 の最尤推定量と同じ）
+```
+
+対数尤度関数を定義する．
+最初の引数がパラメタベクトルになっている（後述の最適化のため）．
+
+```{r ml_norm_func}
+ll_func_n <- function (param, y, n) {  # 対数尤度関数
+  mu = param[1]
+  sigma2 = param[2]
+  -n/2*log(2*pi) - n/2*log(sigma2) - 1/(2*sigma2)*sum((y-mu)^2)
+}
+```
+
+$\sigma^2 = 1$ に固定した場合の $\mu$ と対数尤度の関係をプロットする．
+
+```{r ml_n_2d}
+mu_list <- seq(-2, 2, length = 100)
+ll_mu_list <- sapply(X = mu_list, 
+                     FUN = function(x) ll_func_n(param = c(x, 1), y = y, n = length(y)))
+plot(x = mu_list, y = ll_mu_list, xlim = c(-2, 2), type = "l")
+```
+
+3Dで描画する．（`outer` 関数を使って `z` を計算するつもりだったが，なぜか `outer` 関数にかませる尤度関数中で `sum((y-mu)^2)` が評価できないので `for` 文をネストして計算する．）
+
+```{r ml_n_3d}
+grid_mu <- seq(-2, 2, length = 20)  # 探索する範囲を grid で表す
+grid_sigma2 <- seq(1, 10, length = 20)
+z <- matrix(0, nrow = length(grid_mu), ncol = length(grid_sigma2))
+for (i in 1:length(grid_mu)) {  # 探索 grid に対応する対数尤度を計算
+  for (j in 1:length(grid_sigma2)) {
+    z[i, j] <- ll_func_n(param = c(grid_mu[i], grid_sigma2[j]), y = y, n = length(y))
+  }
+}
+which_max_ml <- which(z == max(z), arr.ind = T)  # 尤度を最大化する grid の index
+grid_mu[which_max_ml[1]]; grid_sigma2[which_max_ml[2]]  # ML推定量 （gridが粗いので精度は低い）
+persp(grid_mu, grid_sigma2, z, theta = 50, phi = 20) -> pmat_persp
+points(trans3d(x = grid_mu[which_max_ml[1]], y = grid_sigma2[which_max_ml[2]], 
+               z = z[which_max_ml], pmat = pmat_persp), col = 2, pch = 19)
+```
+
+<!--
+add point
+https://stat.ethz.ch/pipermail/r-help/2009-February/380847.html
+
+outer関数を使う場合：
+ll_func_n2 <- function (mu, sigma2, n = length(y)) {
+  sum_dev2 <- (y[1]-mu)^2 + (y[2]-mu)^2 + (y[3]-mu)^2 + (y[4]-mu)^2 + (y[5]-mu)^2
+  -n/2*log(2*pi) - n/2*log(sigma2) - 1/(2*sigma2)*sum_dev2
+}
+z <- outer(grid_mu, grid_sigma2, FUN = ll_func_n2)
+-->
+
+汎用の最適化関数 `optim` を使って最尤推定する．
+
+`$par` が最適化されたパラメタの値（最尤推定値）．
+`$value` は最大化された対数尤度．
+
+`$convergence` は 0 ならば収束したことを意味する．
+
+`optim` はデフォルトでは与えられた関数を最小化するため，最大化するためには目的関数を -1 倍した値を最小化するように設定する（引数 `control = list(fnscale = -1)`）．
+
+```{r ml_n_optim}
+optim(par = c(0, 1), fn = ll_func_n, y = y, n = length(y), control = list(fnscale = -1))
+```
+
+
+## Linear regression / 線形回帰モデル
+
+<!--
+See [Rで推定する回帰モデル入門](https://rpubs.com/kuroda/regression001) > MLE of linear model / 線形モデルの最尤推定
+-->
+
+対数尤度関数．
+
+$$ \log L (\beta) = - \frac{n}{2} \log (2 \pi \sigma^2) - \frac{1}{2 \sigma^2} \sum_i (y_i - x_i' \beta)^2 $$
+
+ここで $ x_i' \beta = \beta_0 + \beta_1 x_{i2} + \beta_2 x_{i2} + \cdots $ である．
+
+引数 `param` は k+1 個のパラメタベクトル．
+k は定数項を含めた説明変数の数．
+1 つ目から k 個目までが回帰係数で，k+1 個目は $\sigma^2$．
+
+```{r ml_linear_reg, message = FALSE, warning = FALSE}
+ml_gauss <- function (y_gauss, x_gauss) {
+  LL_gauss <- function (param) {  # 対数尤度関数
+    - (n / 2) * log(2 * pi * param[k+1]) -
+      sum((y_gauss - x_gauss %*% param[1:k])^2) / (2 * param[k+1])
+  }
+  n <- nrow(x_gauss)  # サンプルサイズ
+  k <- ncol(x_gauss)  # 説明変数の数（定数項を含む）
+  optim(par = rep(1, k+1), fn = LL_gauss, control = list(fnscale = -1), hessian = TRUE)  # 尤度最大化
+}
+y_swiss <- swiss$Fertility  # y
+x_swiss <- cbind(1, swiss$Agriculture, swiss$Examination)  # X
+ml_gauss(y_gauss = y_swiss, x_gauss = x_swiss)
+```
+
+答え合わせ．
+
+```{r ml_linear_reg_check}
+lm(Fertility ~ Agriculture + Examination, swiss)
+```
+
+# Discrete regression model / 離散回帰モデル
+
+Titanic データの読み込み．
+
+```{r titanic_read}
+titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/titanic3_csv.csv")
+```
+
+## Linear probability model / 線形確率モデル
+
+$$ \mbox{Survived} = \beta_0 + \beta_1 \mbox{Male} + \beta_2 \mbox{Age} + \beta_3 \mbox{2nd-class} + \beta_4 \mbox{3rd-class} $$
+
+```{r titanic_lpm}
+summary(lm(survived ~ sex + age + factor(pclass), data = titanic))
+```
+
+解釈
+
+* 男性の生存率は49%ポイント低い
+* 年齢が1歳高い乗客の生存率は0.5%ポイント低い
+* 2等客室の乗客の生存率は1等と比べて21%ポイント低い
+
+## Binary probit model / 二値プロビット・モデル
+
+$$ p = \Pr (y = 1) = \Phi (\beta_0 + \beta_1 x) $$
+
+`glm` 関数で推定．
+
+```{r titanic_probit_glm}
+probit_titanic <- glm(formula = survived ~ sex + age + factor(pclass), data = titanic, 
+                      family = binomial(link = "probit"))
+summary(probit_titanic)
+```
+
+
+### Estimation by numerical calculation / 数値計算による推定
+
+対数尤度関数を汎用の最適化関数 `optim` で最大化することで推定する．
+
+選択確率は以下で与えられる．
+
+$$ \Pr (Y=1) = \Phi (\beta_0 + \beta_1 X) = \frac{1}{2 \pi} \int_{-\infty}^{\beta_0 + \beta_1 X} \exp \left( - \frac{t^2}{2} \right) dt $$
+
+よって，尤度関数は以下のようになる．
+
+$$ L (\beta_0, \beta_1) = \prod_i \left[ \{ \Pr (Y_i = 1) \}^{Y_i} \times \{ \Pr (Y_i = 0) \}^{1 - Y_i} \right] = \prod_i \left[ \{ \Phi (\beta_0 + \beta_1 x) \}^{Y_i} \times \{ 1 - \Phi (\beta_0 + \beta_1 x) \}^{1 - Y_i} \right] $$
+
+対数を取ると対数尤度関数が得られる．
+
+$$ \log L (\beta_0, \beta_1) = \sum_i \left[ Y_i \times \{ \Phi (\beta_0 + \beta_1 x) \} + (1 - Y_i) \times \{ 1 - \Phi (\beta_0 + \beta_1 x) \} \right] $$
+
+これを，$(\beta_0, \beta_1)$ を引数とする関数として定義すればよい．
+
+標準正規分布の分布関数は `pnorm` で与えられる．
+
+```{r probit_ml_func}
+ml_probit <- function (y_probit, x_probit) {
+  LL_probit <- function (param) {
+    pnorm_xbeta <- pnorm(q = x_probit %*% param, mean = 0, sd = 1)
+    sum(y_probit %*% log(pnorm_xbeta) + (1-y_probit) %*% log(1 - pnorm_xbeta))
+  }
+  optim(par = rep(0, ncol(x_probit)), fn = LL_probit, control = list(fnscale = -1))
+}
+```
+
+上と同じ説明変数を使って推定する．
+
+まずは，計算のために character/factor 型に対応する数値を計算しておく．
+
+```{r probit_ml_titanic_x}
+titanic_numeric <- titanic %>% 
+  filter(!is.na(age)) %>% 
+  mutate(male = 1*(sex == "male"),
+         pclass2 = 1*(pclass == 2),
+         pclass3 = 1*(pclass == 3))
+```
+
+```{r probit_ml_opt}
+titanic_x <- titanic_numeric %>% 
+  dplyr::select(male, age, pclass2, pclass3) %>% 
+  as.matrix
+ml_probit(y_probit = titanic_numeric$survived, x_probit = cbind(1, titanic_x))
+```
+
+### Marginal effect / 限界効果
+
+説明変数の平均値を用いる方法．
+
+$$ ME_i = \phi (\beta_0 + \beta_1 x_i) \beta_1, \quad ME = \phi (\hat{\beta_0} + \hat{\beta_1} \bar{x}) \hat{\beta_1} $$
+
+```{r titanic_probit_me_Xmean}
+xb_mean <- probit_titanic$coef %*% c(1, mean(titanic_numeric$male), mean(titanic$age, na.rm = TRUE), 
+                                     mean(titanic$pclass == 2), mean(titanic$pclass == 3))
+as.numeric(dnorm(x = xb_mean)) * probit_titanic$coef
+```
+
+Individual ごとの限界効果の平均値を計算する方法．
+
+$$ ME = \frac{1}{n} \sum_i \phi (\hat{\beta_0} + \hat{\beta} x_i) \hat{\beta} $$
+
+```{r titanic_probit_me_MEmean}
+xb <- as.matrix(cbind(1, titanic_numeric[, c("male", "age", "pclass2", "pclass3")])) %*% probit_titanic$coef
+c(male = mean(dnorm(x = xb) * probit_titanic$coef[2], na.rm = TRUE), 
+  age = mean(dnorm(x = xb) * probit_titanic$coef[3], na.rm = TRUE), 
+  class2 = mean(dnorm(x = xb) * probit_titanic$coef[4], na.rm = TRUE), 
+  class3 = mean(dnorm(x = xb) * probit_titanic$coef[5], na.rm = TRUE))
+```
+
+`mfx` パッケージを使う場合．
+
+```{r titanic_probit_mfx, message = F, warning = F}
+# install.packages("mfx")
+library(mfx)
+probitmfx(formula = survived ~ sex + age + factor(pclass), data = titanic)
+```
+
+
+## Binary logit model / 二値ロジット・モデル
+
+$$ p = \Pr (y = 1) = \Lambda (\beta_0 + \beta_1 x) $$
+
+`glm` 関数で推定．
+
+```{r titanic_logit_glm}
+logit_titanic <- glm(formula = survived ~ sex + age + factor(pclass), data = titanic, 
+                     family = binomial(link = "logit"))
+summary(logit_titanic)
+```
+
+宿題：プロビットと同様に対数尤度関数を書いて `optim` で最適化計算する．
+
+### Marginal effect / 限界効果
+
+```{r titanic_logit_mfx}
+logitmfx(formula = survived ~ sex + age + factor(pclass), data = titanic)
+```
+
+宿題：プロビットと同様に手計算する．
+
+
+## Advanced: Conditional logit
+
+演習では扱わないが，興味がある履修者は [自動車保有の離散選択問題：Conditional logit](https://rpubs.com/kuroda/cond_logit) を試してみよう．
+
+3つ以上の選択肢から1つを選ぶ問題も上記を一般化して定式化・推定できることが分かるだろう．
+
+
+
+.

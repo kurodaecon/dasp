@@ -1,0 +1,490 @@
+---
+title: "Data Analysis Using Statistical Packages: Card and Krueger (AER 1994)"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2024年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_pck, message = FALSE}
+library(tidyverse)
+```
+
+# Overview 
+
+Card, David and Alan B. Krueger. 1994. [Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania](https://www.jstor.org/stable/2118030), American Economic Review 84(4): 772-793. 
+
+Question. 最低賃金の引き上げは雇用を引き下げるか？
+
+1992年4月に米国ニュージャージー州で最低賃金が引き上げられた（\$4.25 → \$5.05）一方で，隣接するペンシルベニア州ではとどめ置かれた．
+これを自然実験とみなし，DIDの枠組みを利用する．
+ファストフード店の雇用に関する調査データを用いて，最低賃金の引き上げによって雇用がほとんど変化しなかったことを明らかにした．
+
+## Reproduction/Replication by others 
+
+* Aaron Mamula (2021) [Replicating Card and Krueger’s Minimum Wage Study in R](https://aaronmams.github.io/Card-Krueger-Replication/)
+* Paul C. Bauer (2020) [Section 10.5 in Applied Causal Analysis (with R)](https://bookdown.org/paul/applied-causal-analysis/lab-2.html)
+* 矢内勇生 (2023) [差分の差分法（計量経済学応用）](https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/difference-in-differences.html)
+   * アウトカムの定義が元論文とは異なる点に注意
+* 浅野正彦 (2022) [差分の差分法: DID](http://www.ner.takushoku-u.ac.jp/masano/class_material/waseda/keiryo/R29_reg12_DID.html)
+   * アウトカムの定義が元論文とは異なる点に注意．矢内先生の資料と重複する箇所が多い
+
+
+## Data 
+
+データは [著者 Card 本人が提供している data sets 一覧](https://davidcard.berkeley.edu/data_sets) または [Mostly Harmless Econometrics の Data Archive](https://economics.mit.edu/people/faculty/josh-angrist/mhe-data-archive) からダウンロードできる．
+
+Readme （または read.me）ファイルを読むと，「public.dat」がデータセットで，「codebook」がその名の通り対応する codebook （変数の名前やラベルなどの情報）である．
+
+.dat は汎用のファイル拡張子で，テキストエディタで開くと
+
+> 46 4 0 0 0 0 0 1 0 0 0 30.00 15.00 ...
+
+のような数字が入力されている．
+
+Moodle には CardKrueger1994.dat というファイル名でアップロードしている．
+
+* 1994年2月（最低賃金の引き上げ前；Wave 1）の変数名が `xyz` の場合，対応する1994年11-12月（最低賃金の引き上げ後；Wave 2）の変数名は `xyz2` で定義されている
+* p. 775 によれば，Full-time-equivalent [FTE] employment = the number of full-time workers [incl. managers] + 0.5 × the number of part-time workers 
+* DID 分析の都合上，2月と11月の両方で賃金データが観測されていることを表す logical 変数 `wage_available` を作成しておく
+
+.dta を読み込むには `read.table` 関数が使える．
+
+```{r dat_read}
+setwd("c://ws_stat")
+ck_dat <- read.table("CardKrueger1994.dat", header = FALSE, dec = ".", na.strings = ".")
+
+ck <- ck_dat %>% 
+  rename(sheet = V1,
+         chain = V2,
+         co_owned = V3,
+         state = V4,
+         # location 
+         south_NJ = V5,
+         central_NJ = V6,
+         north_NJ = V7,
+         PA1 = V8,
+         PA2 = V9,
+         shore = V10, 
+         # first interview (February 1994) 
+         ncalls = V11,
+         empft = V12,
+         emppt = V13,
+         nmgrs = V14,
+         wage_st = V15,
+         inctime = V16,
+         firstinc = V17,
+         bonus = V18,
+         pctaff = V19,
+         meals = V20,
+         open = V21,
+         hrsopen = V22,
+         psoda = V23,
+         pfry = V24,
+         pentree = V25,
+         nregs = V26,
+         nregs11 = V27,
+         # second interview (November 1994) 
+         type2 = V28,
+         status2 = V29,
+         date2 = V30,
+         ncalls2 = V31,
+         empft2 = V32,
+         emppt2 = V33,
+         nmgrs2 = V34,
+         wage_st2 = V35,
+         inctime2 = V36,
+         firstinc2 = V37,
+         special2 = V38,
+         meals2 = V39,
+         open2r = V40,
+         hrsopen2 = V41,
+         psoda2 = V42,
+         pfry2 = V43,
+         pentree2 = V44,
+         nregs2 = V45,
+         nregs112 = V46) %>% 
+  mutate(NJ = south_NJ + central_NJ + north_NJ,
+         state = ifelse(NJ == 1, "NJ", "PA"),
+         fte = empft + nmgrs + emppt / 2,
+         fte2 = empft2 + nmgrs2 + emppt2 / 2,
+         wage_available = !is.na(wage_st) & !is.na(wage_st2))
+```
+
+# Descriptive statistics 
+
+## The number of stores interviewed (Table 1) 
+
+州ごとの店舗数．
+
+```{r desc_stat}
+table(ck$state)
+```
+
+閉店すると FTE が 0 で記録されている (Table 3 の Notes より)．
+
+```{r desc_closed}
+ck %>% 
+  group_by(state) %>% 
+  summarise(closed = sum(fte2 == 0, na.rm = TRUE))
+```
+
+## Means of key variables (Table 2) 
+
+Panel 1. Distribution of Store Types (%) 
+
+```{r means_store}
+ck %>% 
+  group_by(state) %>% 
+  summarize(BurgerKing = mean(chain == 1),
+            KFC = mean(chain == 2),
+            RoyRogers = mean(chain == 3),
+            Wendys = mean(chain == 4),
+            CompnayOwned = mean(co_owned))
+```
+
+一番右の列は「母平均が2つの州で等しい」を帰無仮説とする t 値．
+
+```{r means_t}
+ck %>% 
+  mutate(BurgerKing = ifelse(chain == 1, 1, 0)) %>% 
+  t.test(BurgerKing ~ state, data = .)
+```
+
+t 値 (Welch's t) の定義から計算することもできる．
+
+$$ t = \frac{\bar{x}_{NJ} - \bar{x}_{PA}}{\sqrt{s_{NJ}^2 / n_{NJ} + s_{PA}^2 / n_{PA}}} $$
+
+```{r means_t_hand}
+ck %>% 
+  mutate(BurgerKing = ifelse(chain == 1, 1, 0)) %>% 
+  group_by(state) %>% 
+  summarise(
+    n = n(),
+    x_bar = mean(BurgerKing), 
+    x_var = var(BurgerKing)) %>% 
+  print.data.frame(., digits = 5)
+(.41088 - .44304) / sqrt(.24279/331 + .24992/79)
+```
+
+または
+
+```{r means_t_hand_alt}
+ck_BK <- ck
+ck_BK$BurgerKing <- ifelse(ck$chain == 1, 1, 0)
+x1 <- ck_BK$BurgerKing[ck_BK$state == "NJ"]
+x2 <- ck_BK$BurgerKing[ck_BK$state == "PA"]
+(mean(x1) - mean(x2)) / sqrt(var(x1) / length(x1) + var(x2) / length(x2))
+```
+
+Panel 2. Means in Wave 1 
+
+カッコの中は標準偏差 (standard deviation; データのばらつき) ではなく標準誤差 (standard error; 推定量のばらつき)．
+
+$$ SE = \frac{\sigma}{\sqrt{n}} $$
+
+```{r means_wave1}
+ck %>% 
+  group_by(state) %>% 
+  summarize(sample_size = sum(!is.na(fte)),
+            FTE = mean(fte, na.rm = TRUE),
+            FTE_se = sd(fte, na.rm = TRUE) / sqrt(sample_size),
+            StartingWage = mean(wage_st, na.rm = TRUE),
+            StartingWage_se = sd(wage_st, na.rm = TRUE) / sqrt(sample_size),
+            Wage425 = mean(wage_st == 4.25, na.rm = TRUE),
+            Wage425_se = sd(wage_st == 4.25, na.rm = TRUE) / sqrt(sample_size))
+```
+
+「Wage = $4.25 (percentage)」変数は再現できない．要確認．
+
+t 値も先ほどと同様に以下のように計算できる．
+
+```{r means_wave1_t}
+ck %>% 
+  t.test(fte ~ state, data = .)
+```
+
+宿題：上で計算していない他の変数やWave2についても同様に計算する．
+
+## Distribution of starting wage rates (Figure 1) 
+
+最低賃金の引き上げ前と引き上げ後のそれぞれにおいて，NJとPAで starting wage （初任給に相当）の時間給の分布がどのように異なるかをプロットする．
+
+NJ と PA を1つのグラフに同時に描画するには以下のように `fill` と `position="dodge"` を指定すればよい．
+
+```{r figure1_freq, message = FALSE, warning = FALSE}
+ggplot(data = ck, mapping = aes(x = wage_st, fill = state)) +
+  geom_histogram(position = "dodge") + 
+  scale_fill_grey()
+```
+
+しかしながら，NJとPAで調査対象数が大きく異なるためうまく比較できない．
+そのため，NJとPAそれぞれでの割合を縦軸にしたい．
+「ggplot2 histogram percentage by group」でGoogle検索すると以下のページがヒットする．
+
+Stack Overflow: [Let ggplot2 histogram show classwise percentages on y axis](https://stackoverflow.com/questions/31200254/let-ggplot2-histogram-show-classwise-percentages-on-y-axis)
+
+```{r figure1, message = FALSE, warning = FALSE}
+ggplot(data = ck, mapping = aes(x = wage_st, fill = state)) +
+  geom_histogram(
+    aes(y = after_stat(c(count[group==1]/sum(count[group==1]), count[group==2]/sum(count[group==2])) * 100) ), 
+    position = "dodge") + 
+  ylab("% of stores") + 
+  scale_fill_grey()
+
+ggplot(data = ck, mapping = aes(x = wage_st2, fill = state)) +
+  geom_histogram(
+    aes(y = after_stat(c(count[group==1]/sum(count[group==1]), count[group==2]/sum(count[group==2])) * 100) ), 
+    position = "dodge") + 
+  ylab("% of stores") + 
+  scale_fill_grey()
+```
+
+よく見ると < 5.05 がある．
+僅かに法令不遵守の店舗があったという意味だと思われる．
+
+```{r nj_less_than_505}
+ck %>% filter(state == "NJ") %>% select(wage_st2) %>% table
+```
+
+# Employment effect of the minimum-wage increase (Section III) 
+
+## III.A. DID (Table 3) 
+
+After-Before の difference は次のように計算できる．
+Difference の標準誤差が論文でレポートされている値と一致しない．
+
+```{r did}
+ck %>% 
+  group_by(state) %>% 
+  summarise(sample_size = sum(!is.na(fte)),
+            FTE_Feb = mean(fte, na.rm = TRUE),
+            FTE_Feb_se = sd(fte, na.rm = TRUE) / sqrt(sample_size),
+            FTE_Nov = mean(fte2, na.rm = TRUE),
+            FTE_Nov_se = sd(fte2, na.rm = TRUE) / sqrt(sample_size)) %>% 
+  mutate(FTE_diff = FTE_Nov - FTE_Feb,
+         FTE_diff_se = sqrt(FTE_Feb_se^2 + FTE_Nov_se^2)) %>% 
+  print.data.frame(., digits = 5)
+```
+
+NJ-PA の difference は以下の通り．
+
+```{r did_nj_pa}
+20.439 - 23.331  # diff in February 
+sqrt(0.50826^2 + 1.35115^2)  # standard error of diff in February 
+21.027 - 21.166  # diff in November 
+sqrt(0.51869^2 + 0.94322^2)  # standard error of diff in November 
+```
+
+DID 推定量．
+
+```{r did_did}
+(21.027 - 21.166) - (20.439 - 23.331)  # DID estimator 
+sqrt(1.443584^2 + 1.076431^2)  # standard error of DID 
+```
+
+要約
+
+| Variable | PA | NJ | Difference: NJ-PA | 
+| :---: | :---: | :---: | :---: | 
+| FTE employment: Before (February) | 23.33 (1.35) | 20.44 (0.51) | -2.89 (1.44) | 
+| FTE employment: After (November) | 21.17 (0.94) | 21.03 (0.52) | -0.14 (1.08) | 
+| Change in FTE employment: After-Before | -2.17 (1.65) | 0.59 (0.73) | 2.75 (1.80) | 
+
+Note: Standard errors in parentheses. 
+
+標準誤差は After-Before の difference から計算しても一緒．
+ただし，論文の値とは一致しない（原因不明）．
+
+```{r did_did_se}
+sqrt(1.6478^2 + 0.7262^2)
+```
+
+
+## III.B. Regression-adjusted models (Table 4) 
+
+ここまで使ってきたデータは wide 型．
+
+Wide 形式：1行＝1店舗（すなわち，1行に複数時点のデータが含まれる）
+
+| Store ID | Chain | NJ | FTE1 | FTE2 | 
+| :---: | :---: | :---: | :---: | :---: | 
+| 46 | 1 | 0 | 40.05 | 24.00 | 
+| 49 | 2 | 0 | 13.75 | 11.50 | 
+| ... | ... | ... | ... | ... | 
+
+Long 形式：1行＝1観測（すなわち，1行には1時点のデータしか含まれない）
+
+| Store ID | Chain | NJ | Wave | FTE | 
+| :---: | :---: | :---: | :---: | :---: | 
+| 46 | 1 | 0 | 1 | 40.05 | 
+| 46 | 1 | 0 | 2 | 24.00 | 
+| 49 | 2 | 0 | 1 | 13.75 | 
+| 49 | 2 | 0 | 2 | 11.50 | 
+| ... | ... | ... | ... | ... | 
+
+### Wide format 
+
+回帰分析でDID推定量を求めることもできる．
+ここで，一階の差分をとる（11月の値から2月の値を引く）と個体の固定効果が打ち消されるため，アウトカムの差分を treatment dummy （つまり NJ ダミー）に回帰すればよい．
+
+回帰分析の枠組みで DID を推定することで，employment growth に影響を与えうる要因を条件づけることができる．
+たとえば，チェーンを説明変数として加えることで，チェーン間での growth の違いをコントロールしたもとで DID 推定ができる．
+
+いずれも Table 4 でレポートされている推定値とは少し異なる．
+
+Model (i)
+
+$$ \Delta E_i = a + c NJ_i + \epsilon_i $$
+
+この式は $E_{i, Feb} = \mbox{baseline} + \gamma NJ_i$ と $E_{i, Nov} = \mbox{baseline} + \gamma NJ_i + c NJ_i + a$ の差分をとることで得られる．
+$\gamma NJ_i$ は処置の前後で共通する NJ 固有の効果であり（差分を取ることで相殺される），$c NJ_i$ は NJ で処置後にのみ生じる部分を表している（差分をとった後に残る）．
+$c$ が DID 推定量である．
+$a$ は NJ と PA の両方で共通する処置後にのみ生じる部分で，time trend として解釈できる．
+
+```{r did_reg_i}
+did_reg_i <- lm(formula = fte2 - fte ~ NJ, data = ck, subset = wage_available)
+# summary(did_reg_i)
+```
+
+Model (ii)
+
+$$ \Delta E_i = a + b X_i + c NJ_i + \epsilon_i $$
+
+```{r did_reg_ii}
+did_reg_ii <- lm(formula = fte2 - fte ~ NJ + factor(chain) + co_owned, data = ck, subset = wage_available)
+```
+
+Model (iii)
+
+NJ の店舗でも starting wage が処置前から既に \$5.05 を上回っている店舗では雇用に対する影響がほとんどないと考えられる一方，処置前には最低賃金 \$4.25 に近かった店舗では雇用への影響が大きいと考えられる．
+そこで，このような within-NJ の変分を表す変数を下のように定義する．
+
+$$ \Delta E_i = a + c' GAP_i + \epsilon_i, \quad GAP = \begin{cases} 0 \quad \mbox{if PA} \\ 0 \quad \mbox{if NJ with } W_{i, Feb} \ge 5.05 \\ \frac{5.05 - W_{i, Feb}}{W_{i, Feb}} \quad \mbox{if NJ with } W_{i, Feb} < 5.05 \end{cases} $$
+
+つまり，GAP 変数は
+
+* 次の2つの変分を含む： (i) NJ と PA の違い，(ii) NJ の処置前の starting wage の違い
+* DID の枠組みに位置付けると，Model (i), (ii) での NJ 変数に対応する．つまり，GAP 変数の回帰係数は DID 推定量のようなものに対応する
+
+```{r did_reg_iii}
+ck_with_gap <- ck %>% 
+  mutate(gap = ifelse(state == "NJ" & wage_st < 5.05, (5.05-wage_st)/wage_st, 0))
+ck_with_gap %>% filter(state == "NJ") %>% pull(gap) %>% hist(xlab = "GAP")
+did_reg_iii <- lm(formula = fte2 - fte ~ gap, data = ck_with_gap, subset = wage_available)
+```
+
+Model (iv) and (v) 
+
+$$ \Delta E_i = a' + b' X_i + c' GAP_i + \epsilon_i $$
+
+```{r did_reg_iv_v}
+did_reg_iv <- lm(formula = fte2 - fte ~ gap + factor(chain) + co_owned, 
+                 data = ck_with_gap, subset = wage_available)
+did_reg_v <- lm(formula = fte2 - fte ~ gap + factor(chain) + co_owned + south_NJ + north_NJ + PA2 + shore, 
+                data = ck_with_gap, subset = wage_available)
+```
+
+まとめて出力．
+
+```{r did_reg_sum, message = FALSE}
+library(modelsummary)
+modelsummary(list(did_reg_i, did_reg_ii, did_reg_iii, did_reg_iv, did_reg_v), 
+             gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", stars = TRUE)
+```
+
+注：論文中ではレポートされていないが，決定係数は非常に低い．
+この文脈で重要なことは DID 推定量がバイアスを持つかどうか（すなわち，興味のある因果効果が識別されているか否か）であって，アウトカムの変分が説明変数によってどれだけ説明されるかではない．
+
+Probability value for controls の行は joint F test for exclusion of all control variables を表すとのこと．
+論文でレポートされている値を全く再現できないが...
+
+```{r ftest, message = FALSE}
+library(car)
+ftest_ii <- linearHypothesis(did_reg_ii, c("factor(chain)2 = 0", "factor(chain)3 = 0", 
+                                           "factor(chain)4 = 0", "co_owned = 0"))
+ftest_iv <- linearHypothesis(did_reg_iv, c("factor(chain)2 = 0", "factor(chain)3 = 0", 
+                                           "factor(chain)4 = 0", "co_owned = 0"))
+ftest_v <- linearHypothesis(did_reg_v, c("factor(chain)2 = 0", "factor(chain)3 = 0", 
+                                         "factor(chain)4 = 0", "co_owned = 0", 
+                                         "south_NJ = 0", "north_NJ = 0", "PA2 = 0", "shore = 0"))
+ftest_ii
+ftest_iv$`Pr(>F)`[2]; ftest_v$`Pr(>F)`[2]
+```
+
+
+### Long format 
+
+Wide 形式のデータを long 形式に変換するには `pivot_longer` を利用する．
+ちなみに以下のコードは ChatGPT が教えてくれた．
+
+ポイント：
+
+* `wage_st` (starting wage) と `fte` (full-time equivalent employment) の2変数について，wave 1 と wave 2 それぞれが1つの行を構成するように変換する
+   * Wave 1 の変数は `変数名1`，wave 2 は `変数名2` で統一する
+   * `wage_available` という変数名との混同を避けるため，`wage_st*` 変数は `wagest*` に予め変更しておく
+* `gap` 変数は before treatment の starting wage で定義するため，wide 形式の状態のうちに計算する
+* `starts_with(文字列)` で，当該文字列から始まる変数名の変数がすべて抽出される
+* `wave` は文字列のため，Before/After ダミーを作成するために `as.numeric` 関数で数値型に変換する（`wave` = 1 ならば Before，`wage` = 2 ならば After）
+
+```{r longer}
+ck_long <- ck %>% 
+  mutate(gap = ifelse(state == "NJ" & wage_st < 5.05, (5.05-wage_st)/wage_st, 0)) %>% 
+  rename(wagest1 = wage_st, wagest2 = wage_st2, fte1 = fte) %>% 
+  dplyr::select(chain, co_owned, ends_with("NJ"), PA1, PA2, shore, state, 
+                starts_with("wage"), fte1, fte2, gap) %>% 
+  pivot_longer(cols = c(wagest1, wagest2, fte1, fte2), 
+               names_to = c(".value", "wave"), 
+               names_pattern = "([a-z]+)(\\d*)") %>% 
+  mutate(after = as.numeric(wave) - 1)  # = 1 if After (November)
+```
+
+処置群ダミー $NJ$ と処置後ダミー $\mbox{After}$ の交差項の係数 $\delta$ が DID 推定量．
+
+$$ E_{it} = a + b X_{it} + c NJ_i + d \mbox{After}_t + \delta NJ_i \times \mbox{After}_t + \epsilon_i $$
+
+```{r longer_reg}
+did_reg_long_i <- lm(fte ~ NJ*after, data = ck_long, subset = wage_available)
+# summary(did_reg_long_i)
+did_reg_long_ii <- lm(fte ~ NJ*after + factor(chain) + co_owned, data = ck_long, subset = wage_available)
+did_reg_long_iii <- lm(fte ~ gap*after, data = ck_long, subset = wage_available)
+did_reg_long_iv <- lm(fte ~ gap*after + factor(chain) + co_owned, data = ck_long, subset = wage_available)
+did_reg_long_v <- lm(fte ~ gap*after + factor(chain) + co_owned + south_NJ + north_NJ + PA2 + shore, 
+                     data = ck_long, subset = wage_available)
+```
+
+まとめて出力．
+
+* GAP 変数を利用する場合は「gap × after」の係数が DID 推定値
+* 欠損値の関係で分析に使用される標本が wide 形式のデータを用いた場合と僅かに異なるため，推定値も若干変わっている
+
+```{r did_reg_long_sum, message = FALSE}
+modelsummary(list(did_reg_long_i, did_reg_long_ii, did_reg_long_iii, did_reg_long_iv, did_reg_long_v), 
+             gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", stars = TRUE)
+```
+
+<!--
+```{r ck}
+library(tidyverse)
+# install.packages("evident")
+library(evident)
+str(ck)
+head(ck)
+ck %>% 
+  # mutate(grp2 = ifelse(grp == "PA", "PA", "NJ")) %>% 
+  # group_by(grp2) %>% 
+  summarise(Feb = mean(fte), Nov = mean(fte2))
+(20.1-21.1) - (23.7-21.8)  # diff in diff
+# lm(formula = fte - fte2 ~ I(grp == "PA"), data = ck)
+```
+-->
+.

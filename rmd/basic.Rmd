@@ -19,24 +19,24 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Basic operating instructions / 基本的な操作
 
-Rコード（Rスクリプト or Rプログラム）の例 ↓ 
+　↓ Rコード（Rスクリプト or Rプログラム，薄い灰色で塗りつぶされた箇所）の例 
 
 ```{r r_code_example}
 1 + 1
 ```
 
-Rコード（薄い灰色で塗りつぶされた箇所）を実行した結果 ↑
+　↑ Rコードを実行した結果
 
 このページのRコードをどのように実行すればよいか？
 
 * Rを利用：[Rをダウンロード](https://cran.ism.ac.jp/)
    * コンソールに直接コピーアンドペーストして「Enter」（Macの場合は「Return」）
-   * 「ファイル」→「新しいスクリプト」にコピーアンドペーストして，実行する箇所を選択 → 「Ctrl」＋「+」
+   * 「ファイル」→「新しいスクリプト」にコピーアンドペーストして，実行する箇所を選択 → 「Ctrl」＋「R」
    * 「ファイル」→「新しいスクリプト」に「写経」（コピーアンドペーストしないで一字一句書き写すこと）して実行．一番面倒だが，一番勉強になる
-* RStudioを利用：Rをダウンロードしてから[RStudioをダウンロード](https://posit.co/download/rstudio-desktop/)
+* RStudioを利用：Rをダウンロードしてから [RStudioをダウンロード](https://posit.co/download/rstudio-desktop/)
    * コンソールに直接コピーアンドペーストして「Enter」
    * 作成したスクリプトページにコピーアンドペーストして，実行する箇所を選択 → 「Ctrl」＋「Enter」
-   * [GitHub](https://github.com/kurodaecon/dasp/tree/main/rmd)から .rmd ファイルをダウンロードして，チャンクの右上にある「▶」(Run Current Chunk) を押す．一番簡単だが，一番勉強にならない
+   * [GitHub](https://github.com/kurodaecon/dasp/tree/main/rmd) から .rmd ファイルをダウンロードして，チャンクの右上にある「▶」(Run Current Chunk) を押す．一番簡単だが，一番勉強にならない
 
 ## Basic arithmetic operations / 四則演算
 
@@ -64,7 +64,7 @@ Rコード（薄い灰色で塗りつぶされた箇所）を実行した結果 
 2 ** 3  # same as above 
 sqrt(16)  # square root 
 log(10)  # natural logarithm 
-exp(1)  # exponential 
+exp(1)  # exponential, e = Napier's constant 
 ```
 
 `sqrt`, `log` などは関数．
@@ -102,7 +102,14 @@ pi  # pi (circle ratio)
 
 ```{r obj}
 x <- 1  # "x" is the object name
-x + 1
+x
+```
+
+注：小文字 `x` と大文字 `X` は区別される．
+
+このオブジェクトを使って何らかの計算をすることができる．
+
+```{r obj2}
 x + 2
 x <- 10  # overwrite (override) 
 x + 5
@@ -157,7 +164,6 @@ c(c(1, 2), 5:7)
 
 ```{r sum_vector}
 sum(c(1, 2, 6))  # sum of 1, 2, 6 
-sum(c(1, 2, 6) - 4:6)  # sum of 1-4, 2-5, 6-6 
 ```
 
 
@@ -168,6 +174,7 @@ sum(c(1, 2, 6) - 4:6)  # sum of 1-4, 2-5, 6-6
 ```{r vector_obj}
 x <- c(1, 2, 6)  # assign vector to object "x"
 x
+sum(x)  # sum of 1, 2, 6
 x + 10
 ```
 
@@ -195,6 +202,18 @@ x[x == 2]  # "==" means `equal to`
 x[x != 2]  # "!=" means `not equal to`
 ```
 
+cf. 論理演算
+
+```{r logical}
+1 > 0
+c(1, 2, 6) > 1
+1 == 0.5 + 0.5  # equal 
+2 != 1  # not equal 
+!(1 > 0)  # "!" = logical negation 
+1 > 0 & 2 == 1  # TRUE AND FALSE 
+1 > 0 | 2 == 1  # TRUE OR FALSE 
+```
+
 特定の要素に別の値を代入して上書きすることもできる．
 
 ```{r vector_override}
@@ -208,13 +227,15 @@ x
 複数のベクトルに対して演算することもできる．
 
 ```{r vectors}
-x2 <- c(1, 3, 4)  # another vector
+sum(c(1, 2, 6) - 4:6)  # sum of 1-4, 2-5, 6-6 
+x <- c(1, 2, 6)
+x2 <- c(1, 3, 4)
 x + x2
 ```
 
-ベクトルの内積（スカラー積）は `%*%` で計算される．
+ベクトルの内積（スカラー積）は `%*%` で計算される（$\mathbf{x}'$ は $\mathbf{x}$ の転置）．
 
-$$ (\bf{x}, \bf{x_2}) = \bf{x}' \bf{x_2} = \left[ \matrix{1 & 2 & 6} \right] \left[ \matrix{1 \\ 3 \\ 4} \right] = 1 \times 1 + 2 \times 3 + 6 \times 4 = 1+6+24 = 31 $$
+$$ (\mathbf{x}, \mathbf{x_2}) = \mathbf{x}' \mathbf{x_2} = \left[ \matrix{1 & 2 & 6} \right] \left[ \matrix{1 \\ 3 \\ 4} \right] = 1 \times 1 + 2 \times 3 + 6 \times 4 = 1+6+24 = 31 $$
 
 ```{r vectors_mult}
 x %*% x2
@@ -242,9 +263,10 @@ beatles_name <- c("John", "Paul", "George", "Ringo")
 
 ## Other tips: semicolon
 
+1行に複数のコマンドを書く場合は「`;`」で繋ぐ．
+<!--
 To write multiple commands on a single line, join them with semicolon ";". 
-
-1行に複数のコマンドを書く場合は「;」で繋ぐ．
+-->
 
 ```{r mult}
 x; x + x2 + 1
@@ -283,13 +305,13 @@ beatles2
 データフレームの特定の要素を抽出するには， `[ ]` を使って何行目・何列目かを指定したり，あるいは「`データフレーム名$列名`」のように `$` （ドル）記号を使って列名（変数名）を指定する．
 
 ```{r df_element}
+beatles[1, 2]  # 1st row (John) and 2nd column (born)
+beatles[1:2, 2:3]
+beatles[1:2, c("born", "decease")]  # same as above
 beatles[1, ]  # 1st row (John)
 beatles[, 2]  # 2nd column (born)
 beatles[, "born"]  # same as above
 beatles$born  # column named "born" (year of birth)
-beatles[1, 2]  # 1st row (John) and 2nd column (born)
-beatles[1:2, 2:3]
-beatles[1:2, c("born", "decease")]  # same as above
 ```
 
 ## Display the structure of an object / オブジェクトの構造
@@ -335,7 +357,7 @@ beatles
 
 Rには幾つかのサンプルデータが既に含まれている（`data()` で列挙）．
 
-`swiss` は1988年のスイスにおける出生率と社会経済変数のデータセット．
+`swiss` は1888年のスイスにおける出生率と社会経済変数のデータセット．
 Province レベルで集計されている．
 
 ```{r swiss}
@@ -347,7 +369,7 @@ str(swiss)
 最も基本的な描画は `plot` 関数を使った散布図．
 
 ```{r plot}
-plot(x = swiss$Fertility, y = swiss$Education)
+plot(x = swiss$Education, y = swiss$Fertility)
 ```
 
 追加の引数を指定することで，グラフのタイトル，X軸・Y軸のラベル，マーカーの種類，色などを変更できる．
@@ -377,6 +399,9 @@ Tips: `plot` 周りで何らかのエラーが生じたら，`dev.off()` で一�
 参照：[Titanic：タイタニック号乗客者の生存状況（年齢や性別などの13項目）の表形式データセット](https://atmarkit.itmedia.co.jp/ait/articles/2007/02/news016.html)
 
 * `pclass`： 旅客クラス
+* `survived`: = 1 if survived, = 0 if not survived
+* `sex`: female or male 
+* `age`: 年齢
 * `sibsp`： 同船する兄弟（siblings）と配偶者（spouses）の数
 * `parch`： 同船する親（parents）と子供（children）の数
 * `embarked`： 出港地（C＝Cherbourg（仏・シェルブール）, Q＝Queenstown, S＝Southampton）
@@ -406,9 +431,10 @@ titanic <- read.csv("titanic3_csv.csv")
 
 ## `read.csv` + `file.choose` 
 
-If the working directory settings do not work, execute the following line to load the CSV file. The "Select File" screen will appear, from which you can select the CSV file to be read.
-
 作業ディレクトリの設定がうまくできない場合は，次の行を実行してCSVファイルを読み込む．実行すると「ファイルを選択」画面が出てきて，そこから読み込むCSVファイルを選択することができる．
+<!--
+If the working directory settings do not work, execute the following line to load the CSV file. The "Select File" screen will appear, from which you can select the CSV file to be read.
+-->
 
 ```{r read_csv_choose, eval = F}
 titanic <- read.csv(file.choose())
@@ -468,6 +494,8 @@ write.csv(titanic_head, "c://ws_stat/new_dir/titanic_first_6_rows.csv")
 
 `log` や `exp` のような既に定義されている関数の他に，自作の関数を定義して使用することができる．
 
+例：引数の二乗を返す関数
+
 ```{r def_fun}
 return_squared <- function (x) {
   x^2
@@ -475,7 +503,7 @@ return_squared <- function (x) {
 return_squared(x = 5)
 ```
 
-## Examine whether it is a leap year or not / 閏年の判定
+## Example: Examine whether it is a leap year or not / 閏年の判定
 
 西暦が4で割り切れる年は原則として閏年だが，「100で割り切れて，かつ，400で割り切れない」場合は例外的に閏年ではない．
 
@@ -490,8 +518,11 @@ return_squared(x = 5)
 また，ある条件を満たすかどうかによって異なる処理を行うには `if, elase` を使う．
 
 `if` 関数の引数（条件分岐の条件）には論理値（`TRUE` または `FALSE`）が与えられる．
-`TRUE` の場合にのみ `if` の `{ }` の中が実行される．
-`FALSE` の場合には `else` の `{ }` の中が実行される．
+
+* `TRUE` の場合にのみ `if` の `{ }` の中が実行される
+* `FALSE` の場合には `else` の `{ }` の中が実行される
+
+Tips. `for` 文の中で数字や文字などを出力するには `print` 関数が使える．
 
 ```{r if_else}
 if (1 > 0) {
@@ -501,25 +532,9 @@ if (1 > 0) {
 }
 ```
 
-cf. 論理演算
-
-```{r logical}
-1 > 0
-1 == 0.5 + 0.5  # equal 
-2 != 1  # not equal 
-!(1 > 0)  # "!" = logical negation 
-1 > 0 & 2 == 1  # TRUE AND FALSE 
-1 > 0 | 2 == 1  # TRUE OR FALSE 
-```
-
 よって，以下のように関数を作成すればよい．
 
-Tips 1. `if` 文は入れ子にすることができる．
-
-Tips 2. `for` 文の中で数字や文字などを出力するには `print` 関数が使える．
-<!--
-Tips 3. 複数行にわたる場合は `{ }` で囲む．
--->
+Tips. `if` 文は入れ子にすることができる．
 
 ```{r def_fun_leap}
 examine_leap <- function (year) {
@@ -542,7 +557,11 @@ examine_leap(year = 2400)
 
 `for` 文を使うことでほとんど同じ計算を繰り返し計算することができる．
 
-`i` というオブジェクトに `in` のあとのベクトルの要素を順次代入して計算する．
+`i` というオブジェクトに `in` のあとのベクトルの要素を順次代入して計算する．つまり，
+
+* まず `i` に 1 が代入されて `{ }` の中が実行され，
+* 次いで `i` に 2 が代入されて `{ }` の中が実行され，
+* 最後 `i` に 3 が代入されて `{ }` の中が実行される
 
 ```{r for}
 for (i in 1:3) {
@@ -554,7 +573,9 @@ for (i in 1:3) {
 
 $$ \sum_{i=1}^{3} i = 1 + 2 + 3 = 6 $$
 
-```{r for2}
+累積の値を格納するオブジェクト `i_cumulative` を作成して，`{ }` の中でこのオブジェクトの値を更新する．
+
+```{r for_sum}
 i_cumulative <- 0  # initialize 
 for (i in 1:3) {
   i_cumulative <- i_cumulative + i
@@ -589,18 +610,27 @@ is_leap <- function (year) {
 
 この関数を `for` 文の中で使う．
 
+```{r for_user_defined_function}
+for (y in 2090:2110) {
+  if (is_leap(year = y)) {
+    print(y)
+  }
+}
+```
+
 Tips. `{ }` の中が1行だけの場合は `{ }` を省略できる．
 
-```{r for_user_defined_function}
-for (y in 2090:2110) 
-  if (is_leap(year = y)) 
-    print(y)
+```{r for_user_defined_function_ver2, eval = FALSE}
+for (y in 2090:2110) if (is_leap(year = y)) print(y)
 ```
+
+（出力は省略）
 
 <!--
 中級者向け
 (2090:2110)[sapply(2090:2110, is_leap)]
 -->
+
 
 # Matrix / 行列
 
@@ -655,8 +685,8 @@ $$ \left[ \matrix{1 & 5 \\ 2 & 6 \\ 3 & 7} \right] \left[ \matrix{0.1 & 0.2 & 0.
 
 ```{r matrix_product}
 mat <- matrix(c(1, 2, 3, 5, 6, 7), nrow = 3, ncol = 2)
-mat2 <- matrix(c(0.1, 0.2, 0.3, 0.5, 0.6, 0.7), nrow = 2, ncol = 3, byrow = TRUE)
 mat
+mat2 <- matrix(c(0.1, 0.2, 0.3, 0.5, 0.6, 0.7), nrow = 2, ncol = 3, byrow = TRUE)
 mat2
 mat %*% mat2
 ```
@@ -670,7 +700,7 @@ $$ \mathbf{A} \mathbf{A}^{-1} = \mathbf{A}^{-1} \mathbf{A} = \mathbf{E} = \left[
 * スカラーであれば $A A^{-1} = A^{-1} A = 1, A^{-1} = 1/A$ すなわち逆数．逆行列は，これの行列バージョンのようなもの．
 * $\mathbf{E}$ は単位行列（対角成分だけが1でそれ以外のすべての要素が0）
 
-2×2 の行列については次の公式で計算できる．
+2×2 の行列については次のように計算できる．
 
 $$ \left[ \matrix{1 & 3 \\ 2 & 4 } \right]^{-1} = \frac{1}{1 \times 4 - 3 \times 2} \left[ \matrix{4 & -3 \\ -2 & 1} \right] = \left[ \matrix{-2 & 1.5 \\ 1 & -0.5} \right] $$
 
@@ -690,13 +720,24 @@ mat3 %*% solve(mat3)  # should be identity matrix
 solve(mat3) %*% mat3
 ```
 
-行列の determinant が 0 の場合は逆行列を計算できない．
+行列の determinant （行列式）が 0 の場合は逆行列を計算できない．
+
+$$ \det \left[ \matrix{1 & 0 \\ 1 & 0 } \right] = 1 \times 0 + 0 \times 1 = 0 $$
 
 ```{r matrix_inverse_not_regular, eval = FALSE}
 solve(matrix(c(1, 1, 0, 0), nrow = 2))
 ```
 
 （エラーが出る）
+
+
+# Take home messages 
+
+* 分からないことがあればヘルプを見る
+   * ヘルプは `?関数名` または `help(関数名)` 
+   * それでも分からなければ，Google  で検索，ChatGPT に相談，YouTube で検索，etc. 
+* オブジェクトへの代入は `オブジェクト名 <- 中身（スカラー or ベクトル or データフレーム or 行列 etc.）`
+* CSV ファイルの読み込みは `read.csv(ファイル名)` 
 
 
 .

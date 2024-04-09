@@ -1,0 +1,441 @@
+---
+title: "Data Analysis Using Statistical Packages: Basics of Inferential statistics"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年4月 (Last update: 2024年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Probability / 確率
+
+## Expectation and Variance of random variable 
+
+離散確率変数 $X$ の期待値と分散は確率関数 $f$ を用いて以下のように定義される．
+
+$$ \mu = E(X) = \sum_j^k x_j f(x_j) $$
+
+$$ \sigma^2 = V(X) = E[(X-E(X))^2] = \sum_j^k (x_j - E(X))^2 f(x_j) = E(X^2) - (E(X))^2 $$ 
+
+連続確率変数の場合
+
+$$ \mu = E(X) = \int_{-\infty}^{\infty} x f(x) dx $$
+
+$$ \sigma^2 = V(X) = \int_a^b (x - \mu)^2 f(x) dx$$
+
+### Example: Dice roll 
+
+例：サイコロの出目 $X$ の期待値と分散 / Example of dice roll
+<!--
+Expected value and variance of the dice roll.
+-->
+
+$$ E(X) = \sum_{j=1}^6 x_j \frac{1}{6} = 1 \times \frac{1}{6} + 2 \times \frac{1}{6} + 3 \times \frac{1}{6} + 4 \times \frac{1}{6} + 5 \times \frac{1}{6} + 6 \times \frac{1}{6} = \frac{7}{2} $$
+
+```{r dice}
+dice <- 1:6  # c(1, 2, 3, 4, 5, 6) と同じ
+sum(dice * (1/6))  # definition of expectation
+mean(dice)  # mean
+```
+
+$$ V(X) = \sum_{j=1}^6 (x_j - E(X))^2 \frac{1}{6} = \left( 1-\frac{7}{2} \right) ^2 \frac{1}{6} + \left( 2-\frac{7}{2} \right) ^2 \frac{1}{6} + \cdots + \left( 6-\frac{7}{2} \right) ^2 \frac{1}{6} \approx 2.917 $$ 
+
+```{r dice_variance}
+sum((dice - mean(dice))^2 * (1/6))  # variance: sum[(x-E(X))*f(x)]
+```
+
+`var(dice)` は 3.5 となり，上記と一致しないが，これは `var` 関数が標本分散（不偏分散）を計算するためである．`3.5*(n-1)/n = 3.5*5/6 ≒ 2.9` である．
+
+$V(X) = E(X^2) - (E(X))^2$ でもある．
+
+```{r dice_variance2}
+sum(dice^2 * (1/6)) - sum(dice * (1/6))^2  # variance: E(X^2)-E(X)^2
+```
+
+<!--
+The value of `var(dice)` is 3.5, which does not equal the above, but this is because the `var` function calculates the sample variance (unbiased variance); `3.5*(n-1)/n = 3.5*5/6 ≈ 2.9`.
+-->
+
+
+## Z score
+
+標準正規分布の $z = 1.96$ より左側の面積は確率 $Pr(Z \le 1.96)$ である．
+
+`pnorm` は与えられた $z$ スコアに対応する確率を返す関数で，関数名は p (probability) + norm (normal distribution) から来ている．
+
+<!--
+The area of the standard normal distribution to the left of $z = 1.96$ is the probability of $\Pr(Z \le 1.96)$. 
+The function name `pnorm` comes from p (probability) + norm (normal distribution). `pnorm` is a function that returns the probability corresponding to a given z-score.
+-->
+
+```{r prob_p}
+pnorm(q = 1.96, mean = 0, sd = 1)
+```
+
+その逆に，`qnorm` は与えられた確率に対応する $z$ スコアを返す関数．
+<!--
+Conversely, `qnorm` is a function that returns the z-score corresponding to a given probability. 
+-->
+
+```{r prob_q}
+qnorm(p = 0.975, mean = 0, sd = 1)
+qnorm(p = 0.975)  # for N(0,1), the mean and sd arguments may be omitted 
+```
+
+確率密度．
+`dnorm` = d (density) + norm (normal distribution). 
+
+```{r dnorm}
+dnorm(x = 1.96, mean = 0, sd = 1)
+```
+
+標準正規分布の確率密度 $\phi$ を積分する（確率密度関数とX軸の間の面積を計算する）と，積分区間の間の値を取る確率が得られる．
+
+$$ \Pr(-1.96 \le Z \le 1.96) = \int_{-1.96}^{1.96} \phi(z) dz \approx 0.95 $$
+
+```{r integrate_dnorm}
+integrate(dnorm, -1.96, 1.96)  # 積分: 約 95%
+```
+
+この `dnorm` 関数は密度関数の描画にも使える．
+
+```{r curve_drnom}
+curve(dnorm(x, mean = 0, sd = 1), xlim = c(-5, 5))
+```
+
+
+## Generating random numbers / 乱数の生成
+
+一様分布から乱数をドローするには，`runif`関数を使う．この関数名は r (random) + unif (uniform distribution) から来ている．
+<!--
+To draw random numbers from a uniform distribution, use the `runif` function. The function name comes from r (random) + unif (uniform distribution).
+-->
+
+```{r runif}
+runif(n = 5, min = 0, max = 1)
+runif(5, 0, 1)  # 引数の順番を守れば「n=」などを省略可
+runif(5, 0, 1)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）
+```
+
+乱数をドローするたびに異なる値が出力される．
+再現性のために乱数のシードを指定することができる．
+
+```{r runif_set_seed}
+set.seed(0)
+runif(5)
+set.seed(0)
+runif(5)
+```
+
+正規乱数（正規分布からドローする乱数）は `rnorm` で生成できる．
+
+```{r rnorm}
+rnorm(n = 5, mean = 0, sd = 10)
+```
+
+### Expectation and variance: Random variables from the uniform distribution 
+
+一様分布 $U(a, b)$ から乱数を生成して標本平均と標本分散を計算し，それが理論値と一致するかを確認する．
+
+$$ E(X) = \int_a^b x \frac{1}{b-a} dx = \frac{1}{b-a} \left[ \frac{x^2}{2} \right]_a^b = \frac{1}{b-a} \times \frac{b^2 - a^2}{2} = \frac{a+b}{2} $$
+
+$$ V(X) = \int_a^b (x - \mu)^2 \frac{1}{b-a} dx = \frac{1}{b-a} \left[ \frac{ \left( x - \frac{a+b}{2} \right)^3}{3} \right]_a^b = \frac{(b - a)^2}{12} $$
+
+$X \sim U(-1, 1)$ とすると，母平均と母分散は次の値となる．
+
+$$ E(X) = \frac{a+b}{2} = \frac{-1+1}{2} = 0 $$
+
+$$ V(X) = \frac{(b - a)^2}{12} = \frac{(1 - (-1))^2}{12} = \frac{1}{3} $$
+
+一様分布に従う乱数は `runif(n = サンプルサイズ, min = 下限, max = 上限)` で生成できる (`runif` = random + uniform)．
+
+```{r runif_example}
+runif(n = 5, min = -1, max = 1)
+```
+
+「サンプルサイズ 100 で一様乱数を生成して平均と分散を計算する」を 1,000 回繰り返す．このようなシミュレーションを「モンテカルロ・シミュレーション」と呼ぶ．
+
+```{r rv_uniform}
+runif_mean <- runif_var <- NULL
+for (i in 1:1000) {
+  set.seed(i)  # 再現性のため
+  runif_i <- runif(n = 100, min = -1, max = 1)
+  runif_mean <- c(runif_mean, mean(runif_i))
+  runif_var <- c(runif_var, var(runif_i))
+}
+summary(runif_mean)
+summary(runif_var)
+```
+
+
+
+# Sampling / サンプリング
+
+## Central limit theorem / 中心極限定理
+
+一様確率変数の標本平均の分布を求める．標本サイズが大きくなるほど正規分布に近づき，分布の分散が小さくなることが分かる．
+<!--
+Find the distribution of the sample mean of the uniform random variable $x \sim U(0, 1)$. We see that the larger the sample size, the closer to a normal distribution, and the smaller the variance of the distribution. Such a simulation is called a Monte Carlo simulation. 
+-->
+
+### $n=1$
+
+これは乱数そのものの分布と等しい．
+<!--
+This is equivalent to the distribution of the random numbers themselves. 
+-->
+
+$$ \bar{x} = x_i, \quad x_i \sim U(0, 1) $$
+
+```{r clt1}
+x_bar <- NULL  # create empty (null) object
+for (i in 1:10000) {
+  x_bar_i <- mean(runif(n = 1, min = 0, max = 1))
+  x_bar <- c(x_bar, x_bar_i)
+}
+hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=1")
+```
+
+### $n=2$
+
+$$ \bar{x} = \frac{1}{2} \sum_{i=1}^{2} x_i, \quad x_i \sim U(0, 1) $$
+
+```{r clt2}
+x_bar <- NULL
+for (i in 1:10000) {
+  x_bar_i <- mean(runif(n = 2, min = 0, max = 1))
+  x_bar <- c(x_bar, x_bar_i)
+}
+hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=2")
+```
+
+### $n=10$
+
+$$ \bar{x} = \frac{1}{10} \sum_{i=1}^{10} x_i, \quad x_i \sim U(0, 1) $$
+
+```{r clt10}
+x_bar <- NULL
+for (i in 1:10000) {
+  x_bar_i <- mean(runif(n = 10, min = 0, max = 1))
+  x_bar <- c(x_bar, x_bar_i)
+}
+hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=10",
+     xlim = c(0, 1))
+```
+
+### For advanced students / 上級者向け
+
+実は，`for`文を使わずに`sapply`関数を使って次のように書くこともできる：
+<!--
+In fact, we can also write the following using the `sapply` function without using the `for` function:
+-->
+
+`hist(sapply(X = 1:10000, FUN = function (x) mean(runif(10)) ), breaks = 50)`
+
+
+
+# Confidence interval / 信頼区間
+
+## Population mean with known $\sigma$ / 標準偏差が既知の場合の母平均
+
+標本平均が100，「母集団」の標準偏差が2，サンプルサイズが100の場合，信頼区間は次のように計算される．
+<!--
+For a sample mean of 100, **population** standard deviation of 2, and sample size of 100, the confidence interval is calculated as follows: 
+-->
+
+$$ \bar{x} \pm z \frac{\sigma}{\sqrt{n}} = 100 \pm 1.96 \frac{2}{\sqrt{100}} = 100 \pm 0.392, \quad \mbox{95% CI}: [99.61, 100.39] $$
+
+```{r ci_known}
+qnorm(p = 0.025, mean = 0, sd = 1)  # P(Z<z) = 0.025
+qnorm(p = 0.975, mean = 0, sd = 1)  # P(Z<z) = 0.975
+100 + qnorm(p = 0.025) * 2 / sqrt(100)  # lower limit
+100 + qnorm(p = 0.975) * 2 / sqrt(100)  # upper limit
+```
+
+## Population mean with unknown $\sigma$ / 標準偏差が未知の場合の母平均
+
+標本平均が100，「標本」標準偏差が2，サンプルサイズが100の場合，信頼区間は次のようになる．
+<!--
+For a sample mean of 100, **sample** standard deviation of 2, and sample size of 100, the confidence interval is calculated as follows: 
+-->
+
+$$ \bar{x} \pm t \frac{s}{\sqrt{n}} = 100 \pm 1.98 \frac{2}{\sqrt{100}} = 100 \pm 0.396, \quad \mbox{95% CI}: [99.60, 100.40] $$
+
+<!--
+Note that we use t-value, not z-value. 
+-->
+
+```{r ci_unknown}
+qt(p = 0.025, df = 100-1)  # P(T<t) = 0.025
+100 + qt(p = 0.025, df = 100-1) * 2 / sqrt(100)  # lower limit
+100 + qt(p = 0.975, df = 100-1) * 2 / sqrt(100)  # upper limit
+```
+
+### Using `t.test` function 
+
+$t$-検定を行う`t.test`という関数は信頼区間をついでに出力してくれる．
+<!--
+The function `t.test`, which performs a $t$-test (to be covered in the next class), also outputs a confidence interval. 
+-->
+
+```{r ci_unknown_ttest}
+wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
+mean(wage)  # mean 
+sd(wage)  # standard deviation 
+length(wage)  # sample size (length of the vector)
+mean(wage) + qt(p = 0.025, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # lower bound 
+mean(wage) + qt(p = 0.975, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # upper bound 
+t.test(wage)  # default: 95% CI
+t.test(wage, conf.level = 0.99)  # 99% CI
+```
+
+## Population proportion / 母比率
+
+$$ p \pm z \sqrt{\frac{p (1-p)}{n}} $$
+
+Example of [Banerjee, Duflo, and Glennerster (BMJ 2010)](https://www.bmj.com/content/340/bmj.c2220)
+
+382人の子供のうち148人がワクチンの予防接種を受けた．
+<!--
+Of the 382 children, 148 received immunizations. 
+-->
+
+```{r ci_prop}
+n1 <- 148; n0 <- 382  # intervention B
+p <- n1 / n0
+p
+p + qnorm(p = .025) * sqrt(p * (1 - p) / n0)  # lower limit of 95% CI
+p + qnorm(p = .975) * sqrt(p * (1 - p) / n0)  # upper limit
+```
+
+注：この数値は論文中で報告されている数値とは異なる．
+地理的なブロック（村）を用いてクラスター無作為化対照試験が実行されたため，著者らはこのデータの階層性を考慮したより複雑な計算をしていると思われる．
+<!--
+In fact, these figures differ from those reported in the paper. Because a cluster randomized controlled trial was performed using geographic blocks (at the village level), it is likely that the authors have performed a more complex calculation to account for the hierarchical nature of data. 
+-->
+
+
+
+# Statistical hypothesis testing / 統計的仮説検定
+
+## One-sample $t$ test for population mean / 1標本の母平均の $t$ 検定
+
+### Calculation from the sample mean and sd of the data / データの標本平均・標準偏差から計算
+
+賃金の母集団が正規分布で，$\sigma$ は未知，$\bar{x} = 1230, s=170.3, n = 10, \alpha=0.05$ とする．
+<!--
+Wage population is normally distributed, $\sigma$ is unknown, $\bar{x} = 1230$, $s=170.3$, $n = 10$, $\alpha=0.05$
+-->
+
+$$ H_0: \mu = 1100, \quad H_1: \mu \ne 1100 $$
+
+$$ t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}} = \frac{1230 - 1110}{170.3 / \sqrt{10}} \approx 2.41 $$
+$$ \Pr (T \le 2.41) = 0.98 , \quad 2 \times (1 - \Pr (T \le 2.41)) \approx 0.039 $$
+
+```{r t0}
+t_value <- (1230 - 1100) / (170.3 / sqrt(10))  # t value
+t_value
+pt(q = t_value, df = 10 - 1)  # Pr(T <= t)
+1 - pt(q = t_value, df = 10 - 1)  # one sided p value ... p = Pr(T > t)
+2 * (1 - pt(q = t_value, df = 10 - 1))  # two sided p value
+```
+
+よって，$H_0$ は棄却され $H_1$ が採択される．
+<!--
+Thus, $H_0$ is rejected and $H_1$ is accepted. 
+-->
+
+### Calculation from the data itself / データそのものから計算
+
+```{r t1}
+wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
+mean(wage); sd(wage)
+t.test(wage, mu = 1100)  # default: two sided ... H1 is [mu /= 1150]
+t.test(wage, mu = 1100, alternative = "greater")  # one sided ... H1 is [mu > 1150]
+```
+
+このように信頼区間も同時に計算してくれる．
+<!--
+In this way, the confidence intervals are calculated at the same time. 
+-->
+
+## Two-sample $t$ test for population mean / 2標本の母平均の $t$ 検定
+
+### Independent $t$ test
+
+#### Example of "wage" data 
+
+```{r t2}
+wage_jp <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # Japan
+wage_us <- c(900, 1300, 1200, 800, 1600, 850, 1000, 950)  # US
+t.test(wage_jp, wage_us)  # default: Welch's t test (assuming unequal variance)
+t.test(wage_jp, wage_us, var.equal = TRUE)  # t test (assuming equal variance)
+```
+
+#### Titanic data 
+
+データ読み込み．
+
+```{r titanic_read_data}
+titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/titanic3_csv.csv")
+```
+
+性別によって年齢の平均値が異なるかどうかの検定．
+
+```{r titanic_age_by_sex_ttest}
+t.test(x = titanic$age[titanic$sex == "female"], y = titanic$age[titanic$sex == "male"])
+t.test(age ~ sex, data = titanic)  # same as above
+```
+
+$p < 0.05$ なので，「年齢の平均値は男性と女性で等しい」という帰無仮説を有意水準5%で棄却できる．
+男性の標本平均の方が高いことと合わせると，「男性の方が有意に平均年齢が高い」と言える．
+
+サブサンプルに対して検定する場合やデータフレームを加工して作成した変数を用いて検定する場合はパイプ演算子を使うと便利（`tidyverse` が必要）．
+
+```{r titanic_age_by_sex_1st_class_ttest, message = FALSE}
+library(tidyverse)
+titanic %>% 
+  filter(pclass == 1) %>%
+  t.test(age ~ sex, data = .)
+```
+
+
+### Paired (dependent) $t$ test
+
+```{r t_paired}
+wage_w <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # wife
+wage_h <- c(900, 1300, 1200, 800, 1600, 850, 1000, 950, 1200, 1400)  # husband
+# length(wage_w); length(wage_h)  # = 10
+t.test(wage_w, wage_h, paired = TRUE)
+t.test(wage_w - wage_h)  # same as an ordinary "one-sample t test"
+```
+
+## Multiple testing problem: Simulation / 多重検定の問題に関するシミュレーション
+
+「標準正規分布 $N(0, 1)$ から $n=100$ の乱数をドローして，その平均が 0 に等しいかどうかを検定する」という手続きを1,000回繰り返し，検定で計算されたp値の分布を観察する．
+
+One-sample test for population mean: $H_0: \mu = 0$
+
+```{r mtp_sim}
+p_value_list <- NULL
+for (i in 1:1000) {
+  p_value_list <- c(p_value_list, t.test(rnorm(100, mean = 0, sd = 1))$p.value)
+}
+hist(p_value_list, breaks = 20)
+table(p_value_list <= 0.05)
+```
+
+母集団分布の母平均は $\mu = 0$ であるからこの帰無仮説は棄却されないことが望まれるが，上記の通り5%程度の確率で誤って棄却されてしまう（第一種の過誤）．
+
+この簡単なシミュレーションは有意水準 $\alpha$ が何を表しているかを理解するのに役立つと同時に，多重検定の問題を理解するのにも役立つ．
+
+
+.

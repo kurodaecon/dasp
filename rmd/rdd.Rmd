@@ -1,0 +1,212 @@
+---
+title: "Data Analysis Using Statistical Packages: Regression Discontinuity Design"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年4月 (Last update: 2024年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_pck, message = FALSE}
+library(tidyverse)
+```
+
+# Data 
+
+Angrist and Pischke (2014) Mastering 'Metrics, Princeton University Press. が提供する [法廷飲酒年齢のRD分析のデータとコード](https://www.masteringmetrics.com/resources/) を用いる．
+このデータは [Carpenter and Dobkin (AEJ: Applied 2009)](https://www.aeaweb.org/articles?id=10.1257/app.1.1.164) に基づく．
+
+注：このページは Carpenter and Dobkin (2009) の reproduction/replication というわけではない．
+
+上のサイトでは AEJfigs.dta というファイル名．
+Moodle には MMch4_RD.dta というファイル名でアップロードしている．
+
+主な変数
+
+* outcome 
+   * `all`: mortality rate from all causes (per 100,000) 
+* running variable 
+   * `agecell`: age cell = 19.07, 19.15, 19.23, 19.31, ..., 22.93
+
+つまり，個人レベルのデータではなく，年齢の cell を単位として集計されたデータである．
+
+<!--
+   * `internal`: mortality rate from internal causes 
+   * `external`: mortality rate from external causes 
+-->
+
+```{r read_data}
+setwd("c://ws_stat")
+mm <- haven::read_dta("MMch4_RD.dta")
+nrow(mm)
+mm <- mm %>%
+  mutate(
+    age = agecell - 21,  # centering 
+    over21 = ifelse(agecell >= 21, 1, 0),
+  )
+```
+
+## Reproduction/Replication by others
+
+* Philipp Leppert (2020) [R Tutorial: Regression Discontinuity Design](https://rpubs.com/phle/r_tutorial_regression_discontinuity_design)
+   * `rddtools` パッケージを使用
+   * [Yamamoto (2021)](https://rpubs.com/Ryohei/709855) はこの日本語版を含む
+* Twinkle Roy (2021) [Homework 6: Regression Discontinuity, Carpenter and Dobkin(2009)](https://rpubs.com/whineywiner/730934)
+   * タイトルの通り授業の宿題として作成された模様
+   * `rdd` パッケージを使用
+
+
+# Plot discontinuity 
+
+## Naive fitting 
+
+閾値（21歳）の前後で切片が「ジャンプ」するように線形モデルを推定．
+
+```{r naive_linear, message = FALSE, warning = FALSE}
+naive_linear <- lm(all ~ age + over21, data = mm)
+naive_linear$coefficients[3]  # size of `jump` 
+mm$allfit <- predict(naive_linear, newdata = mm)  # 回帰直線を引くために fitted value を計算
+ggplot(mm, aes(x = agecell, y = all)) +
+  geom_point() +
+  geom_line(aes(y = allfit)) 
+```
+
+縦軸（10万人当たり死亡率）が 8 ポイント近く「ジャンプ」している．
+
+これがもっとも単純な RD 分析．
+
+## Flexible fitting 
+
+閾値（21歳）の前後で別々の滑らかな曲線を当てはめる．
+
+* LOESS (locally estimated scatterplot smoothing) と呼ばれる局所回帰の手法を使用してデータに当てはまる曲線を推定しているが（引数 `method = loess`），この演習では理解する必要はない
+* `aes` の `col` として閾値の前と後を区別する factor を指定することで，閾値前後で別々の曲線が推定できる
+
+```{r lowess, message = FALSE, warning = FALSE}
+ggplot(mm, aes(x = agecell, y = all, col = factor(over21))) + 
+  geom_point() + 
+  geom_smooth(method = loess, se = FALSE) +
+  guides(color = FALSE)  # legend off 
+```
+
+縦軸（10万人当たり死亡率）が 10 ポイント近く「ジャンプ」している．
+
+cf. Carpenter and Dobkin (2009) Figure 3 
+
+## `rdrobust::rdplot` 関数を利用
+
+RDD 分析は [`rdrobust` パッケージ](https://cran.r-project.org/package=rdrobust) を用いて行うことができる．
+
+* 引数 `c` で cutoff を指定
+* デフォルトでは4次の多項式 (引数 `p = 4`) でフィッティング
+* デフォルトでは bin の数が小さすぎるので，`nbins` 引数で調整
+
+```{r rdrobust_plot}
+# install.packages("rdrobust")
+library(rdrobust)
+rdplot(y = mm$all, x = mm$agecell, c = 21, nbins = 50)
+```
+
+
+# Estimate the gap 
+
+## Using linear/quadratic model 
+
+Baseline: Linear 
+
+$$ y = \beta_0 + \beta_1 1(\mbox{Age} \ge 21) + \beta_2 \mbox{Age} + \beta_3 1(\mbox{Age} \ge 21) \times \mbox{Age} +u \\ = \begin{cases} (\beta_0 + \beta_1) + (\beta_2 + \beta_3) \mbox{Age} +u  \quad \mbox{if Age} \ge 21 \\ \beta_0 + \beta_2 \mbox{Age} +u \quad \mbox{if Age} < 21 \end{cases} $$
+
+* 不均一分散に頑健な標準誤差を計算するために `fixest::feols` を使う．
+* 興味があるのは `over21` 変数の係数．これが閾値（21歳）前後の「ジャンプ」すなわち因果効果を捕捉している．
+* `over21:age` は，`age` 変数の係数が閾値の前後で異なってよいことを表現するためのもの．21歳未満では `age` の係数，21歳以上では `age` の係数と `over21:age` の係数を足したもの．
+
+```{r feols_est, message = FALSE}
+library(fixest)
+feols_linear <- feols(all ~ over21 + age + over21:age, data = mm, vcov = "hetero")
+feols_quad <- feols(all ~ over21 + age + I(age^2) + over21 + over21:age + over21:I(age^2), 
+                    data = mm, vcov = "hetero")
+library(modelsummary)
+modelsummary(list(feols_linear, feols_quad), 
+             gof_omit = "AIC|BIC|RMSE", stars = TRUE)
+```
+
+
+## `rdrobust::rdrobust` 関数を利用
+
+何らかのカーネル関数を用いて推定する．
+デフォルトは三角カーネル（`kernel = "triangular"`）．
+
+```{r rdrobust_est}
+summary(rdrobust(y = mm$all, x = mm$agecell, c = 21))
+```
+
+9.6 ポイントの「ジャンプ」が認められる．
+
+<!--
+robust な信頼区間
+https://doi.org/10.1093/ectj/utz022
+-->
+
+## Honest confidence interval （おまけ）
+
+定式化によって推定値は大きく影響を受ける可能性があり，定式化の誤りを考慮して推定値の信頼区間を計算する手法が開発されている．
+
+[Kolesár and Rothe (AER 2018)](https://www.aeaweb.org/articles?id=10.1257/aer.20160945) に基づく “honest” な信頼区間を計算する．
+
+この計算は `RDHonest::RDHonest` で計算できるが，この [パッケージ `RDHonest`](https://github.com/kolesarm/RDHonest) は CRAN には含まれないため，パッケージ作成者個人の GitHub からダウンロードする．
+GitHub からパッケージをダウンロードするためには `remotes` パッケージが必要．
+
+```{r honest, message = FALSE}
+# install.packages("remotes")
+# remotes::install_github("kolesarm/RDHonest")
+library(RDHonest)
+RDHonest(all ~ agecell, data = mm, cutoff = 21)
+```
+
+
+# McCrary test （おまけ）
+
+RDD の識別の重要な仮定は running variable の閾値前後における counterfactual outcome の条件付き期待値の連続性である．
+しかしながら，たとえば individual 自身が running variable を「操作」できる場合 (sorting)，この仮定は満たされない場合がある．
+
+そこで，[McCrary (JE 2008)](https://doi.org/10.1016/j.jeconom.2007.05.005) が提案した密度検定を行いこの仮定を検証する．
+閾値の前後で running variable が不連続に多くなっていれば何らかのメカニズムによって sorting が生じていることになり，連続性の仮定を満たさない．
+
+検定には `rdd` パッケージの `DCdensity` 関数を用いる．
+
+注：Carpenter and Dobkin (2009) の running variable は cell であるためこの検定方法は不適であるし，そもそも年齢を直接操作することはできない．
+
+以下にパッケージの help に書かれているサンプルコードを示す．
+Running variable `running_variable` が処置を受ける閾値を 0 とし，その前後で density が異なるようにデータを生成する．
+
+```{r mccrary_data, message = FALSE}
+# install.packages("rdd")
+library(rdd)
+set.seed(2)
+running_variable <- runif(1000, -1, 1)  # running variable 
+running_variable <- running_variable + 2 * (runif(1000, -1, 1) > 0 & running_variable < 0)
+hist(running_variable, breaks = 100, freq = FALSE)
+abline(v = 0, col = 2, lwd = 2, lty = 2)  # red dashed vertical line 
+```
+
+`rdd::DCdensity(runvar = running variable, cutpoint = cutoff)` で検定を行う．
+
+出力されるのは「Sorting は生じていない」という帰無仮説のもとでの p 値．
+p 値が有意水準（5%など）を下回る場合，帰無仮説は棄却され，「Sorting が生じているだろう」と結論付けられる．
+
+```{r mccrary_test, message = FALSE}
+rdd::DCdensity(runvar = running_variable, cutpoint = 0)
+```
+
+縦軸を相対頻度（密度）に設定したヒストグラムと比較すると，この検定が何を行っているかをイメージできるだろう．
+
+
+.
