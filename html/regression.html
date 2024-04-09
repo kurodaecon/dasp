@@ -12,7 +12,7 @@
 <meta name="author" content="Sho Kuroda / 黒田翔" />
 
 
-<title>Data Analysis Using Statistical Packages: Regression</title>
+<title>Data Analysis Using Statistical Packages: Regression Analysis</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1479,7 +1479,7 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">Data Analysis Using Statistical Packages:
-Regression</h1>
+Regression Analysis</h1>
 <h4 class="author">Sho Kuroda / 黒田翔</h4>
 <h4 class="date">2024年3月 (Last update: 2024年3月)</h4>
 
@@ -1878,7 +1878,7 @@ resid_restricted &lt;- sum(lm_swiss_restricted$resid^2)</code></pre>
 <p>計算した <span class="math inline">\(Q, Q_R\)</span> を用いて <span class="math inline">\(F\)</span> 値を計算し，臨界値と比較する．</p>
 <pre class="r"><code>((resid_restricted - resid_unrestricted) / 2) / (resid_unrestricted / (nrow(swiss) - 2 - 1))  # F</code></pre>
 <pre><code>## [1] 22.48799</code></pre>
-<pre class="r"><code>qf(p = 0.05, df1 = 2, df2 = nrow(swiss) - 2 - 1, lower.tail = F)</code></pre>
+<pre class="r"><code>qf(p = 0.05, df1 = 2, df2 = nrow(swiss) - 2 - 1, lower.tail = F)  # critical value </code></pre>
 <pre><code>## [1] 3.209278</code></pre>
 <pre class="r"><code># qf(p = 0.95, df1 = 2, df2 = nrow(swiss) - 2 - 1, lower.tail = T)  # same as above</code></pre>
 <p><span class="math inline">\(F \approx 22.5 &gt; \mbox{critical
@@ -1932,49 +1932,32 @@ summary(lm_swiss)</code></pre>
 <p><span class="math display">\[ H_0: \beta_{Ed} = \beta_{Ex} = 0
 \]</span></p>
 <pre class="r"><code>car::linearHypothesis(lm_swiss, c(&quot;Examination = 0&quot;, &quot;Education = 0&quot;))</code></pre>
-<pre><code>## Linear hypothesis test
-## 
-## Hypothesis:
-## Examination = 0
-## Education = 0
-## 
-## Model 1: restricted model
-## Model 2: Fertility ~ Examination + Education
-## 
-##   Res.Df    RSS Df Sum of Sq      F   Pr(&gt;F)    
-## 1     46 7178.0                                 
-## 2     44 3549.6  2    3628.3 22.488 1.87e-07 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>（出力は省略）</p>
 <p><span class="math display">\[ H_0: \beta_{Ed} + \beta_{Ex} = 1
 \]</span></p>
 <pre class="r"><code>car::linearHypothesis(lm_swiss, &quot;Examination + Education = 1&quot;)</code></pre>
-<pre><code>## Linear hypothesis test
-## 
-## Hypothesis:
-## Examination  + Education = 1
-## 
-## Model 1: restricted model
-## Model 2: Fertility ~ Examination + Education
-## 
-##   Res.Df     RSS Df Sum of Sq      F    Pr(&gt;F)    
-## 1     45 16001.1                                  
-## 2     44  3549.6  1     12452 154.35 5.523e-16 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>（出力は省略）</p>
 <p>See alos: <a href="https://www.econometrics-with-r.org/7.3-joint-hypothesis-testing-using-the-f-statistic.html" class="uri">https://www.econometrics-with-r.org/7.3-joint-hypothesis-testing-using-the-f-statistic.html</a></p>
 </div>
 </div>
 <div id="white-standard-error-ホワイトの標準誤差" class="section level2" number="3.4">
 <h2><span class="header-section-number">3.4</span> White standard error
 / ホワイトの標準誤差</h2>
-<p><span class="math display">\[ s.e.(\hat{\beta}) = \frac{1}{n s_X^2}
-\sqrt{\sum_i (X_i - \bar{X})^2 \hat{u}_i^2} \]</span></p>
+<p>残差 <span class="math inline">\(\hat{u} = Y - \hat{Y}\)</span>
+を用いた不均一分散に頑健な標準誤差（White によるオリジナルの方法）．</p>
+<p><span class="math display">\[ s.e.(\hat{\beta}) = \sqrt{ \frac{\sum_i
+(X_i - \bar{X})^2 \hat{u}_i^2}{\left[\sum_i (X_i - \bar{X})^2\right]^2}
+} \]</span></p>
 <pre class="r"><code>x &lt;- swiss$Examination
 lm_swiss &lt;- lm(Fertility ~ Examination, data = swiss)
-sqrt(sum((x - mean(x))^2 * lm_swiss$resid^2)) / (nrow(swiss) * var(x))  # White SE (original)</code></pre>
-<pre><code>## [1] 0.173891</code></pre>
-<pre class="r"><code>sqrt(sum((x - mean(x))^2 * lm_swiss$resid^2) / (sum((x - mean(x))^2))^2 * nrow(swiss) / (nrow(swiss) - 2)) # White SE (modified)</code></pre>
+sqrt(sum((x - mean(x))^2 * lm_swiss$resid^2) / (sum((x - mean(x))^2))^2)  # White SE (original)</code></pre>
+<pre><code>## [1] 0.1776713</code></pre>
+<p>誤差分散を不偏推定するために自由度を調整する場合（一般に HC1
+として知られる）．</p>
+<p><span class="math display">\[ s.e._{HC1}(\hat{\beta}) = \sqrt{
+\frac{n}{n-(k+1)} \frac{\sum_i (X_i - \bar{X})^2
+\hat{u}_i^2}{\left[\sum_i (X_i - \bar{X})^2\right]^2} } \]</span></p>
+<pre class="r"><code>sqrt(nrow(swiss) / (nrow(swiss) - 2) * sum((x - mean(x))^2 * lm_swiss$resid^2) / (sum((x - mean(x))^2))^2)</code></pre>
 <pre><code>## [1] 0.1815766</code></pre>
 <p><code>fixest</code> パッケージで推定する場合．</p>
 <pre class="r"><code># install.packages(&quot;fixest&quot;)
