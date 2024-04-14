@@ -42,6 +42,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 
 ## Learning resources for R programming, focusing on statistics and causal inference, developed by others 
 
+* Kabacoff (2024) [Modern Data Visualization with R](https://rkabacoff.github.io/datavis/)
 * Heiss (2020) [Using R for Introductory Econometrics](https://www.urfie.net/)
 * Carilli (2021) [R Companion to Real Econometrics](https://bookdown.org/carillitony/bailey/)
 * Bauer (2020) [Applied Causal Analysis (with R)](https://bookdown.org/paul/applied-causal-analysis/)
