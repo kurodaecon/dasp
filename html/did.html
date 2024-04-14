@@ -3059,7 +3059,7 @@ Estimation by hand</h2>
 <p>Period = 6 で処置が始まるので，その直前の Period = 5 を reference
 point として推定する．</p>
 <p><span class="math display">\[ y_{it} = \beta_0 + \beta_1 x_{it1} +
-\sum_{t = \{1, \ldots, 4,6,\ldots,10 \}} \gamma_t (\mbox{Treat})_i
+\sum_{t \in \{1, \ldots, 4,6,\ldots,10 \}} \gamma_t (\mbox{Treat})_i
 \times 1(\mbox{Period}_t = 1) + \alpha_i + \lambda_t + \epsilon_{it}
 \]</span></p>
 <pre class="r"><code>base_did_mod &lt;- base_did %&gt;% 

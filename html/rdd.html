@@ -1710,7 +1710,6 @@ Regression Discontinuity Design</h1>
 </div>
 
 
-<pre class="r"><code>library(tidyverse)</code></pre>
 <div id="data" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Data</h1>
 <p>Angrist and Pischke (2014) Mastering ’Metrics, Princeton University
@@ -1740,6 +1739,7 @@ MMch4_RD.dta というファイル名でアップロードしている．</p>
    * `external`: mortality rate from external causes 
 -->
 <pre class="r"><code>setwd(&quot;c://ws_stat&quot;)
+library(tidyverse)
 mm &lt;- haven::read_dta(&quot;MMch4_RD.dta&quot;)
 nrow(mm)</code></pre>
 <pre><code>## [1] 50</code></pre>

@@ -1607,8 +1607,8 @@ See [Rで推定する回帰モデル入門](https://rpubs.com/kuroda/regression0
 <p><span class="math display">\[ \log L (\beta) = - \frac{n}{2} \log (2
 \pi \sigma^2) - \frac{1}{2 \sigma^2} \sum_i (y_i - x_i&#39; \beta)^2
 \]</span></p>
-<p>ここで $ x_i’ = _0 + <em>1 x</em>{i2} + <em>2 x</em>{i2} + $
-である．</p>
+<p>ここで <span class="math inline">\(x_{i}&#39; \beta = \beta_0 +
+\beta_1 x_{i1} + \beta_2 x_{i2}\)</span> である．</p>
 <p>引数 <code>param</code> は k+1 個のパラメタベクトル． k
 は定数項を含めた説明変数の数． 1 つ目から k 個目までが回帰係数で，k+1
 個目は <span class="math inline">\(\sigma^2\)</span>．</p>
