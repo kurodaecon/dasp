@@ -1501,8 +1501,15 @@ Rプログラム，薄い灰色で塗りつぶされた箇所）の例</p>
 <li>Rを利用：<a href="https://cran.ism.ac.jp/">Rをダウンロード</a>
 <ul>
 <li>コンソールに直接コピーアンドペーストして「Enter」（Macの場合は「Return」）</li>
-<li>「ファイル」→「新しいスクリプト」にコピーアンドペーストして，実行する箇所を選択
-→ 「Ctrl」＋「R」</li>
+<li>新しいスクリプトにコピーアンドペーストする場合
+<ul>
+<li>Windows:
+「ファイル」→「新しいスクリプト」にペーストして，実行する箇所を選択 →
+「Ctrl」＋「R」</li>
+<li>Mac:
+白い紙のアイコンをクリックして開いたスクリプトにペーストし，実行する箇所を選択
+→ 「Command」＋「Return」</li>
+</ul></li>
 <li>「ファイル」→「新しいスクリプト」に「写経」（コピーアンドペーストしないで一字一句書き写すこと）して実行．一番面倒だが，一番勉強になる</li>
 </ul></li>
 <li>RStudioを利用：Rをダウンロードしてから <a href="https://posit.co/download/rstudio-desktop/">RStudioをダウンロード</a>
@@ -2121,10 +2128,7 @@ function</h2>
 <p>Tips. <code>{ }</code> の中が1行だけの場合は <code>{ }</code>
 を省略できる．</p>
 <pre class="r"><code>for (y in 2090:2110) if (is_leap(year = y)) print(y)</code></pre>
-<pre><code>## [1] 2092
-## [1] 2096
-## [1] 2104
-## [1] 2108</code></pre>
+<p>（出力は省略）</p>
 <!--
 中級者向け
 (2090:2110)[sapply(2090:2110, is_leap)]

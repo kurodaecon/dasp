@@ -1658,16 +1658,24 @@ distribution table of quantitative data / 数量データの度数分布表</h2>
 <li>「[0, 20)」は 0 以上 20 未満．右は閉じない（左側が閉じる）ので
 <code>right = FALSE</code> 引数を追加</li>
 </ul>
-<pre class="r"><code>titanic_age_interval &lt;- cut(titanic$age, breaks = c(0, 20, 60, 100), right = FALSE)
+<pre class="r"><code>titanic_age_interval &lt;- cut(titanic$age, breaks = c(0, 20, 40, 60, 100), right = FALSE)
 # [right = F] means intervals should not be closed on the right
 table(titanic_age_interval)</code></pre>
 <pre><code>## titanic_age_interval
-##   [0,20)  [20,60) [60,100) 
-##      225      781       40</code></pre>
+##   [0,20)  [20,40)  [40,60) [60,100) 
+##      225      576      205       40</code></pre>
 <pre class="r"><code>table(titanic_age_interval) / sum(table(titanic_age_interval))  # relative frequency</code></pre>
 <pre><code>## titanic_age_interval
-##     [0,20)    [20,60)   [60,100) 
-## 0.21510516 0.74665392 0.03824092</code></pre>
+##     [0,20)    [20,40)    [40,60)   [60,100) 
+## 0.21510516 0.55066922 0.19598470 0.03824092</code></pre>
+<p>同様に，分割表は以下のように作成できる．</p>
+<pre class="r"><code>table(titanic_age_interval, titanic$survived)</code></pre>
+<pre><code>##                     
+## titanic_age_interval   0   1
+##             [0,20)   119 106
+##             [20,40)  351 225
+##             [40,60)  121  84
+##             [60,100)  28  12</code></pre>
 </div>
 <div id="mean-平均" class="section level2" number="3.3">
 <h2><span class="header-section-number">3.3</span> Mean / 平均</h2>
@@ -1787,7 +1795,7 @@ denominator of the sample variance <span class="math inline">\(n-1\)</span>?</h3
 <p>平均1，分散1の乱数を生成する <code>rnorm</code>
 関数を使ってシミュレーションを行って確認してみる．</p>
 <pre class="r"><code>var(rnorm(n = 5, mean = 0, sd = 1))</code></pre>
-<pre><code>## [1] 1.309828</code></pre>
+<pre><code>## [1] 0.740988</code></pre>
 <p>シミュレーション</p>
 <ul>
 <li><code>rnorm(n = サンプルサイズ, mean = 平均, sd = 標準偏差)</code>
