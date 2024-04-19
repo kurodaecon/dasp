@@ -12,7 +12,7 @@
 <meta name="author" content="Sho Kuroda / 黒田翔" />
 
 
-<title>Data Analysis Using Statistical Packages: Basics of Inferential statistics</title>
+<title>Data Analysis Using Statistical Packages: Basics of Inferential Statistics</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1479,7 +1479,7 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">Data Analysis Using Statistical Packages:
-Basics of Inferential statistics</h1>
+Basics of Inferential Statistics</h1>
 <h4 class="author">Sho Kuroda / 黒田翔</h4>
 <h4 class="date">2024年4月 (Last update: 2024年4月)</h4>
 
@@ -1498,7 +1498,8 @@ Variance of random variable</h2>
 \]</span></p>
 <p><span class="math display">\[ \sigma^2 = V(X) = E[(X-E(X))^2] =
 \sum_j^k (x_j - E(X))^2 f(x_j) = E(X^2) - (E(X))^2 \]</span></p>
-<p>連続確率変数の場合</p>
+<p>連続確率変数の場合（ここでは <span class="math inline">\(f\)</span>
+は確率密度関数）</p>
 <p><span class="math display">\[ \mu = E(X) = \int_{-\infty}^{\infty} x
 f(x) dx \]</span></p>
 <p><span class="math display">\[ \sigma^2 = V(X) =
@@ -1525,10 +1526,19 @@ sum(dice * (1/6))  # definition of expectation</code></pre>
 \right) ^2 \frac{1}{6} \approx 2.917 \]</span></p>
 <pre class="r"><code>sum((dice - mean(dice))^2 * (1/6))  # variance: sum[(x-E(X))*f(x)]</code></pre>
 <pre><code>## [1] 2.916667</code></pre>
-<p><code>var(dice)</code> は 3.5 となり，上記と一致しないが，これは
-<code>var</code>
-関数が標本分散（不偏分散）を計算するためである．<code>3.5*(n-1)/n = 3.5*5/6 ≒ 2.9</code>
-である．</p>
+<p>なお，<code>var(dice)</code> は 3.5
+となり，上記と一致しないが，これは <code>var</code>
+関数が標本を引数として標本分散（不偏分散）を計算するためである．
+<code>dice</code>
+は標本ではなく母集団なので，この場合は母分散を計算しなければならない．</p>
+<p>cf. 標本分散 <span class="math inline">\(s^2\)</span> と母分散 <span class="math inline">\(\sigma^2\)</span></p>
+<p><span class="math display">\[ s^2 = \frac{1}{n-1} \sum_i
+(x_i-\bar{x})^2, \quad \sigma^2 = \frac{1}{n} \sum_i (x_i-\mu)^2
+\]</span></p>
+<p>標本分散に <span class="math inline">\((n-1)/n\)</span>
+を乗じて母分散に変換できる．</p>
+<pre class="r"><code>3.5 * (6-1) / 6  # approx. 2.917</code></pre>
+<pre><code>## [1] 2.916667</code></pre>
 <p><span class="math inline">\(V(X) = E(X^2) - (E(X))^2\)</span>
 でもある．</p>
 <pre class="r"><code>sum(dice^2 * (1/6)) - sum(dice * (1/6))^2  # variance: E(X^2)-E(X)^2</code></pre>
@@ -1580,12 +1590,14 @@ numbers / 乱数の生成</h2>
 r (random) + unif (uniform distribution) から来ている． <!--
 To draw random numbers from a uniform distribution, use the `runif` function. The function name comes from r (random) + unif (uniform distribution).
 --></p>
+<p><code>runif(n = サンプルサイズ, min = 下限, max = 上限)</code>
+で乱数を生成．</p>
 <pre class="r"><code>runif(n = 5, min = 0, max = 1)</code></pre>
-<pre><code>## [1] 0.3643732 0.5337379 0.2054425 0.7926579 0.7097652</code></pre>
+<pre><code>## [1] 0.29715894 0.27265571 0.46258601 0.67950573 0.09897916</code></pre>
 <pre class="r"><code>runif(5, 0, 1)  # 引数の順番を守れば「n=」などを省略可</code></pre>
-<pre><code>## [1] 0.7122370 0.5318734 0.1858128 0.6586689 0.9585829</code></pre>
-<pre class="r"><code>runif(5, 0, 1)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）</code></pre>
-<pre><code>## [1] 0.7438739 0.6539080 0.2009139 0.4914709 0.9517454</code></pre>
+<pre><code>## [1] 0.04956765 0.46852701 0.44102886 0.23825383 0.42990961</code></pre>
+<pre class="r"><code>runif(5)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）</code></pre>
+<pre><code>## [1] 0.8443760 0.5234901 0.4353203 0.3651927 0.2525658</code></pre>
 <p>乱数をドローするたびに異なる値が出力される．
 再現性のために乱数のシードを指定することができる．</p>
 <pre class="r"><code>set.seed(0)
@@ -1615,18 +1627,26 @@ variance: Random variables from the uniform distribution</h3>
 0 \]</span></p>
 <p><span class="math display">\[ V(X) = \frac{(b - a)^2}{12} = \frac{(1
 - (-1))^2}{12} = \frac{1}{3} \]</span></p>
-<p>一様分布に従う乱数は
-<code>runif(n = サンプルサイズ, min = 下限, max = 上限)</code>
-で生成できる (<code>runif</code> = random + uniform)．</p>
-<pre class="r"><code>runif(n = 5, min = -1, max = 1)</code></pre>
-<pre><code>## [1]  0.539682840 -0.004601516  0.435237017  0.983812190 -0.239929641</code></pre>
 <p>「サンプルサイズ 100 で一様乱数を生成して平均と分散を計算する」を
-1,000
-回繰り返す．このようなシミュレーションを「モンテカルロ・シミュレーション」と呼ぶ．</p>
-<pre class="r"><code>runif_mean &lt;- runif_var &lt;- NULL
+1,000 回繰り返し，1,000個の平均と分散の分布を観察する．
+このようなシミュレーションを「モンテカルロ・シミュレーション」と呼ぶ．</p>
+<ul>
+<li><code>for</code> 文を使って，乱数生成，平均と分散の計算，記録を行う
+<ul>
+<li>計算結果を格納するオブジェクトを <code>runif_mean</code> と
+<code>runif_var</code> という名前で作成．<code>NULL</code>
+を代入することで，空のオブジェクトを作成</li>
+<li><code>c(直前までの計算結果のベクトル, 今回の計算結果)</code> で
+append</li>
+</ul></li>
+</ul>
+<pre class="r"><code>runif_mean &lt;- NULL  # 標本平均を格納しておくオブジェクト
+runif_var &lt;- NULL  # 標本分散を 〃
 for (i in 1:1000) {
   set.seed(i)  # 再現性のため
+  # 乱数を生成
   runif_i &lt;- runif(n = 100, min = -1, max = 1)
+  # 平均・分散を計算して上で作成したオブジェクトに格納 (append) 
   runif_mean &lt;- c(runif_mean, mean(runif_i))
   runif_var &lt;- c(runif_var, var(runif_i))
 }
@@ -1703,11 +1723,11 @@ In fact, we can also write the following using the `sapply` function without usi
 <div id="confidence-interval-信頼区間" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> Confidence interval /
 信頼区間</h1>
-<div id="population-mean-with-known-sigma-標準偏差が既知の場合の母平均" class="section level2" number="3.1">
+<div id="population-mean-with-known-sigma-母集団の標準偏差が既知の場合の母平均" class="section level2" number="3.1">
 <h2><span class="header-section-number">3.1</span> Population mean with
 known <span class="math inline">\(\sigma\)</span> /
-標準偏差が既知の場合の母平均</h2>
-<p>標本平均が100，「母集団」の標準偏差が2，サンプルサイズが100の場合，信頼区間は次のように計算される．
+母集団の標準偏差が既知の場合の母平均</h2>
+<p>標本平均が100，「母集団」の標準偏差が2，サンプルサイズが100の場合，信頼水準95%の信頼区間は次のように計算される．
 <!--
 For a sample mean of 100, **population** standard deviation of 2, and sample size of 100, the confidence interval is calculated as follows: 
 --></p>
@@ -1723,11 +1743,11 @@ For a sample mean of 100, **population** standard deviation of 2, and sample siz
 <pre class="r"><code>100 + qnorm(p = 0.975) * 2 / sqrt(100)  # upper limit</code></pre>
 <pre><code>## [1] 100.392</code></pre>
 </div>
-<div id="population-mean-with-unknown-sigma-標準偏差が未知の場合の母平均" class="section level2" number="3.2">
+<div id="population-mean-with-unknown-sigma-母集団の標準偏差が未知の場合の母平均" class="section level2" number="3.2">
 <h2><span class="header-section-number">3.2</span> Population mean with
 unknown <span class="math inline">\(\sigma\)</span> /
-標準偏差が未知の場合の母平均</h2>
-<p>標本平均が100，「標本」標準偏差が2，サンプルサイズが100の場合，信頼区間は次のようになる．
+母集団の標準偏差が未知の場合の母平均</h2>
+<p>標本平均が100，「標本」標準偏差が2，サンプルサイズが100の場合，信頼水準95%の信頼区間は次のようになる．
 <!--
 For a sample mean of 100, **sample** standard deviation of 2, and sample size of 100, the confidence interval is calculated as follows: 
 --></p>
@@ -1750,7 +1770,8 @@ Note that we use t-value, not z-value.
 <!--
 The function `t.test`, which performs a $t$-test (to be covered in the next class), also outputs a confidence interval. 
 --></p>
-<p>まずは <code>t.test</code> 関数を使わない場合．</p>
+<p>まずは <code>t.test</code> 関数を使わない場合．
+信頼水準95%とする．</p>
 <pre class="r"><code>wage &lt;- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
 mean(wage)  # mean </code></pre>
 <pre><code>## [1] 1230</code></pre>
@@ -1795,6 +1816,9 @@ mean(wage)  # mean </code></pre>
 <div id="population-proportion-母比率" class="section level2" number="3.3">
 <h2><span class="header-section-number">3.3</span> Population proportion
 / 母比率</h2>
+<p>標本の比率 <span class="math inline">\(p\)</span>，サンプルサイズ
+<span class="math inline">\(n\)</span>，z 値 (such that <span class="math inline">\(\Pr(Z \le z) = 1 - \alpha\)</span>)
+より次のように母比率の信頼区間が計算される．</p>
 <p><span class="math display">\[ p \pm z \sqrt{\frac{p (1-p)}{n}}
 \]</span></p>
 <p>Example of <a href="https://www.bmj.com/content/340/bmj.c2220">Banerjee, Duflo, and
@@ -1835,11 +1859,12 @@ Wage population is normally distributed, $\sigma$ is unknown, $\bar{x} = 1230$, 
 <p><span class="math display">\[ H_0: \mu = 1100, \quad H_1: \mu \ne
 1100 \]</span></p>
 <p><span class="math display">\[ t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}}
-= \frac{1230 - 1110}{170.3 / \sqrt{10}} \approx 2.41 \]</span> <span class="math display">\[ \Pr (T \le 2.41) = 0.98 , \quad 2 \times (1 -
-\Pr (T \le 2.41)) \approx 0.039 \]</span></p>
+= \frac{1230 - 1110}{170.3 / \sqrt{10}} \approx 2.41 \]</span></p>
 <pre class="r"><code>t_value &lt;- (1230 - 1100) / (170.3 / sqrt(10))  # t value
 t_value</code></pre>
 <pre><code>## [1] 2.413952</code></pre>
+<p><span class="math display">\[ \Pr (T \le 2.41) = 0.98 , \quad p = 2
+\times (1 - \Pr (T \le 2.41)) \approx 0.039 \]</span></p>
 <pre class="r"><code>pt(q = t_value, df = 10 - 1)  # Pr(T &lt;= t)</code></pre>
 <pre><code>## [1] 0.9805023</code></pre>
 <pre class="r"><code>1 - pt(q = t_value, df = 10 - 1)  # one sided p value ... p = Pr(T &gt; t)</code></pre>
@@ -1853,11 +1878,12 @@ Thus, $H_0$ is rejected and $H_1$ is accepted.
 <div id="calculation-from-the-data-itself-データそのものから計算" class="section level3" number="4.1.2">
 <h3><span class="header-section-number">4.1.2</span> Calculation from
 the data itself / データそのものから計算</h3>
+<p><code>t.test(ベクトル, mu = 帰無仮説の仮説値)</code> と指定．</p>
 <pre class="r"><code>wage &lt;- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
 mean(wage); sd(wage)</code></pre>
 <pre><code>## [1] 1230</code></pre>
 <pre><code>## [1] 170.2939</code></pre>
-<pre class="r"><code>t.test(wage, mu = 1100)  # default: two sided ... H1 is [mu /= 1150]</code></pre>
+<pre class="r"><code>t.test(wage, mu = 1100)  # default: two sided ... H1 is [mu != 1100]</code></pre>
 <pre><code>## 
 ##  One Sample t-test
 ## 
@@ -1869,7 +1895,9 @@ mean(wage); sd(wage)</code></pre>
 ## sample estimates:
 ## mean of x 
 ##      1230</code></pre>
-<pre class="r"><code>t.test(wage, mu = 1100, alternative = &quot;greater&quot;)  # one sided ... H1 is [mu &gt; 1150]</code></pre>
+<p>片側検定をする場合は <code>alternative = &quot;greater&quot;</code> または
+<code>= &quot;less&quot;</code> 引数で指定．</p>
+<pre class="r"><code>t.test(wage, mu = 1100, alternative = &quot;greater&quot;)  # one sided ... H1 is [mu &gt; 1100]</code></pre>
 <pre><code>## 
 ##  One Sample t-test
 ## 
@@ -1894,6 +1922,8 @@ In this way, the confidence intervals are calculated at the same time.
 <div id="example-of-wage-data" class="section level4" number="4.2.1.1">
 <h4><span class="header-section-number">4.2.1.1</span> Example of “wage”
 data</h4>
+<p><code>t.test(x = 1つ目のベクトル, y = 2つ目のベクトル)</code>
+のように指定する．</p>
 <pre class="r"><code>wage_jp &lt;- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # Japan
 wage_us &lt;- c(900, 1300, 1200, 800, 1600, 850, 1000, 950)  # US
 t.test(wage_jp, wage_us)  # default: Welch&#39;s t test (assuming unequal variance)</code></pre>
@@ -1938,6 +1968,8 @@ t.test(wage_jp, wage_us)  # default: Welch&#39;s t test (assuming unequal varian
 ## sample estimates:
 ## mean of x mean of y 
 ##  28.68709  30.58523</code></pre>
+<p><code>t.test(変数 ~ グループ, data = dataset)</code>
+で，2つのグループ間の検定が可能．</p>
 <pre class="r"><code>t.test(age ~ sex, data = titanic)  # same as above</code></pre>
 <pre><code>## 
 ##  Welch Two Sample t-test
@@ -1955,6 +1987,13 @@ t.test(wage_jp, wage_us)  # default: Welch&#39;s t test (assuming unequal varian
 男性の標本平均の方が高いという事実と合わせると，「男性の方が有意に平均年齢が高い」と言える．</p>
 <p>サブサンプルに対して検定する場合やデータフレームを加工して作成した変数を用いて検定する場合はパイプ演算子を使うと便利（<code>tidyverse</code>
 が必要）．</p>
+<ul>
+<li><code>t.test</code>
+の直前のパイプ演算子より前の部分（データフレーム）が <code>t.test</code>
+関数の第一引数にならないため，<code>t.test</code> 関数内で
+<code>data = .</code> を明示的に書く必要がある（<code>.</code>
+がパイプ演算子の前の部分を受け取る）</li>
+</ul>
 <pre class="r"><code>library(tidyverse)
 titanic %&gt;% 
   filter(pclass == 1) %&gt;%
@@ -1975,6 +2014,8 @@ titanic %&gt;%
 <div id="paired-dependent-t-test" class="section level3" number="4.2.2">
 <h3><span class="header-section-number">4.2.2</span> Paired (dependent)
 <span class="math inline">\(t\)</span> test</h3>
+<p>対応のある t 検定は <code>t.test</code> の引数で
+<code>paired = TRUE</code> 引数を追加して計算する．</p>
 <pre class="r"><code>wage_w &lt;- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # wife
 wage_h &lt;- c(900, 1300, 1200, 800, 1600, 850, 1000, 950, 1200, 1400)  # husband
 # length(wage_w); length(wage_h)  # = 10
@@ -2002,6 +2043,7 @@ t.test(wage_w, wage_h, paired = TRUE)</code></pre>
 ## sample estimates:
 ## mean of x 
 ##       110</code></pre>
+<p>上記の通り「要素ごとの差」という一標本の検定になっている．</p>
 </div>
 </div>
 <div id="multiple-testing-problem-simulation-多重検定の問題に関するシミュレーション" class="section level2" number="4.3">
@@ -2009,25 +2051,64 @@ t.test(wage_w, wage_h, paired = TRUE)</code></pre>
 problem: Simulation / 多重検定の問題に関するシミュレーション</h2>
 <p>「標準正規分布 <span class="math inline">\(N(0, 1)\)</span> から
 <span class="math inline">\(n=100\)</span>
-の乱数をドローして，その平均が 0
-に等しいかどうかを検定する」という手続きを1,000回繰り返し，検定で計算されたp値の分布を観察する．</p>
-<p>One-sample test for population mean: <span class="math inline">\(H_0:
-\mu = 0\)</span></p>
+の乱数をドローして，その平均が 0 に等しいかどうかを検定する（<span class="math inline">\(H_0: \mu = 0\)</span>
+とする一標本の母平均の検定）」という手続きを1,000回繰り返し，検定で計算されたp値の分布を観察する．</p>
+<p>設定上，帰無仮説は棄却されないはずだが，現実には偶然に大きな値（または小さな値）ばかりがドローされることで標本平均が
+0 から大きく乖離し，帰無仮説が棄却される場合がありうる．</p>
+<p><code>t.test</code> 関数で計算される p 値は
+<code>t.test(...)$p.value</code> で抽出できる．</p>
+<pre class="r"><code>t.test(x = 1:10)$p.value</code></pre>
+<pre><code>## [1] 0.000278196</code></pre>
 <pre class="r"><code>p_value_list &lt;- NULL
 for (i in 1:1000) {
-  p_value_list &lt;- c(p_value_list, t.test(rnorm(100, mean = 0, sd = 1))$p.value)
+  p_value_i &lt;- t.test(rnorm(100, mean = 0, sd = 1))$p.value
+  p_value_list &lt;- c(p_value_list, p_value_i)
 }
 hist(p_value_list, breaks = 20)</code></pre>
 <p><img src="data:image/png;base64,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" width="672" /></p>
-<pre class="r"><code>table(p_value_list &lt;= 0.05)</code></pre>
-<pre><code>## 
-## FALSE  TRUE 
-##   941    59</code></pre>
 <p>母集団分布の母平均は <span class="math inline">\(\mu = 0\)</span>
 であるからこの帰無仮説は棄却されないことが望まれるが，上記の通り5%程度の確率で誤って棄却されてしまう（第一種の過誤）．</p>
 <p>この簡単なシミュレーションは有意水準 <span class="math inline">\(\alpha\)</span>
 が何を表しているかを理解するのに役立つと同時に，多重検定の問題を理解するのにも役立つ．</p>
+<div id="multiple-tests-performed-independently" class="section level3" number="4.3.1">
+<h3><span class="header-section-number">4.3.1</span> Multiple tests
+performed independently</h3>
+<p>複数の標本（または複数の標本組み合わせ）に関する帰無仮説を独立して検定すると，そのうち少なくとも一つで誤って帰無仮説を棄却する確率が事前に設定した有意水準（5%など）を上回ってしまう．</p>
+<p>1,000 の標本のうち「1つ」について <span class="math inline">\(H_0:
+\mu = 0\)</span>
+を検定した場合，帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね5%）．</p>
+<pre class="r"><code>table(p_value_list &lt;= 0.05)</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##   941    59</code></pre>
+<p>1,000 の標本のうち「2つ」について <span class="math inline">\(H_0:
+\mu = 0\)</span>
+を検定した場合，少なくともどちらか一方で帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね10%）．</p>
+<p><span class="math display">\[ 1 - \mbox{(2回とも棄却されない確率)} =
+1 - (1 - 0.05)^2 = 0.0975 \]</span></p>
+<ul>
+<li><code>sapply(X = ベクトル, FUN = 関数)</code>
+：ベクトルの要素を1つずつ関数で評価しその結果をベクトルで返す</li>
+<li><code>sample(ベクトル, 個数)</code>
+：指定した個数分だけベクトルからランダムにサンプリング</li>
+<li><code>any(論理値ベクトル)</code> ：論理値ベクトルの要素の1つ以上が
+TRUE の場合に TRUE を返す</li>
+</ul>
+<pre class="r"><code>table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value_list, 2) &lt;= 0.05)))</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##   902    98</code></pre>
+<p>1,000 の標本のうち「5つ」について <span class="math inline">\(H_0:
+\mu = 0\)</span>
+を検定した場合，少なくとも1つで帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね23%）．</p>
+<p><span class="math display">\[ 1 - (1 - 0.05)^5 \approx 0.226
+\]</span></p>
+<pre class="r"><code>table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value_list, 5) &lt;= 0.05)))</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##   754   246</code></pre>
 <p>.</p>
+</div>
 </div>
 </div>
 
