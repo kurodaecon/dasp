@@ -1546,7 +1546,8 @@ c(alpha_hat, beta_hat)</code></pre>
 <div id="advanced-当てはめ値と残差に関する性質の確認" class="section level3" number="1.1.1">
 <h3><span class="header-section-number">1.1.1</span> Advanced:
 当てはめ値と残差に関する性質の確認</h3>
-<p>アウトカムの当てはめ値 $_i = + X_i $
+<p>アウトカムの当てはめ値 <span class="math inline">\(\hat{Y}_i =
+\hat{\alpha} + \hat{\beta} X_i\)</span>
 の平均はアウトカムの平均と一致する．</p>
 <p><span class="math display">\[ \bar{\hat{Y}} = \bar{Y} \]</span></p>
 <pre class="r"><code>y_pred &lt;- alpha_hat + beta_hat * swiss$Examination  # y hat
