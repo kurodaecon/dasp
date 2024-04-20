@@ -52,7 +52,10 @@ install.packages("tidyverse")  # run for the first time only
 library(tidyverse)
 ```
 
-`dplyr` パッケージの重要な関数
+### `dplyr` package 
+
+データのハンドリング（または data wrangling）を行うパッケージ．
+
 <!--
 Important function in `dplyr` (pronounced "dee-ply-er") package:
 -->
@@ -77,12 +80,14 @@ Important function in `dplyr` (pronounced "dee-ply-er") package:
    * Note: `group_by` alone will not give any output; it should be followed by `summarise` (or `mutate`) function. 
 -->
 
-## `ggplot2` package
+### `ggplot2` package
 
 データ可視化のためのパッケージ．
 `plot` のようなデフォルトで使える関数と比べて文法に癖があるが，慣れれば論文に使える程度に綺麗な図を出力できる．
 
 `plot` 関数はこれ単体でグラフを描画してくれるが，ggplot2 パッケージを使用する場合は `ggplot` 関数でデータと属性（X軸の変数，Y軸の変数，色に対応する変数，サイズに対応する変数）を指定し，次いで `geom_xxx` 関数でジオメトリ（点，線，棒，etc.）を指定するという2段階で描画する．
+
+詳細は Kabacoff (2024) [Modern Data Visualization with R](https://rkabacoff.github.io/datavis/) などを参照．
 
 <!--
 https://rstudio-conf-2020.github.io/r-for-excel/ggplot2.html
@@ -323,7 +328,7 @@ We can also compare states with high fertility rates with provinces with low fer
 swiss2 %>%
   mutate(high_fertility_province = Fertility > mean(Fertility)) %>%
   group_by(high_fertility_province) %>%
-  summarize(mean_fert = mean(Fertility), mean_exam = mean(Examination))
+  summarise(mean_fert = mean(Fertility), mean_exam = mean(Examination))
 ```
 
 先ほどと同様に `group_by` や `summarise` 関数を使わずに同じものを計算しようとすると以下のようになる．
@@ -455,7 +460,7 @@ titanic %>% filter(age > 75)
 ```{r titanic_group_by_summarise_sex}
 titanic %>% 
   group_by(sex) %>%
-  summarize(survival_rate = mean(survived), 
+  summarise(survival_rate = mean(survived), 
             sample_size = n())
 ```
 
@@ -464,7 +469,7 @@ titanic %>%
 ```{r titanic_group_by_summarise_sex_pclass, message = FALSE}
 titanic %>% 
   group_by(sex, pclass) %>%
-  summarize(survival_rate = mean(survived), 
+  summarise(survival_rate = mean(survived), 
             sample_size = n())
 ```
 
@@ -474,7 +479,7 @@ titanic %>%
 titanic %>% 
   mutate(age_group = cut(age, breaks = c(0, 20, 60, 100), right = FALSE)) %>% 
   group_by(sex, age_group) %>%
-  summarize(survival_rate = mean(survived), 
+  summarise(survival_rate = mean(survived), 
             sample_size = n())
 ```
 
@@ -484,7 +489,7 @@ titanic %>%
 titanic %>% 
   mutate(age_group = cut(age, breaks = c(0, 20, 60, 100), right = FALSE)) %>% 
   group_by(sex, pclass, age_group) %>%
-  summarize(survival_rate = mean(survived), 
+  summarise(survival_rate = mean(survived), 
             sample_size = n()) 
 ```
 
@@ -495,7 +500,7 @@ titanic %>%
 titanic %>% 
   mutate(age_group = cut(age, breaks = c(0, 20, 60, 100), right = FALSE)) %>% 
   group_by(sex, pclass, age_group) %>%
-  summarize(survival_rate = mean(survived), 
+  summarise(survival_rate = mean(survived), 
             sample_size = n()) %>% 
   print(n = 30)
 ```
@@ -590,14 +595,14 @@ titanic %>%
 
 ## Boxplot using `ggplot2` 
 
-年齢．
+性別ごとの年齢．
 
 ```{r titanic_box, message = FALSE, warning = FALSE}
 ggplot(data = titanic, mapping = aes(x = sex, y = age)) + 
   geom_boxplot()
 ```
 
-客室等級ごとの年齢．
+性別・客室等級ごとの年齢．
 
 ```{r titanic_box_by_pclass, message = FALSE, warning = FALSE}
 ggplot(data = titanic, mapping = aes(x = sex, y = age, fill = factor(pclass))) + 
@@ -638,10 +643,10 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived)) +
 性別による死亡率の違いを示す．
 
 ```{r titanic_point_smooth_by_sex, message = FALSE, warning = FALSE}
-ggplot(data = titanic, mapping = aes(x = age, y = survived, color = sex, shape = sex)) + 
+ggplot(data = titanic, mapping = aes(x = age, y = survived, color = sex, shape = sex, linetype = sex)) + 
   geom_point(size = 0.5) + 
   geom_jitter(height = .05, width = 0) + 
-  geom_smooth(aes(color = sex, linetype = sex), se = FALSE) + 
+  geom_smooth(se = FALSE) + 
   scale_color_brewer(palette = "Dark2") + # colorblind-friendly palette 
   theme_classic()
 ```
@@ -653,10 +658,11 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived, color = sex, shape =
 * `pclass` は連続変数なので `factor` 関数で因子型の変数に変換して使う．
 
 ```{r titanic_point_smooth_by_pclass, message = FALSE, warning = FALSE}
-ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), shape = factor(pclass))) + 
+ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), 
+                                     shape = factor(pclass), linetype = factor(pclass))) + 
   geom_point() + 
   geom_jitter(height = .05, width = 0) + 
-  geom_smooth(aes(color = factor(pclass), linetype = factor(pclass)), se = FALSE) + 
+  geom_smooth(se = FALSE) + 
   scale_color_brewer(palette = "Dark2") +
   theme_classic()
 ```
@@ -666,10 +672,11 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclas
 * `facet_wrap(~ グループ変数)` を利用
 
 ```{r titanic_point_smooth_by_pclass_sep_by_sex, message = FALSE, warning = FALSE}
-ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), shape = factor(pclass))) + 
+ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), 
+                                     shape = factor(pclass), linetype = factor(pclass))) + 
   geom_point() + 
   geom_jitter(height = .05, width = 0) + 
-  geom_smooth(aes(color = factor(pclass), linetype = factor(pclass)), se = FALSE) + 
+  geom_smooth(se = FALSE) + 
   facet_wrap(~ sex) + 
   scale_color_brewer(palette = "Dark2") +
   theme_classic()

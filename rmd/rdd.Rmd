@@ -15,10 +15,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r load_pck, message = FALSE}
-library(tidyverse)
-```
-
 # Data 
 
 Angrist and Pischke (2014) Mastering 'Metrics, Princeton University Press. が提供する [法廷飲酒年齢のRD分析のデータとコード](https://www.masteringmetrics.com/resources/) を用いる．
@@ -43,8 +39,9 @@ Moodle には MMch4_RD.dta というファイル名でアップロードして�
    * `external`: mortality rate from external causes 
 -->
 
-```{r read_data}
+```{r read_data, message = FALSE}
 setwd("c://ws_stat")
+library(tidyverse)
 mm <- haven::read_dta("MMch4_RD.dta")
 nrow(mm)
 mm <- mm %>%

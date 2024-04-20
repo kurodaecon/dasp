@@ -174,11 +174,18 @@ lines(density(titanic$age, na.rm = TRUE))
 * 「[0, 20)」は 0 以上 20 未満．右は閉じない（左側が閉じる）ので `right = FALSE` 引数を追加
 
 ```{r titanic_fd}
-titanic_age_interval <- cut(titanic$age, breaks = c(0, 20, 60, 100), right = FALSE)
+titanic_age_interval <- cut(titanic$age, breaks = c(0, 20, 40, 60, 100), right = FALSE)
 # [right = F] means intervals should not be closed on the right
 table(titanic_age_interval)
 table(titanic_age_interval) / sum(table(titanic_age_interval))  # relative frequency
 ```
+
+同様に，分割表は以下のように作成できる．
+
+```{r contingency_table_continuous}
+table(titanic_age_interval, titanic$survived)
+```
+
 
 ## Mean / 平均
 

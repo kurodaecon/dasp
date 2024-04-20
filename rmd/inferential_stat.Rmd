@@ -1,5 +1,5 @@
 ---
-title: "Data Analysis Using Statistical Packages: Basics of Inferential statistics"
+title: "Data Analysis Using Statistical Packages: Basics of Inferential Statistics"
 author: "Sho Kuroda / 黒田翔"
 date: '2024年4月 (Last update: 2024年4月)'
 output:
@@ -25,11 +25,11 @@ $$ \mu = E(X) = \sum_j^k x_j f(x_j) $$
 
 $$ \sigma^2 = V(X) = E[(X-E(X))^2] = \sum_j^k (x_j - E(X))^2 f(x_j) = E(X^2) - (E(X))^2 $$ 
 
-連続確率変数の場合
+連続確率変数の場合（ここでは $f$ は確率密度関数）
 
 $$ \mu = E(X) = \int_{-\infty}^{\infty} x f(x) dx $$
 
-$$ \sigma^2 = V(X) = \int_a^b (x - \mu)^2 f(x) dx$$
+$$ \sigma^2 = V(X) = \int_{-\infty}^{\infty} (x - \mu)^2 f(x) dx$$
 
 ### Example: Dice roll 
 
@@ -52,7 +52,18 @@ $$ V(X) = \sum_{j=1}^6 (x_j - E(X))^2 \frac{1}{6} = \left( 1-\frac{7}{2} \right)
 sum((dice - mean(dice))^2 * (1/6))  # variance: sum[(x-E(X))*f(x)]
 ```
 
-`var(dice)` は 3.5 となり，上記と一致しないが，これは `var` 関数が標本分散（不偏分散）を計算するためである．`3.5*(n-1)/n = 3.5*5/6 ≒ 2.9` である．
+なお，`var(dice)` は 3.5 となり，上記と一致しないが，これは `var` 関数が標本を引数として標本分散（不偏分散）を計算するためである．
+`dice` は標本ではなく母集団なので，この場合は母分散を計算しなければならない．
+
+cf. 標本分散 $s^2$ と母分散 $\sigma^2$
+
+$$ s^2 = \frac{1}{n-1} \sum_i (x_i-\bar{x})^2, \quad \sigma^2 = \frac{1}{n} \sum_i (x_i-\mu)^2 $$
+
+標本分散に $(n-1)/n$ を乗じて母分散に変換できる．
+
+```{r convert_to_}
+3.5 * (6-1) / 6  # approx. 2.917
+```
 
 $V(X) = E(X^2) - (E(X))^2$ でもある．
 
@@ -119,10 +130,12 @@ curve(dnorm(x, mean = 0, sd = 1), xlim = c(-5, 5))
 To draw random numbers from a uniform distribution, use the `runif` function. The function name comes from r (random) + unif (uniform distribution).
 -->
 
+`runif(n = サンプルサイズ, min = 下限, max = 上限)` で乱数を生成．
+
 ```{r runif}
 runif(n = 5, min = 0, max = 1)
 runif(5, 0, 1)  # 引数の順番を守れば「n=」などを省略可
-runif(5, 0, 1)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）
+runif(5)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）
 ```
 
 乱数をドローするたびに異なる値が出力される．
@@ -149,25 +162,27 @@ $$ E(X) = \int_a^b x \frac{1}{b-a} dx = \frac{1}{b-a} \left[ \frac{x^2}{2} \righ
 
 $$ V(X) = \int_a^b (x - \mu)^2 \frac{1}{b-a} dx = \frac{1}{b-a} \left[ \frac{ \left( x - \frac{a+b}{2} \right)^3}{3} \right]_a^b = \frac{(b - a)^2}{12} $$
 
-$X \sim U(-1, 1)$ とすると，母平均と母分散は次の値となる．
+$X \sim U(-1, 1)$ とすると，期待値と分散は次の値となる．
 
 $$ E(X) = \frac{a+b}{2} = \frac{-1+1}{2} = 0 $$
 
 $$ V(X) = \frac{(b - a)^2}{12} = \frac{(1 - (-1))^2}{12} = \frac{1}{3} $$
 
-一様分布に従う乱数は `runif(n = サンプルサイズ, min = 下限, max = 上限)` で生成できる (`runif` = random + uniform)．
+「サンプルサイズ 100 で一様乱数を生成して平均と分散を計算する」を 1,000 回繰り返し，1,000個の平均と分散の分布を観察する．
+このようなシミュレーションを「モンテカルロ・シミュレーション」と呼ぶ．
 
-```{r runif_example}
-runif(n = 5, min = -1, max = 1)
-```
-
-「サンプルサイズ 100 で一様乱数を生成して平均と分散を計算する」を 1,000 回繰り返す．このようなシミュレーションを「モンテカルロ・シミュレーション」と呼ぶ．
+* `for` 文を使って，乱数生成，平均と分散の計算，記録を行う
+   * 計算結果を格納するオブジェクトを `runif_mean` と `runif_var` という名前で作成．`NULL` を代入することで，空のオブジェクトを作成
+   * `c(直前までの計算結果のベクトル, 今回の計算結果)` で append
 
 ```{r rv_uniform}
-runif_mean <- runif_var <- NULL
+runif_mean <- NULL  # 標本平均を格納しておくオブジェクト
+runif_var <- NULL  # 標本分散を 〃
 for (i in 1:1000) {
   set.seed(i)  # 再現性のため
+  # 乱数を生成
   runif_i <- runif(n = 100, min = -1, max = 1)
+  # 平均・分散を計算して上で作成したオブジェクトに格納 (append) 
   runif_mean <- c(runif_mean, mean(runif_i))
   runif_var <- c(runif_var, var(runif_i))
 }
@@ -176,17 +191,18 @@ summary(runif_var)
 ```
 
 
+# Central limit theorem / 中心極限定理
 
-# Sampling / サンプリング
+標本平均 $\bar{x}$ は母平均 $\mu$, 母分散 $\sigma^2$, サンプルサイズ $n$ で決まる正規分布に従う．
 
-## Central limit theorem / 中心極限定理
+$$ \bar{x} \sim N \left( \mu, \frac{\sigma^2}{n} \right) $$
 
 一様確率変数の標本平均の分布を求める．標本サイズが大きくなるほど正規分布に近づき，分布の分散が小さくなることが分かる．
 <!--
 Find the distribution of the sample mean of the uniform random variable $x \sim U(0, 1)$. We see that the larger the sample size, the closer to a normal distribution, and the smaller the variance of the distribution. Such a simulation is called a Monte Carlo simulation. 
 -->
 
-### $n=1$
+## $n=1$
 
 これは乱数そのものの分布と等しい．
 <!--
@@ -204,7 +220,7 @@ for (i in 1:10000) {
 hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=1")
 ```
 
-### $n=2$
+## $n=2$
 
 $$ \bar{x} = \frac{1}{2} \sum_{i=1}^{2} x_i, \quad x_i \sim U(0, 1) $$
 
@@ -217,7 +233,7 @@ for (i in 1:10000) {
 hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=2")
 ```
 
-### $n=10$
+## $n=10$
 
 $$ \bar{x} = \frac{1}{10} \sum_{i=1}^{10} x_i, \quad x_i \sim U(0, 1) $$
 
@@ -231,22 +247,25 @@ hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sa
      xlim = c(0, 1))
 ```
 
-### For advanced students / 上級者向け
+## For advanced students / 中級者向け
 
-実は，`for`文を使わずに`sapply`関数を使って次のように書くこともできる：
+`for` 文を使わずに `sapply` 関数を使って次のように書くこともできる：
 <!--
 In fact, we can also write the following using the `sapply` function without using the `for` function:
 -->
 
-`hist(sapply(X = 1:10000, FUN = function (x) mean(runif(10)) ), breaks = 50)`
+```{r clt_simulation_hist_sapply, eval = FALSE}
+hist(sapply(X = 1:10000, FUN = function (x) mean(runif(10)) ), breaks = 50)
+```
 
+（出力は省略）
 
 
 # Confidence interval / 信頼区間
 
-## Population mean with known $\sigma$ / 標準偏差が既知の場合の母平均
+## Population mean with known $\sigma$ / 母集団の標準偏差が既知の場合の母平均
 
-標本平均が100，「母集団」の標準偏差が2，サンプルサイズが100の場合，信頼区間は次のように計算される．
+標本平均が100，「母集団」の標準偏差が2，サンプルサイズが100の場合，信頼水準95%の信頼区間は次のように計算される．
 <!--
 For a sample mean of 100, **population** standard deviation of 2, and sample size of 100, the confidence interval is calculated as follows: 
 -->
@@ -260,9 +279,9 @@ qnorm(p = 0.975, mean = 0, sd = 1)  # P(Z<z) = 0.975
 100 + qnorm(p = 0.975) * 2 / sqrt(100)  # upper limit
 ```
 
-## Population mean with unknown $\sigma$ / 標準偏差が未知の場合の母平均
+## Population mean with unknown $\sigma$ / 母集団の標準偏差が未知の場合の母平均
 
-標本平均が100，「標本」標準偏差が2，サンプルサイズが100の場合，信頼区間は次のようになる．
+標本平均が100，「標本」標準偏差が2，サンプルサイズが100の場合，信頼水準95%の信頼区間は次のようになる．
 <!--
 For a sample mean of 100, **sample** standard deviation of 2, and sample size of 100, the confidence interval is calculated as follows: 
 -->
@@ -286,18 +305,31 @@ $t$-検定を行う`t.test`という関数は信頼区間をついでに出力�
 The function `t.test`, which performs a $t$-test (to be covered in the next class), also outputs a confidence interval. 
 -->
 
-```{r ci_unknown_ttest}
+まずは `t.test` 関数を使わない場合．
+信頼水準95%とする．
+
+```{r ci_unknown_ttest_manual}
 wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
 mean(wage)  # mean 
 sd(wage)  # standard deviation 
 length(wage)  # sample size (length of the vector)
 mean(wage) + qt(p = 0.025, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # lower bound 
 mean(wage) + qt(p = 0.975, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # upper bound 
+```
+
+同じ結果が `t.test` 関数で確認できる．
+
+信頼水準 ($1 - \alpha$) はデフォルトで95%に設定されている．
+`conf.level` 引数を指定すればそれ以外の信頼水準に変更できる．
+
+```{r ci_unknown_ttest_func}
 t.test(wage)  # default: 95% CI
 t.test(wage, conf.level = 0.99)  # 99% CI
 ```
 
 ## Population proportion / 母比率
+
+標本の比率 $p$，サンプルサイズ $n$，z 値 (such that $\Pr(Z \le z) = 1 - \alpha$) より次のように母比率の信頼区間が計算される．
 
 $$ p \pm z \sqrt{\frac{p (1-p)}{n}} $$
 
@@ -330,7 +362,8 @@ In fact, these figures differ from those reported in the paper. Because a cluste
 
 ### Calculation from the sample mean and sd of the data / データの標本平均・標準偏差から計算
 
-賃金の母集団が正規分布で，$\sigma$ は未知，$\bar{x} = 1230, s=170.3, n = 10, \alpha=0.05$ とする．
+賃金の母集団が正規分布に従っており，$\sigma$ は未知，$\bar{x} = 1230, s=170.3, n = 10, \alpha=0.05$ とする．
+
 <!--
 Wage population is normally distributed, $\sigma$ is unknown, $\bar{x} = 1230$, $s=170.3$, $n = 10$, $\alpha=0.05$
 -->
@@ -338,11 +371,15 @@ Wage population is normally distributed, $\sigma$ is unknown, $\bar{x} = 1230$, 
 $$ H_0: \mu = 1100, \quad H_1: \mu \ne 1100 $$
 
 $$ t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}} = \frac{1230 - 1110}{170.3 / \sqrt{10}} \approx 2.41 $$
-$$ \Pr (T \le 2.41) = 0.98 , \quad 2 \times (1 - \Pr (T \le 2.41)) \approx 0.039 $$
 
-```{r t0}
+```{r t_hand}
 t_value <- (1230 - 1100) / (170.3 / sqrt(10))  # t value
 t_value
+```
+
+$$ \Pr (T \le 2.41) = 0.98 , \quad p = 2 \times (1 - \Pr (T \le 2.41)) \approx 0.039 $$
+
+```{r t_hand_p_value}
 pt(q = t_value, df = 10 - 1)  # Pr(T <= t)
 1 - pt(q = t_value, df = 10 - 1)  # one sided p value ... p = Pr(T > t)
 2 * (1 - pt(q = t_value, df = 10 - 1))  # two sided p value
@@ -355,11 +392,18 @@ Thus, $H_0$ is rejected and $H_1$ is accepted.
 
 ### Calculation from the data itself / データそのものから計算
 
-```{r t1}
+`t.test(ベクトル, mu = 帰無仮説の仮説値)` と指定．
+
+```{r t_ttest}
 wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
 mean(wage); sd(wage)
-t.test(wage, mu = 1100)  # default: two sided ... H1 is [mu /= 1150]
-t.test(wage, mu = 1100, alternative = "greater")  # one sided ... H1 is [mu > 1150]
+t.test(wage, mu = 1100)  # default: two sided ... H1 is [mu != 1100]
+```
+
+片側検定をする場合は `alternative = "greater"` または `= "less"` 引数で指定．
+
+```{r t_greater}
+t.test(wage, mu = 1100, alternative = "greater")  # one sided ... H1 is [mu > 1100]
 ```
 
 このように信頼区間も同時に計算してくれる．
@@ -372,6 +416,8 @@ In this way, the confidence intervals are calculated at the same time.
 ### Independent $t$ test
 
 #### Example of "wage" data 
+
+`t.test(x = 1つ目のベクトル, y = 2つ目のベクトル)` のように指定する．
 
 ```{r t2}
 wage_jp <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # Japan
@@ -392,13 +438,20 @@ titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/t
 
 ```{r titanic_age_by_sex_ttest}
 t.test(x = titanic$age[titanic$sex == "female"], y = titanic$age[titanic$sex == "male"])
+```
+
+`t.test(変数 ~ グループ, data = dataset)` で，2つのグループ間の検定が可能．
+
+```{r titanic_age_by_sex_ttest_formula}
 t.test(age ~ sex, data = titanic)  # same as above
 ```
 
 $p < 0.05$ なので，「年齢の平均値は男性と女性で等しい」という帰無仮説を有意水準5%で棄却できる．
-男性の標本平均の方が高いことと合わせると，「男性の方が有意に平均年齢が高い」と言える．
+男性の標本平均の方が高いという事実と合わせると，「男性の方が有意に平均年齢が高い」と言える．
 
 サブサンプルに対して検定する場合やデータフレームを加工して作成した変数を用いて検定する場合はパイプ演算子を使うと便利（`tidyverse` が必要）．
+
+* `t.test` の直前のパイプ演算子より前の部分（データフレーム）が `t.test` 関数の第一引数にならないため，`t.test` 関数内で `data = .` を明示的に書く必要がある（`.` がパイプ演算子の前の部分を受け取る）
 
 ```{r titanic_age_by_sex_1st_class_ttest, message = FALSE}
 library(tidyverse)
@@ -410,6 +463,8 @@ titanic %>%
 
 ### Paired (dependent) $t$ test
 
+対応のある t 検定は `t.test` の引数で `paired = TRUE` 引数を追加して計算する．
+
 ```{r t_paired}
 wage_w <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # wife
 wage_h <- c(900, 1300, 1200, 800, 1600, 850, 1000, 950, 1200, 1400)  # husband
@@ -418,24 +473,62 @@ t.test(wage_w, wage_h, paired = TRUE)
 t.test(wage_w - wage_h)  # same as an ordinary "one-sample t test"
 ```
 
+上記の通り「要素ごとの差」という一標本の検定になっている．
+
+
 ## Multiple testing problem: Simulation / 多重検定の問題に関するシミュレーション
 
-「標準正規分布 $N(0, 1)$ から $n=100$ の乱数をドローして，その平均が 0 に等しいかどうかを検定する」という手続きを1,000回繰り返し，検定で計算されたp値の分布を観察する．
+「標準正規分布 $N(0, 1)$ から $n=100$ の乱数をドローして，その平均が 0 に等しいかどうかを検定する（$H_0: \mu = 0$ とする一標本の母平均の検定）」という手続きを1,000回繰り返し，検定で計算されたp値の分布を観察する．
 
-One-sample test for population mean: $H_0: \mu = 0$
+設定上，帰無仮説は棄却されないはずだが，現実には偶然に大きな値（または小さな値）ばかりがドローされることで標本平均が 0 から大きく乖離し，帰無仮説が棄却される場合がありうる．
+
+`t.test` 関数で計算される p 値は `t.test(...)$p.value` で抽出できる．
+
+```{r ttest_extract_p_value}
+t.test(x = 1:10)$p.value
+```
 
 ```{r mtp_sim}
 p_value_list <- NULL
 for (i in 1:1000) {
-  p_value_list <- c(p_value_list, t.test(rnorm(100, mean = 0, sd = 1))$p.value)
+  p_value_i <- t.test(rnorm(100, mean = 0, sd = 1))$p.value
+  p_value_list <- c(p_value_list, p_value_i)
 }
 hist(p_value_list, breaks = 20)
-table(p_value_list <= 0.05)
 ```
 
 母集団分布の母平均は $\mu = 0$ であるからこの帰無仮説は棄却されないことが望まれるが，上記の通り5%程度の確率で誤って棄却されてしまう（第一種の過誤）．
 
 この簡単なシミュレーションは有意水準 $\alpha$ が何を表しているかを理解するのに役立つと同時に，多重検定の問題を理解するのにも役立つ．
 
+### Multiple tests performed independently 
+
+複数の標本（または複数の標本組み合わせ）に関する帰無仮説を独立して検定すると，そのうち少なくとも一つで誤って帰無仮説を棄却する確率が事前に設定した有意水準（5%など）を上回ってしまう．
+
+1,000 の標本のうち「1つ」について $H_0: \mu = 0$ を検定した場合，帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね5%）．
+
+```{r multiple_test_1}
+table(p_value_list <= 0.05)
+```
+
+1,000 の標本のうち「2つ」について $H_0: \mu = 0$ を検定した場合，少なくともどちらか一方で帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね10%）．
+
+$$ 1 - \mbox{(2回とも棄却されない確率)} = 1 - (1 - 0.05)^2 = 0.0975 $$
+
+* `sapply(X = ベクトル, FUN = 関数)` ：ベクトルの要素を1つずつ関数で評価しその結果をベクトルで返す
+* `sample(ベクトル, 個数)` ：指定した個数分だけベクトルからランダムにサンプリング
+* `any(論理値ベクトル)` ：論理値ベクトルの要素の1つ以上が TRUE の場合に TRUE を返す
+
+```{r multiple_test_2}
+table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value_list, 2) <= 0.05)))
+```
+
+1,000 の標本のうち「5つ」について $H_0: \mu = 0$ を検定した場合，少なくとも1つで帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね23%）．
+
+$$ 1 - (1 - 0.05)^5 \approx 0.226 $$
+
+```{r multiple_test_5}
+table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value_list, 5) <= 0.05)))
+```
 
 .

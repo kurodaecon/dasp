@@ -130,7 +130,7 @@ See [Rで推定する回帰モデル入門](https://rpubs.com/kuroda/regression0
 
 $$ \log L (\beta) = - \frac{n}{2} \log (2 \pi \sigma^2) - \frac{1}{2 \sigma^2} \sum_i (y_i - x_i' \beta)^2 $$
 
-ここで $ x_i' \beta = \beta_0 + \beta_1 x_{i2} + \beta_2 x_{i2} + \cdots $ である．
+ここで $x_{i}' \beta = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2}$ である．
 
 引数 `param` は k+1 個のパラメタベクトル．
 k は定数項を含めた説明変数の数．
