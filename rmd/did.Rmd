@@ -111,7 +111,7 @@ crime4_ow_demean %>%
 Demean された変数を用いて OLS で推定する．
 
 ```{r crime4_one_within_lm, message = FALSE}
-summary(lm(crmrte_demean ~ lprbarr_demean + lprbconv_demean + lpolpc_demean + lpolpc_demean, 
+summary(lm(crmrte_demean ~ lprbarr_demean + lprbconv_demean + lpolpc_demean, 
            data = crime4_ow_demean))
 ```
 
@@ -171,7 +171,7 @@ modelsummary(list(panel_lsdv_ow_lm), coef_omit = 1:90, fmt = 5,
 
 郡の固定効果 $\alpha_i$ は差分を取ることで消える．
 
-$$ \Delta y_{it} = \beta_0 + \beta_1 \Delta x_{it} + \epsilon_{it} $$
+$$ \Delta y_{it} = \beta_1 \Delta x_{it} + \epsilon_{it} $$
 
 差分を取るには `d(変数名)` とする．
 
@@ -191,7 +191,7 @@ $$ y_{it} = \beta_0 + \beta_1 x_{it} + \alpha_i + \lambda_t + \epsilon_{it} $$
 
 ### Within estimation 
 
-$\dot{y}$ を demean した変数 ($\dot{y} = y_{it} - \bar{y}_i - \bar{y}_t + \bar{\bar{y}}$) とすると，モデルは以下のようになる．
+$\dot{y}$ を demean した変数 ($\dot{y}_{it} = y_{it} - \bar{y}_i - \bar{y}_t + \bar{\bar{y}}$) とすると，モデルは以下のようになる．
 
 $$ \dot{y}_{it} = \beta_1 \dot{x}_{it} + \dot{\epsilon}_{it} $$
 
@@ -425,7 +425,7 @@ kielmc %>%
 (70619.2 - 63692.9) - (101307.5 - 82517.2)  # DID 
 ```
 
-| Variable | Control (`nearinc == 0`) | Treatment (`nearinc == 1`) | Difference: NJ-PA | 
+| Variable | Control (`nearinc == 0`) | Treatment (`nearinc == 1`) | Difference: Near-Far | 
 | :---: | :---: | :---: | :---: | 
 | Price: Before (1978) | 82,517.2 | 63,692.9 | -18,824.3 | 
 | Price: After (1981) | 101,307.5 | 70,619.2 | -30,688.3 | 
@@ -462,13 +462,6 @@ lm(formula = rprice ~ nearinc + y81 + nearinc:y81, data = kielmc)
 did_reg_i <- lm(formula = rprice ~ nearinc*y81, data = kielmc)
 did_reg_i
 ```
-
-<!--
-アウトカムに log をとった変数が既に `lrprice` という変数名で格納されている．
-```{r kielmc_reg_log}
-lm(formula = lrprice ~ nearinc * y81, data = kielmc)
-```
--->
 
 説明変数として，家屋の築年数 `age`，州間高速道路出入口までの距離 `intst`，土地面積 `land`，家屋面積 `area`，部屋数 `rooms`，bathroom の数 `baths` を加える．
 
@@ -523,7 +516,7 @@ feols(y ~ x1 + post:treat | id + period, data = base_did)
 
 Period = 6 で処置が始まるので，その直前の Period = 5 を reference point として推定する．
 
-$$ y_{it} = \beta_0 + \beta_1 x_{it1} + \sum_{t \in \{1, \ldots, 4,6,\ldots,10 \}} \gamma_t (\mbox{Treat})_i \times 1(\mbox{Period}_t = 1) + \alpha_i + \lambda_t + \epsilon_{it} $$
+$$ y_{it} = \beta_0 + \beta_1 x_{it1} + \sum_{\tau \in \{1, \ldots, 4,6,\ldots,10 \}} \gamma_{\tau} (\mbox{Treat})_i \times 1(\mbox{Period}_t = \tau) + \alpha_i + \lambda_t + \epsilon_{it} $$
 
 ```{r es_twoway_hand}
 base_did_mod <- base_did %>% 
