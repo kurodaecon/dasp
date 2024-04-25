@@ -80,7 +80,7 @@ $$ y_{it} = \beta_0 + \beta_1 x_{it} + \alpha_i + \epsilon_{it} $$
 
 ### Within (fixed effect) estimation 
 
-$\dot{y}$ を demean (over individual) した変数 ($\dot{y}_{it} = y_{it} - \bar{y}_i$) とすると，モデルは以下のようになる．
+$\dot{y}$ を demean (over time) した変数 ($\dot{y}_{it} = y_{it} - \bar{y}_i$) とすると，モデルは以下のようになる．
 
 $$ \dot{y}_{it} = \beta_1 \dot{x}_{it} + \dot{\epsilon}_{it} $$
 
