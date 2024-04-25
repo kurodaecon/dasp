@@ -1829,12 +1829,12 @@ i)\)</span> になっていることを確認する．</p>
 ## 2      3     0.105           3.47e-18
 ## 3      5     0.0880          1.73e-18</code></pre>
 <p>Demean された変数を用いて OLS で推定する．</p>
-<pre class="r"><code>summary(lm(crmrte_demean ~ lprbarr_demean + lprbconv_demean + lpolpc_demean + lpolpc_demean, 
+<pre class="r"><code>summary(lm(crmrte_demean ~ lprbarr_demean + lprbconv_demean + lpolpc_demean, 
            data = crime4_ow_demean))</code></pre>
 <pre><code>## 
 ## Call:
 ## lm(formula = crmrte_demean ~ lprbarr_demean + lprbconv_demean + 
-##     lpolpc_demean + lpolpc_demean, data = crime4_ow_demean)
+##     lpolpc_demean, data = crime4_ow_demean)
 ## 
 ## Residuals:
 ##       Min        1Q    Median        3Q       Max 
@@ -2032,8 +2032,8 @@ R2 Adj.
 estimation</h3>
 <p>郡の固定効果 <span class="math inline">\(\alpha_i\)</span>
 は差分を取ることで消える．</p>
-<p><span class="math display">\[ \Delta y_{it} = \beta_0 + \beta_1
-\Delta x_{it} + \epsilon_{it} \]</span></p>
+<p><span class="math display">\[ \Delta y_{it} = \beta_1 \Delta x_{it} +
+\epsilon_{it} \]</span></p>
 <p>差分を取るには <code>d(変数名)</code> とする．</p>
 <pre class="r"><code>feols(d(crmrte) ~ d(lprbarr) + d(lprbconv) + d(lpolpc), data = crime4, panel.id = ~ county + year)</code></pre>
 <pre><code>## OLS estimation, Dep. Var.: d(crmrte, 1)
@@ -2068,8 +2068,9 @@ and Time- fixed effect</h2>
 <h3><span class="header-section-number">1.4.1</span> Within
 estimation</h3>
 <p><span class="math inline">\(\dot{y}\)</span> を demean した変数
-(<span class="math inline">\(\dot{y} = y_{it} - \bar{y}_i - \bar{y}_t +
-\bar{\bar{y}}\)</span>) とすると，モデルは以下のようになる．</p>
+(<span class="math inline">\(\dot{y}_{it} = y_{it} - \bar{y}_i -
+\bar{y}_t + \bar{\bar{y}}\)</span>)
+とすると，モデルは以下のようになる．</p>
 <p><span class="math display">\[ \dot{y}_{it} = \beta_1 \dot{x}_{it} +
 \dot{\epsilon}_{it} \]</span></p>
 <div id="demean-by-hand-1" class="section level4" number="1.4.1.1">
@@ -2537,23 +2538,6 @@ did_reg_i</code></pre>
 ## Coefficients:
 ## (Intercept)      nearinc          y81  nearinc:y81  
 ##       82517       -18824        18790       -11864</code></pre>
-<!--
-アウトカムに log をとった変数が既に `lrprice` という変数名で格納されている．
-
-```r
-lm(formula = lrprice ~ nearinc * y81, data = kielmc)
-```
-
-```
-## 
-## Call:
-## lm(formula = lrprice ~ nearinc * y81, data = kielmc)
-## 
-## Coefficients:
-## (Intercept)      nearinc          y81  nearinc:y81  
-##    11.28542     -0.33992      0.19309     -0.06265
-```
--->
 <p>説明変数として，家屋の築年数
 <code>age</code>，州間高速道路出入口までの距離
 <code>intst</code>，土地面積 <code>land</code>，家屋面積
@@ -3059,9 +3043,9 @@ Estimation by hand</h2>
 <p>Period = 6 で処置が始まるので，その直前の Period = 5 を reference
 point として推定する．</p>
 <p><span class="math display">\[ y_{it} = \beta_0 + \beta_1 x_{it1} +
-\sum_{t \in \{1, \ldots, 4,6,\ldots,10 \}} \gamma_t (\mbox{Treat})_i
-\times 1(\mbox{Period}_t = 1) + \alpha_i + \lambda_t + \epsilon_{it}
-\]</span></p>
+\sum_{\tau \in \{1, \ldots, 4,6,\ldots,10 \}} \gamma_{\tau}
+(\mbox{Treat})_i \times 1(\mbox{Period}_t = \tau) + \alpha_i + \lambda_t
++ \epsilon_{it} \]</span></p>
 <pre class="r"><code>base_did_mod &lt;- base_did %&gt;% 
   mutate(
     treat_p1 = treat * (period == 1), 
