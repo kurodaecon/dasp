@@ -15,10 +15,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r load_pck, message = FALSE}
-library(tidyverse)
-```
-
 # Overview 
 
 Card, David and Alan B. Krueger. 1994. [Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania](https://www.jstor.org/stable/2118030), American Economic Review 84(4): 772-793. 
@@ -57,9 +53,10 @@ Moodle には CardKrueger1994.dat というファイル名でアップロード�
 * p. 775 によれば，Full-time-equivalent [FTE] employment = the number of full-time workers [incl. managers] + 0.5 × the number of part-time workers 
 * DID 分析の都合上，2月と11月の両方で賃金データが観測されていることを表す logical 変数 `wage_available` を作成しておく
 
-.dta を読み込むには `read.table` 関数が使える．
+.dat を読み込むには `read.table` 関数が使える．
 
-```{r dat_read}
+```{r dat_read, message = FALSE}
+library(tidyverse)
 setwd("c://ws_stat")
 ck_dat <- read.table("CardKrueger1994.dat", header = FALSE, dec = ".", na.strings = ".")
 
@@ -145,7 +142,7 @@ Panel 1. Distribution of Store Types (%)
 ```{r means_store}
 ck %>% 
   group_by(state) %>% 
-  summarize(BurgerKing = mean(chain == 1),
+  summarise(BurgerKing = mean(chain == 1),
             KFC = mean(chain == 2),
             RoyRogers = mean(chain == 3),
             Wendys = mean(chain == 4),
@@ -169,7 +166,7 @@ ck %>%
   mutate(BurgerKing = ifelse(chain == 1, 1, 0)) %>% 
   group_by(state) %>% 
   summarise(
-    n = n(),
+    n = n(),  # count (sample size)
     x_bar = mean(BurgerKing), 
     x_var = var(BurgerKing)) %>% 
   print.data.frame(., digits = 5)
@@ -179,7 +176,7 @@ ck %>%
 または
 
 ```{r means_t_hand_alt}
-ck_BK <- ck
+ck_BK <- ck  # copy 
 ck_BK$BurgerKing <- ifelse(ck$chain == 1, 1, 0)
 x1 <- ck_BK$BurgerKing[ck_BK$state == "NJ"]
 x2 <- ck_BK$BurgerKing[ck_BK$state == "PA"]
@@ -195,7 +192,7 @@ $$ SE = \frac{\sigma}{\sqrt{n}} $$
 ```{r means_wave1}
 ck %>% 
   group_by(state) %>% 
-  summarize(sample_size = sum(!is.na(fte)),
+  summarise(sample_size = sum(!is.na(fte)),
             FTE = mean(fte, na.rm = TRUE),
             FTE_se = sd(fte, na.rm = TRUE) / sqrt(sample_size),
             StartingWage = mean(wage_st, na.rm = TRUE),
@@ -213,7 +210,7 @@ ck %>%
   t.test(fte ~ state, data = .)
 ```
 
-宿題：上で計算していない他の変数やWave2についても同様に計算する．
+余裕がある履修者向けの宿題：上で計算していない他の変数やWave2についても同様に計算する．
 
 ## Distribution of starting wage rates (Figure 1) 
 
@@ -250,7 +247,7 @@ ggplot(data = ck, mapping = aes(x = wage_st2, fill = state)) +
 ```
 
 よく見ると < 5.05 がある．
-僅かに法令不遵守の店舗があったという意味だと思われる．
+僅かに法令不遵守の店舗があったという意味かもしれない．
 
 ```{r nj_less_than_505}
 ck %>% filter(state == "NJ") %>% select(wage_st2) %>% table
@@ -369,7 +366,7 @@ Model (iii)
 NJ の店舗でも starting wage が処置前から既に \$5.05 を上回っている店舗では雇用に対する影響がほとんどないと考えられる一方，処置前には最低賃金 \$4.25 に近かった店舗では雇用への影響が大きいと考えられる．
 そこで，このような within-NJ の変分を表す変数を下のように定義する．
 
-$$ \Delta E_i = a + c' GAP_i + \epsilon_i, \quad GAP = \begin{cases} 0 \quad \mbox{if PA} \\ 0 \quad \mbox{if NJ with } W_{i, Feb} \ge 5.05 \\ \frac{5.05 - W_{i, Feb}}{W_{i, Feb}} \quad \mbox{if NJ with } W_{i, Feb} < 5.05 \end{cases} $$
+$$ \Delta E_i = a' + c' GAP_i + \epsilon_i, \quad GAP = \begin{cases} 0 \quad \mbox{if PA} \\ 0 \quad \mbox{if NJ with } W_{i, Feb} \ge 5.05 \\ \frac{5.05 - W_{i, Feb}}{W_{i, Feb}} \quad \mbox{if NJ with } W_{i, Feb} < 5.05 \end{cases} $$
 
 つまり，GAP 変数は
 
@@ -378,7 +375,7 @@ $$ \Delta E_i = a + c' GAP_i + \epsilon_i, \quad GAP = \begin{cases} 0 \quad \mb
 
 ```{r did_reg_iii}
 ck_with_gap <- ck %>% 
-  mutate(gap = ifelse(state == "NJ" & wage_st < 5.05, (5.05-wage_st)/wage_st, 0))
+  mutate(gap = ifelse(state == "NJ" & wage_st < 5.05, (5.05-wage_st) / wage_st, 0))
 ck_with_gap %>% filter(state == "NJ") %>% pull(gap) %>% hist(xlab = "GAP")
 did_reg_iii <- lm(formula = fte2 - fte ~ gap, data = ck_with_gap, subset = wage_available)
 ```
@@ -453,12 +450,12 @@ ck_long <- ck %>%
 $$ E_{it} = a + b X_{it} + c NJ_i + d \mbox{After}_t + \delta NJ_i \times \mbox{After}_t + \epsilon_i $$
 
 ```{r longer_reg}
-did_reg_long_i <- lm(fte ~ NJ*after, data = ck_long, subset = wage_available)
+did_reg_long_i <- lm(fte ~ NJ * after, data = ck_long, subset = wage_available)
 # summary(did_reg_long_i)
-did_reg_long_ii <- lm(fte ~ NJ*after + factor(chain) + co_owned, data = ck_long, subset = wage_available)
-did_reg_long_iii <- lm(fte ~ gap*after, data = ck_long, subset = wage_available)
-did_reg_long_iv <- lm(fte ~ gap*after + factor(chain) + co_owned, data = ck_long, subset = wage_available)
-did_reg_long_v <- lm(fte ~ gap*after + factor(chain) + co_owned + south_NJ + north_NJ + PA2 + shore, 
+did_reg_long_ii <- lm(fte ~ NJ * after + factor(chain) + co_owned, data = ck_long, subset = wage_available)
+did_reg_long_iii <- lm(fte ~ gap * after, data = ck_long, subset = wage_available)
+did_reg_long_iv <- lm(fte ~ gap * after + factor(chain) + co_owned, data = ck_long, subset = wage_available)
+did_reg_long_v <- lm(fte ~ gap * after + factor(chain) + co_owned + south_NJ + north_NJ + PA2 + shore, 
                      data = ck_long, subset = wage_available)
 ```
 
@@ -472,19 +469,17 @@ modelsummary(list(did_reg_long_i, did_reg_long_ii, did_reg_long_iii, did_reg_lon
              gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", stars = TRUE)
 ```
 
+
 <!--
-```{r ck}
-library(tidyverse)
+evident パッケージの ck データを取得することも可．
+
 # install.packages("evident")
 library(evident)
 str(ck)
 head(ck)
 ck %>% 
-  # mutate(grp2 = ifelse(grp == "PA", "PA", "NJ")) %>% 
-  # group_by(grp2) %>% 
+  mutate(grp2 = ifelse(grp == "PA", "PA", "NJ")) %>% 
+  group_by(grp2) %>% 
   summarise(Feb = mean(fte), Nov = mean(fte2))
-(20.1-21.1) - (23.7-21.8)  # diff in diff
-# lm(formula = fte - fte2 ~ I(grp == "PA"), data = ck)
-```
+lm(formula = fte - fte2 ~ I(grp == "PA"), data = ck)
 -->
-.
