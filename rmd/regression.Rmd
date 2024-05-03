@@ -60,37 +60,6 @@ alpha_hat <- y_bar - beta_hat * x_bar
 c(alpha_hat, beta_hat)
 ```
 
-
-### Advanced: Properties of fitted values and residuals 
-
-アウトカムの当てはめ値 $\hat{Y}_i = \hat{\alpha} + \hat{\beta} X_i$ の平均はアウトカムの平均と一致する．
-
-$$ \bar{\hat{Y}} = \bar{Y} $$
-
-```{r reg_check_pred}
-alpha_hat <- lm(Fertility ~ Examination, data = swiss)$coef[1]
-beta_hat <- lm(Fertility ~ Examination, data = swiss)$coef[2]
-y_pred <- alpha_hat + beta_hat * swiss$Examination  # y hat
-c(mean(y_pred), y_bar)  # should be matched
-```
-
-残差（誤差変数の当てはめ値, $\hat{u} = Y - \hat{Y}$）に関する幾つかの性質．
-
-$$ \sum_i \hat{u}_i = 0, \quad \sum_i \hat{u}_i X_i = 0 $$
-
-```{r reg_check1}
-resid_swiss <- swiss$Fertility - y_pred  # residuals
-sum(resid_swiss)  # should be zero
-sum(resid_swiss * swiss$Examination)  # eX ... should be zero
-```
-
-$$ S_{X\hat{u}} = \sum_i (X - \bar{X}) (\hat{u} - \bar{\hat{u}}) = 0, \quad S_{Y\hat{u}} = \sum_i (Y - \bar{Y}) (\hat{u} - \bar{\hat{u}}) = 0 $$
-
-```{r reg_check2}
-sum((swiss$Examination - x_bar) * (resid_swiss - mean(resid_swiss)))  # S_Xe ... should be zero
-sum((y_pred - y_bar) * (resid_swiss - mean(resid_swiss)))  # S_Ye ... should be zero
-```
-
 ## Estimation by numerical calculation / 数値計算による推定
 
 OLSは残差二乗和の最小化によって回帰係数パラメタを推定する方法（モデルをデータに当てはめる原理）であるが，これを解析的に解くのではなく数値計算によって解いてみる．
@@ -160,8 +129,10 @@ $$ S_{YY} = \sum_i (Y_i - \bar{Y})^2, \quad S_{\hat{Y} \hat{Y}} = \sum_i (\hat{Y
 
 ```{r reg_r2}
 s_yy <- sum((swiss$Fertility - y_bar)^2)
+y_pred <- alpha_hat + beta_hat * swiss$Examination  # y hat
 s_yhyh <- sum((y_pred - y_bar)^2)
 s_yhyh / s_yy  # R^2
+resid_swiss <- swiss$Fertility - y_pred  # residuals
 1 - sum(resid_swiss^2) / s_yy  # R^2 ... should be the same as above
 ```
 
@@ -241,19 +212,17 @@ summary(lm(Fertility ~ Examination + Education, data = swiss))
 $X_{nm}$ は $n$ 番目の個体の $m$ 番目の説明変数を表す．
 $Y_{n}$ は $n$ 番目の個体の被説明変数（アウトカム）を表す．
 
-$$ \mathbf{X} = \left[ \matrix{X_{11} & X_{12} & X_{13} & \cdots \\ X_{21} & X_{22} & X_{23} & \cdots \\ X_{31} & X_{32} & X_{33} & \cdots \\ \vdots & \vdots & \vdots & \ddots} \right], \quad \mathbf{Y} = \left[ \matrix{Y_1 \\ Y_2 \\ Y_3 \\ \vdots} \right] , \quad \mathbf{\beta} = \left[ \matrix{\beta_1 \\ \beta_2 \\ \beta_3 \\ \vdots} \right] $$
-
-注：本当は $\beta$ も同様にベクトル表記するべきだが，このページ（R Markdown）を作成するための数式レンダリング機能の限界でスカラーのように出力されてしまっている．ベクトルとして読んでいただきたい．
+$$ \mathbf{X} = \left[ \matrix{X_{11} & X_{12} & X_{13} & \cdots \\ X_{21} & X_{22} & X_{23} & \cdots \\ X_{31} & X_{32} & X_{33} & \cdots \\ \vdots & \vdots & \vdots & \ddots} \right], \quad \mathbf{Y} = \left[ \matrix{Y_1 \\ Y_2 \\ Y_3 \\ \vdots} \right] , \quad \boldsymbol{\beta} = \left[ \matrix{\beta_1 \\ \beta_2 \\ \beta_3 \\ \vdots} \right] $$
 
 行列表記の回帰モデル．
 
-$$ \mathbf{Y} = \mathbf{X} \mathbf{\beta} + \mathbf{u} $$
+$$ \mathbf{Y} = \mathbf{X} \boldsymbol{\beta} + \mathbf{u} $$
 
-残差二乗和 $Q$ を $\mathbf{\beta}$ で微分して 0 とおくことでOLS推定量が得られる．
+残差二乗和 $Q$ を $\boldsymbol{\beta}$ で微分して 0 とおくことでOLS推定量が得られる．
 
-$$ Q = \mathbf{u}'\mathbf{u} = (\mathbf{Y} - \mathbf{X} \mathbf{\beta})' (\mathbf{Y} - \mathbf{X} \mathbf{\beta}), \quad \frac{\partial Q}{\partial \beta} =0 $$
+$$ Q = \mathbf{u}'\mathbf{u} = (\mathbf{Y} - \mathbf{X} \boldsymbol{\beta})' (\mathbf{Y} - \mathbf{X} \boldsymbol{\beta}), \quad \frac{\partial Q}{\partial \boldsymbol{\beta}} =0 $$
 
-$$ \hat{\mathbf{\beta}} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{Y} $$
+$$ \hat{\boldsymbol{\beta}} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{Y} $$
 
 まずは $\mathbf{X}, \mathbf{Y}$ を作成する．
 説明変数には1（定数項）が含まれている点に注意しよう．
@@ -274,7 +243,7 @@ beta_multi
 
 ## Standard error / 標準誤差
 
-$$ V(\hat{\mathbf{\beta}}) = \sigma^2 (\mathbf{X}'\mathbf{X})^{-1} $$
+$$ V(\hat{\boldsymbol{\beta}}) = \sigma^2 (\mathbf{X}'\mathbf{X})^{-1} $$
 
 回帰係数の検定を行うためには誤差分散 $\sigma^2$ の推定値を求める必要がある．
 $k$ は（定数項を除いた）説明変数の数なので2である．
@@ -445,6 +414,46 @@ lm(Fertility ~ Examination + region, data = swiss2)
 
 
 # Topics in Econometrics 
+
+## Properties of fitted values and residuals 
+
+再掲：一変数の回帰モデルの係数パラメタ推定
+
+```{r reg_mean_replay}
+y_bar <- mean(swiss$Fertility)  # Y bar
+x_bar <- mean(swiss$Examination)  # X bar
+s_xx <- sum((swiss$Examination - x_bar)^2)  # S_XX
+s_xy <- sum((swiss$Examination - x_bar) * (swiss$Fertility - y_bar))  # S_XX
+beta_hat <- s_xy / s_xx
+alpha_hat <- y_bar - beta_hat * x_bar
+```
+
+アウトカムの当てはめ値 $\hat{Y}_i = \hat{\alpha} + \hat{\beta} X_i$ の平均はアウトカムの平均と一致する．
+
+$$ \bar{\hat{Y}} = \bar{Y} $$
+
+```{r reg_check_pred}
+y_pred <- alpha_hat + beta_hat * swiss$Examination  # y hat
+c(mean(y_pred), y_bar)  # should be matched
+```
+
+残差（誤差変数の当てはめ値, $\hat{u} = Y - \hat{Y}$）に関する幾つかの性質．
+
+$$ \sum_i \hat{u}_i = 0, \quad \sum_i \hat{u}_i X_i = 0 $$
+
+```{r reg_check1}
+resid_swiss <- swiss$Fertility - y_pred  # residuals
+sum(resid_swiss)  # should be zero
+sum(resid_swiss * swiss$Examination)  # eX ... should be zero
+```
+
+$$ S_{X\hat{u}} = \sum_i (X - \bar{X}) (\hat{u} - \bar{\hat{u}}) = 0, \quad S_{Y\hat{u}} = \sum_i (Y - \bar{Y}) (\hat{u} - \bar{\hat{u}}) = 0 $$
+
+```{r reg_check2}
+sum((swiss$Examination - x_bar) * (resid_swiss - mean(resid_swiss)))  # S_Xe ... should be zero
+sum((y_pred - y_bar) * (resid_swiss - mean(resid_swiss)))  # S_Ye ... should be zero
+```
+
 
 ## Joint hypothesis test / 結合有意性検定
 
