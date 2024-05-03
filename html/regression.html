@@ -1543,33 +1543,6 @@ c(y_bar, x_bar, s_xx, s_xy)</code></pre>
 alpha_hat &lt;- y_bar - beta_hat * x_bar
 c(alpha_hat, beta_hat)</code></pre>
 <pre><code>## [1] 86.818529 -1.011317</code></pre>
-<div id="advanced-当てはめ値と残差に関する性質の確認" class="section level3" number="1.1.1">
-<h3><span class="header-section-number">1.1.1</span> Advanced:
-当てはめ値と残差に関する性質の確認</h3>
-<p>アウトカムの当てはめ値 <span class="math inline">\(\hat{Y}_i =
-\hat{\alpha} + \hat{\beta} X_i\)</span>
-の平均はアウトカムの平均と一致する．</p>
-<p><span class="math display">\[ \bar{\hat{Y}} = \bar{Y} \]</span></p>
-<pre class="r"><code>y_pred &lt;- alpha_hat + beta_hat * swiss$Examination  # y hat
-c(mean(y_pred), y_bar)  # should be matched</code></pre>
-<pre><code>## [1] 70.14255 70.14255</code></pre>
-<p>残差（誤差変数の当てはめ値, <span class="math inline">\(\hat{u} = Y -
-\hat{Y}\)</span>）に関する幾つかの性質．</p>
-<p><span class="math display">\[ \sum_i \hat{u}_i = 0, \quad \sum_i
-\hat{u}_i X_i = 0 \]</span></p>
-<pre class="r"><code>resid_swiss &lt;- swiss$Fertility - y_pred  # residuals
-sum(resid_swiss)  # should be zero</code></pre>
-<pre><code>## [1] 1.065814e-13</code></pre>
-<pre class="r"><code>sum(resid_swiss * swiss$Examination)  # eX ... should be zero</code></pre>
-<pre><code>## [1] 1.58451e-12</code></pre>
-<p><span class="math display">\[ S_{X\hat{u}} = \sum_i (X - \bar{X})
-(\hat{u} - \bar{\hat{u}}) = 0, \quad S_{Y\hat{u}} = \sum_i (Y - \bar{Y})
-(\hat{u} - \bar{\hat{u}}) = 0 \]</span></p>
-<pre class="r"><code>sum((swiss$Examination - x_bar) * (resid_swiss - mean(resid_swiss)))  # S_Xe ... should be zero</code></pre>
-<pre><code>## [1] -1.501022e-13</code></pre>
-<pre class="r"><code>sum((y_pred - y_bar) * (resid_swiss - mean(resid_swiss)))  # S_Ye ... should be zero</code></pre>
-<pre><code>## [1] -8.354428e-14</code></pre>
-</div>
 </div>
 <div id="estimation-by-numerical-calculation-数値計算による推定" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Estimation by
@@ -1678,10 +1651,12 @@ determination / 決定係数</h2>
 \quad S_{\hat{Y} \hat{Y}} = \sum_i (\hat{Y}_i - \bar{\hat{Y}})^2
 \]</span></p>
 <pre class="r"><code>s_yy &lt;- sum((swiss$Fertility - y_bar)^2)
+y_pred &lt;- alpha_hat + beta_hat * swiss$Examination  # y hat
 s_yhyh &lt;- sum((y_pred - y_bar)^2)
 s_yhyh / s_yy  # R^2</code></pre>
 <pre><code>## [1] 0.4171645</code></pre>
-<pre class="r"><code>1 - sum(resid_swiss^2) / s_yy  # R^2 ... should be the same as above</code></pre>
+<pre class="r"><code>resid_swiss &lt;- swiss$Fertility - y_pred  # residuals
+1 - sum(resid_swiss^2) / s_yy  # R^2 ... should be the same as above</code></pre>
 <pre><code>## [1] 0.4171645</code></pre>
 <p>余裕のある履修者向けの宿題：自由度調整済み決定係数を計算．</p>
 </div>
@@ -1774,21 +1749,18 @@ hand</h2>
 X_{23} &amp; \cdots \\ X_{31} &amp; X_{32} &amp; X_{33} &amp; \cdots \\
 \vdots &amp; \vdots &amp; \vdots &amp; \ddots} \right], \quad \mathbf{Y}
 = \left[ \matrix{Y_1 \\ Y_2 \\ Y_3 \\ \vdots} \right] , \quad
-\mathbf{\beta} = \left[ \matrix{\beta_1 \\ \beta_2 \\ \beta_3 \\ \vdots}
-\right] \]</span></p>
-<p>注：本当は <span class="math inline">\(\beta\)</span>
-も同様にベクトル表記するべきだが，このページ（R
-Markdown）を作成するための数式レンダリング機能の限界でスカラーのように出力されてしまっている．ベクトルとして読んでいただきたい．</p>
+\boldsymbol{\beta} = \left[ \matrix{\beta_1 \\ \beta_2 \\ \beta_3 \\
+\vdots} \right] \]</span></p>
 <p>行列表記の回帰モデル．</p>
-<p><span class="math display">\[ \mathbf{Y} = \mathbf{X} \mathbf{\beta}
-+ \mathbf{u} \]</span></p>
-<p>残差二乗和 <span class="math inline">\(Q\)</span> を <span class="math inline">\(\mathbf{\beta}\)</span> で微分して 0
+<p><span class="math display">\[ \mathbf{Y} = \mathbf{X}
+\boldsymbol{\beta} + \mathbf{u} \]</span></p>
+<p>残差二乗和 <span class="math inline">\(Q\)</span> を <span class="math inline">\(\boldsymbol{\beta}\)</span> で微分して 0
 とおくことでOLS推定量が得られる．</p>
 <p><span class="math display">\[ Q = \mathbf{u}&#39;\mathbf{u} =
-(\mathbf{Y} - \mathbf{X} \mathbf{\beta})&#39; (\mathbf{Y} - \mathbf{X}
-\mathbf{\beta}), \quad \frac{\partial Q}{\partial \beta} =0
-\]</span></p>
-<p><span class="math display">\[ \hat{\mathbf{\beta}} =
+(\mathbf{Y} - \mathbf{X} \boldsymbol{\beta})&#39; (\mathbf{Y} -
+\mathbf{X} \boldsymbol{\beta}), \quad \frac{\partial Q}{\partial
+\boldsymbol{\beta}} =0 \]</span></p>
+<p><span class="math display">\[ \hat{\boldsymbol{\beta}} =
 (\mathbf{X}&#39;\mathbf{X})^{-1}\mathbf{X}&#39;\mathbf{Y} \]</span></p>
 <p>まずは <span class="math inline">\(\mathbf{X}, \mathbf{Y}\)</span>
 を作成する． 説明変数には1（定数項）が含まれている点に注意しよう．</p>
@@ -1810,7 +1782,7 @@ beta_multi</code></pre>
 <div id="standard-error-標準誤差" class="section level2" number="2.2">
 <h2><span class="header-section-number">2.2</span> Standard error /
 標準誤差</h2>
-<p><span class="math display">\[ V(\hat{\mathbf{\beta}}) = \sigma^2
+<p><span class="math display">\[ V(\hat{\boldsymbol{\beta}}) = \sigma^2
 (\mathbf{X}&#39;\mathbf{X})^{-1} \]</span></p>
 <p>回帰係数の検定を行うためには誤差分散 <span class="math inline">\(\sigma^2\)</span> の推定値を求める必要がある．
 <span class="math inline">\(k\)</span>
@@ -2047,8 +2019,42 @@ table(swiss2$region)</code></pre>
 <div id="topics-in-econometrics" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Topics in
 Econometrics</h1>
-<div id="joint-hypothesis-test-結合有意性検定" class="section level2" number="4.1">
-<h2><span class="header-section-number">4.1</span> Joint hypothesis test
+<div id="properties-of-fitted-values-and-residuals" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> Properties of fitted
+values and residuals</h2>
+<p>再掲：一変数の回帰モデルの係数パラメタ推定</p>
+<pre class="r"><code>y_bar &lt;- mean(swiss$Fertility)  # Y bar
+x_bar &lt;- mean(swiss$Examination)  # X bar
+s_xx &lt;- sum((swiss$Examination - x_bar)^2)  # S_XX
+s_xy &lt;- sum((swiss$Examination - x_bar) * (swiss$Fertility - y_bar))  # S_XX
+beta_hat &lt;- s_xy / s_xx
+alpha_hat &lt;- y_bar - beta_hat * x_bar</code></pre>
+<p>アウトカムの当てはめ値 <span class="math inline">\(\hat{Y}_i =
+\hat{\alpha} + \hat{\beta} X_i\)</span>
+の平均はアウトカムの平均と一致する．</p>
+<p><span class="math display">\[ \bar{\hat{Y}} = \bar{Y} \]</span></p>
+<pre class="r"><code>y_pred &lt;- alpha_hat + beta_hat * swiss$Examination  # y hat
+c(mean(y_pred), y_bar)  # should be matched</code></pre>
+<pre><code>## [1] 70.14255 70.14255</code></pre>
+<p>残差（誤差変数の当てはめ値, <span class="math inline">\(\hat{u} = Y -
+\hat{Y}\)</span>）に関する幾つかの性質．</p>
+<p><span class="math display">\[ \sum_i \hat{u}_i = 0, \quad \sum_i
+\hat{u}_i X_i = 0 \]</span></p>
+<pre class="r"><code>resid_swiss &lt;- swiss$Fertility - y_pred  # residuals
+sum(resid_swiss)  # should be zero</code></pre>
+<pre><code>## [1] 1.065814e-13</code></pre>
+<pre class="r"><code>sum(resid_swiss * swiss$Examination)  # eX ... should be zero</code></pre>
+<pre><code>## [1] 1.58451e-12</code></pre>
+<p><span class="math display">\[ S_{X\hat{u}} = \sum_i (X - \bar{X})
+(\hat{u} - \bar{\hat{u}}) = 0, \quad S_{Y\hat{u}} = \sum_i (Y - \bar{Y})
+(\hat{u} - \bar{\hat{u}}) = 0 \]</span></p>
+<pre class="r"><code>sum((swiss$Examination - x_bar) * (resid_swiss - mean(resid_swiss)))  # S_Xe ... should be zero</code></pre>
+<pre><code>## [1] -1.501022e-13</code></pre>
+<pre class="r"><code>sum((y_pred - y_bar) * (resid_swiss - mean(resid_swiss)))  # S_Ye ... should be zero</code></pre>
+<pre><code>## [1] -8.354428e-14</code></pre>
+</div>
+<div id="joint-hypothesis-test-結合有意性検定" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> Joint hypothesis test
 / 結合有意性検定</h2>
 <p>「<code>Education</code> と <code>Examination</code>
 のどちらの回帰パラメタも 0 に等しい」という帰無仮説を検定するためには
@@ -2090,8 +2096,8 @@ f_value</code></pre>
 value}\)</span> なので，帰無仮説は5%有意水準で棄却される．
 すなわち，<code>Education</code> と <code>Examination</code>
 という2つの説明変数のうち少なくともいずれか一方の回帰パラメタは0ではないと結論付けられる．</p>
-<div id="using-carlinearhypothesis-function" class="section level3" number="4.1.1">
-<h3><span class="header-section-number">4.1.1</span> Using
+<div id="using-carlinearhypothesis-function" class="section level3" number="4.2.1">
+<h3><span class="header-section-number">4.2.1</span> Using
 <code>car::linearHypothesis</code> function</h3>
 <p><code>car</code> というパッケージの <code>linearHypothesis</code>
 という関数で検定できる．
@@ -2146,8 +2152,8 @@ summary(lm_swiss)</code></pre>
 See alos: <https://www.econometrics-with-r.org/7.3-joint-hypothesis-testing-using-the-f-statistic.html>
 -->
 </div>
-<div id="advanced-anova" class="section level3" number="4.1.2">
-<h3><span class="header-section-number">4.1.2</span> Advanced:
+<div id="advanced-anova" class="section level3" number="4.2.2">
+<h3><span class="header-section-number">4.2.2</span> Advanced:
 ANOVA</h3>
 <p>分散分析について知っている履修者は次の2つの分析の関係を検討してみよう．</p>
 <ul>
@@ -2162,8 +2168,8 @@ ANOVA</h3>
 <pre><code>## [1] 29.07634       NA</code></pre>
 </div>
 </div>
-<div id="white-standard-error-ホワイトの標準誤差" class="section level2" number="4.2">
-<h2><span class="header-section-number">4.2</span> White standard error
+<div id="white-standard-error-ホワイトの標準誤差" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> White standard error
 / ホワイトの標準誤差</h2>
 <p>残差 <span class="math inline">\(\hat{u} = Y - \hat{Y}\)</span>
 を用いた不均一分散に頑健な標準誤差（White
@@ -2214,8 +2220,8 @@ https://cran.r-project.org/web/packages/fixest/vignettes/standard_errors.html
 # lmtest::coeftest(lm_swiss, vcov. = sandwich::vcovHC(lm_swiss, type="HC1"))  # using "lmtest" and "sandwich" packages
 -->
 </div>
-<div id="cluster-robust-se-クラスターロバスト標準誤差" class="section level2" number="4.3">
-<h2><span class="header-section-number">4.3</span> Cluster robust SE /
+<div id="cluster-robust-se-クラスターロバスト標準誤差" class="section level2" number="4.4">
+<h2><span class="header-section-number">4.4</span> Cluster robust SE /
 クラスターロバスト標準誤差</h2>
 <p><code>swiss</code>
 データにおいて，以下の6地域をクラスターとして利用する（再掲）．</p>
@@ -2237,8 +2243,8 @@ table(swiss2$region)  # 再掲</code></pre>
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## RMSE: 9.43462   Adj. R2: 0.404213</code></pre>
 </div>
-<div id="ols-vs.-wls-monte-carlo-simulation-モンテカルロシミュレーション" class="section level2" number="4.4">
-<h2><span class="header-section-number">4.4</span> OLS vs. WLS Monte
+<div id="ols-vs.-wls-monte-carlo-simulation-モンテカルロシミュレーション" class="section level2" number="4.5">
+<h2><span class="header-section-number">4.5</span> OLS vs. WLS Monte
 Carlo simulation / モンテカルロシミュレーション</h2>
 <p>誤差の不均一性をもたらすメカニズムが既知で当該要因を観測可能な場合は
 OLS よりも加重最小二乗法（WLS）の方が効率よく推定できる．</p>
