@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Instrumental Variables"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年4月 (Last update: 2024年4月)'
+date: '2024年4月 (Last update: 2024年5月)'
 output:
   html_document:
     toc: yes
@@ -68,7 +68,7 @@ $$ \hat{\beta}_{IV} = \frac{cov(z, y)}{cov(z, x)} $$
 * アウトカム `log(wage)` を `educ` に回帰したとき，`educ` の回帰係数 $\beta$ が半弾力性（`educ` が1単位増加したとき賃金率が $100 \times \beta$ % 増加する）として解釈できる
 * しかし `educ` は内生変数なので，`fatheduc` で instrument する
 
-$$ \mbox{First stage:} \quad \log(\mbox{Education}) = \gamma_0 + \gamma_1  (\mbox{Father's education}) + v $$
+$$ \mbox{First stage:} \quad (\mbox{Education}) = \gamma_0 + \gamma_1  (\mbox{Father's education}) + v $$
 $$ \mbox{Second stage:} \quad \log(\mbox{Wage}) = \beta_0 + \beta_1 (\mbox{Education}) + u $$
 
 ## Estimation by hand 
