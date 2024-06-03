@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Regression Analysis"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年3月 (Last update: 2024年4月)'
+date: '2024年3月 (Last update: 2024年6月)'
 output:
   html_document:
     toc: yes
@@ -42,13 +42,13 @@ summary(lm(formula = Fertility ~ Examination, data = swiss))
 $$ \hat{\alpha} = \bar{Y} - \hat{\beta} \bar{X}, \quad \hat{\beta} = \frac{S_{XY}}{S_{XX}} $$
 $$ S_{XX} = \sum_i (X_i - \bar{X})^2, \quad S_{XY} = \sum_i (X_i - \bar{X}) (Y_i - \bar{Y}) $$
 
-まず $\bar{Y}, \bar{X}, S_{XX}, S_{YY}$ という4つの統計量を計算する．
+まず $\bar{Y}, \bar{X}, S_{XX}, S_{XY}$ という4つの統計量を計算する．
 
 ```{r reg_mean_s}
 y_bar <- mean(swiss$Fertility)  # Y bar
 x_bar <- mean(swiss$Examination)  # X bar
 s_xx <- sum((swiss$Examination - x_bar)^2)  # S_XX
-s_xy <- sum((swiss$Examination - x_bar) * (swiss$Fertility - y_bar))  # S_XX
+s_xy <- sum((swiss$Examination - x_bar) * (swiss$Fertility - y_bar))  # S_XY
 c(y_bar, x_bar, s_xx, s_xy)
 ```
 
