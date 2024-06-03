@@ -1481,7 +1481,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">Data Analysis Using Statistical Packages:
 Regression Analysis</h1>
 <h4 class="author">Sho Kuroda / 黒田翔</h4>
-<h4 class="date">2024年3月 (Last update: 2024年4月)</h4>
+<h4 class="date">2024年3月 (Last update: 2024年6月)</h4>
 
 </div>
 
@@ -1531,11 +1531,11 @@ hand</h2>
 \bar{X}, \quad \hat{\beta} = \frac{S_{XY}}{S_{XX}} \]</span> <span class="math display">\[ S_{XX} = \sum_i (X_i - \bar{X})^2, \quad S_{XY}
 = \sum_i (X_i - \bar{X}) (Y_i - \bar{Y}) \]</span></p>
 <p>まず <span class="math inline">\(\bar{Y}, \bar{X}, S_{XX},
-S_{YY}\)</span> という4つの統計量を計算する．</p>
+S_{XY}\)</span> という4つの統計量を計算する．</p>
 <pre class="r"><code>y_bar &lt;- mean(swiss$Fertility)  # Y bar
 x_bar &lt;- mean(swiss$Examination)  # X bar
 s_xx &lt;- sum((swiss$Examination - x_bar)^2)  # S_XX
-s_xy &lt;- sum((swiss$Examination - x_bar) * (swiss$Fertility - y_bar))  # S_XX
+s_xy &lt;- sum((swiss$Examination - x_bar) * (swiss$Fertility - y_bar))  # S_XY
 c(y_bar, x_bar, s_xx, s_xy)</code></pre>
 <pre><code>## [1]    70.14255    16.48936  2927.74468 -2960.87872</code></pre>
 <p>計算した統計量を使って回帰係数を計算する．</p>
