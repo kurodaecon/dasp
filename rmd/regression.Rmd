@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Regression Analysis"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年3月 (Last update: 2024年6月)'
+date: '2024年3月 (Last update: 2024年7月)'
 output:
   html_document:
     toc: yes
@@ -136,7 +136,14 @@ resid_swiss <- swiss$Fertility - y_pred  # residuals
 1 - sum(resid_swiss^2) / s_yy  # R^2 ... should be the same as above
 ```
 
+決定係数が 0.417 ということは，説明変数 (Examination) によって被説明変数 (Fertility) の変動のうち 41.7% を説明することができる，という意味．
+
 余裕のある履修者向けの宿題：自由度調整済み決定係数を計算．
+
+$$ R^2 = 1 - \frac{n - 1}{n - K - 1} \frac{\sum \hat{u}_i^2}{S_{YY}} $$
+
+$K$: 説明変数の数（定数項は含めない）
+
 
 ## Standard error and test / 標準誤差と検定
 
@@ -385,7 +392,7 @@ swiss2 %>%
 t.test(Fertility ~ exam_dummy, data = swiss2, var.equal = TRUE)
 ```
 
-このように，線形回帰モデルにおける検定は幾つかの検定と本質的に同じことを行っているものとして解釈できる．詳細は Lindeløv (2019) [Common statistical tests are linear models](https://lindeloev.github.io/tests-as-linear/) を参照．
+このように，線形回帰モデルにおける回帰係数に対する検定は幾つかの検定と本質的に同じことを行っているものとして解釈できる．詳細は Lindeløv (2019) [Common statistical tests are linear models](https://lindeloev.github.io/tests-as-linear/) を参照．
 
 
 ## Categorical variables 
@@ -407,10 +414,171 @@ swiss2$region <-
     "F", "F", "F", "F", "F", "F", "F", "F", "D", "D",
     "D", "D", "D", "D", "E", "E", "E")
 table(swiss2$region)
-lm(Fertility ~ Examination + region, data = swiss2)
+lm(Fertility ~ Examination + region, swiss2)$coef
 ```
 
 `regionB` の回帰係数 -12.1 は，`region` = A をベースラインとしたときの B の切片の違い（平均的に Fertility がどれだけ異なるか）を表す．
+
+
+### Change the reference group 
+
+ベースラインのカテゴリーを変更するには `relevel` 関数を使う．
+
+```{r category_dummy_baseB}
+swiss2$region <- relevel(as.factor(swiss2$region), ref = "B")
+lm(Fertility ~ Examination + region, swiss2)$coef
+```
+
+
+## Multicollinearity / 多重共線性
+
+### Example of perfect multico. / 完全な多重共線性の例
+
+```{r multico_perfect}
+lm(formula = Fertility ~ Examination + I(2 * Examination), data = swiss)$coef
+cor(swiss$Examination, 2 * swiss$Examination)
+```
+
+R では，該当する変数（のうち一つ）が自動的に drop される．
+
+
+### Example of imperfect multico. / 不完全な多重共線性の例
+
+説明変数 `Examination` と非常に相関の高い変数（`Examination` にノイズを足したもの）が説明変数として追加される場合．
+
+```{r multico_imperfect}
+set.seed(2)
+swiss_multico <- swiss %>% 
+  mutate(Exam_with_noise = Examination + rnorm(nrow(swiss), sd = 1))
+cor(swiss_multico$Examination, swiss_multico$Exam_with_noise)
+summary(lm(formula = Fertility ~ Examination + Exam_with_noise, data = swiss_multico))$coef
+```
+
+（参考）`Examination` のみの場合．
+
+```{r multico_imperfect_base}
+summary(lm(formula = Fertility ~ Examination, data = swiss_multico))$coef
+```
+
+
+### Using VIF for diagnostics / VIF による診断 
+
+変数 $j$ の分散拡大係数（variance inflation factor, VIF）は，変数 $j$ をそれ以外の変数に回帰したときの決定係数 $R_j^2$ を使って以下のように計算される．
+
+$$ VIF_j = \frac{1}{1 - R_j^2} $$
+
+あくまで一つの経験則でしかないが，「$VIF > 10$ ならば多重共線性が生じている」と判断される．
+
+```{r vif_manual}
+lm_exam <- lm(Examination ~ Education + Agriculture + Catholic, data = swiss)
+r2_exam <- summary(lm_exam)$r.squared
+1 / (1 - r2_exam)  # VIF 
+```
+
+`car` パッケージの `vif` 関数を使うと便利．
+
+```{r vif_car, message = FALSE}
+# install.packages("car")
+library(car)
+lm0 <- lm(formula = Fertility ~ Examination + Education + Agriculture + Catholic, data = swiss)
+car::vif(lm0)
+```
+
+
+## Comparing the size of the coefficients / 回帰係数の大きさを比較する
+
+例：`Examination` と `Agriculture` の回帰係数の（絶対値の）大きさを比較する．
+
+```{r swiss_example}
+lm(formula = Fertility ~ Examination + Agriculture, data = swiss)$coef
+```
+
+上の結果から「$|-1.195|>|-0.094|$ なので `Examination` の方が `Fertility` の分散をより説明する」と結論付けることはできない．
+
+なぜなら，係数の大きさは変数のスケール（ばらつき）に依存するから．
+
+たとえば，線形モデル $y = \beta_0 + \beta_1 x + u$ において金額ベースの変数 $x$ の単位を「円」から「千円」に変えると，推定される値そのもの ($\hat{\beta}_1$) は1千倍になるが，推定された回帰係数の「解釈」は全く変わらない（この変数の重要性が1千倍になるわけではない）．
+
+
+### Comparing the change per one SD / 1標準偏差当たりの変化量の比較
+
+```{r swiss_comparison}
+-1.195 * sd(swiss$Examination)
+-0.094 * sd(swiss$Agriculture)
+```
+
+「$|-9.5|>|-2.1|$ なので `Examination` の方が `Fertility` の分散をより説明する」と言える．
+
+
+### Standardized partial regression coefficient / 標準偏回帰係数
+
+より一般的な方法は，標準化（平均 0，分散 1 になるように変換）した変数を使って回帰分析をするもの．
+
+```{r swiss_scaled}
+swiss_scaled <- swiss %>% 
+  mutate(Fertility_scaled = (Fertility - mean(Fertility)) / sd(Fertility),
+         Examination_scaled = (Examination - mean(Examination)) / sd(Examination),
+         Agriculture_scaled = (Agriculture - mean(Agriculture)) / sd(Agriculture))
+lm(formula = Fertility_scaled ~ Examination_scaled + Agriculture_scaled, data = swiss_scaled)$coef
+```
+
+「$|-0.76|>|-0.17|$ なので `Examination` の方が `Fertility` の分散をより説明する」と言える．
+
+スケーリング（分散を 1 にする）とセンタリング（平均を 0 にする）を同時に行ってくれる `scale` という関数を使えばより簡単．
+
+```{r swiss_scaled_2, eval = FALSE}
+lm(formula = Fertility ~ Examination + Agriculture, data = as.data.frame(scale(swiss)))
+```
+
+（出力は省略）
+
+
+## Model selection / モデル選択
+
+被説明変数の予測を目的として回帰分析を行う場合，複数のモデル候補があった場合に，予測力が最も優れたモデルを一つ選択したい場合があるだろう．
+しかし，説明変数を追加すれば決定係数は必ず増加するが，それは標本に特有のデータの変動（あるいはノイズ）に過適合しているだけかもしれない．
+これを防ぐために，モデルの説明力とモデルの簡潔さのトレードオフの間でバランスを取るための何らかの指標が必要となる．
+
+自由度調整済みの決定係数はモデル選択の趣旨には当てはまっているが，実務的により広く利用されるのはAIC（赤池情報量規準）と呼ばれる規準（基準）．
+これはモデルを最尤推定することを前提として「最尤推定量の対数尤度」と「パラメタの数（＝定数項を含む説明変数の数＝K+1）」のトレードオフとして記述される．
+
+$$ AIC = -2 \log L + 2(K+1) $$
+
+対数尤度は大きいほど当てはまりが良く，パラメタ数は少ない方がよい．
+すなわち，複数のモデル間で AIC が最も小さいモデルが望ましい．
+
+注：
+
+* 因果推論を目的として回帰分析を行う場合には一般にモデル選択は行わない場合が多い．分析の目的に応じてモデル選択を行うかどうかを決めよう．
+  * 典型的な AIC の使いどころは，時系列分析におけるラグの次数決定．
+* AICは「真のモデル」を選択する基準ではない．あくまで予測力の観点で（比較対象の中で相対的に最も）望ましいモデルを選択する基準である．
+* モデル選択後に回帰係数の検定を行わない方が良い．少なくとも，オーソドックスな t 検定をナイーブに適用するのはNG．
+
+<!--
+MODEL SELECTION AND INFERENCE: FACTS AND FICTION
+https://www.cambridge.org/core/journals/econometric-theory/article/abs/model-selection-and-inference-facts-and-fiction/EF3C7D79D5AFC4C6325345A3C8E26296
+-->
+
+### Find AIC 
+
+```{r aic}
+lm1 <- lm(Fertility ~ Examination, data = swiss)
+lm2 <- lm(Fertility ~ Examination + Education, data = swiss)
+lm3 <- lm(Fertility ~ Examination + Education + Agriculture + Catholic, data = swiss)
+AIC(lm1, lm2, lm3)
+```
+
+
+### Stepwise model selection with AIC
+
+考え得る説明変数をすべて含めたモデル (full model) からスタートして stepwise で最適なモデルを選択することもできる．
+
+`step` 関数を使うと AIC を規準としてモデル選択が行われる．
+
+```{r aic_step}
+lm_full <- lm(Fertility ~ Examination + Education + Agriculture + Catholic + Infant.Mortality, data = swiss)
+step(lm_full, trace = 0)  # trace = 1 にすると計算過程が出力される
+```
 
 
 # Topics in Econometrics 
