@@ -1481,7 +1481,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">Data Analysis Using Statistical Packages:
 Regression Analysis</h1>
 <h4 class="author">Sho Kuroda / 黒田翔</h4>
-<h4 class="date">2024年3月 (Last update: 2024年6月)</h4>
+<h4 class="date">2024年3月 (Last update: 2024年7月)</h4>
 
 </div>
 
@@ -1658,7 +1658,14 @@ s_yhyh / s_yy  # R^2</code></pre>
 <pre class="r"><code>resid_swiss &lt;- swiss$Fertility - y_pred  # residuals
 1 - sum(resid_swiss^2) / s_yy  # R^2 ... should be the same as above</code></pre>
 <pre><code>## [1] 0.4171645</code></pre>
+<p>決定係数が 0.417 ということは，説明変数 (Examination)
+によって被説明変数 (Fertility) の変動のうち 41.7%
+を説明することができる，という意味．</p>
 <p>余裕のある履修者向けの宿題：自由度調整済み決定係数を計算．</p>
+<p><span class="math display">\[ R^2 = 1 - \frac{n - 1}{n - K - 1}
+\frac{\sum \hat{u}_i^2}{S_{YY}} \]</span></p>
+<p><span class="math inline">\(K\)</span>:
+説明変数の数（定数項は含めない）</p>
 </div>
 <div id="standard-error-and-test-標準誤差と検定" class="section level2" number="1.4">
 <h2><span class="header-section-number">1.4</span> Standard error and
@@ -1975,7 +1982,7 @@ test of difference of means / 平均値の差の検定との関係</h3>
 ## sample estimates:
 ## mean in group 0 mean in group 1 
 ##        76.05926        62.15500</code></pre>
-<p>このように，線形回帰モデルにおける検定は幾つかの検定と本質的に同じことを行っているものとして解釈できる．詳細は
+<p>このように，線形回帰モデルにおける回帰係数に対する検定は幾つかの検定と本質的に同じことを行っているものとして解釈できる．詳細は
 Lindeløv (2019) <a href="https://lindeloev.github.io/tests-as-linear/">Common statistical
 tests are linear models</a> を参照．</p>
 </div>
@@ -2001,19 +2008,190 @@ table(swiss2$region)</code></pre>
 <pre><code>## 
 ##  A  B  C  D  E  F 
 ##  6 19  5  6  3  8</code></pre>
-<pre class="r"><code>lm(Fertility ~ Examination + region, data = swiss2)</code></pre>
-<pre><code>## 
-## Call:
-## lm(formula = Fertility ~ Examination + region, data = swiss2)
-## 
-## Coefficients:
-## (Intercept)  Examination      regionB      regionC      regionD      regionE  
-##     90.3395      -0.7412     -12.1424       6.0538      -1.8291     -30.9761  
-##     regionF  
-##     -8.8106</code></pre>
+<pre class="r"><code>lm(Fertility ~ Examination + region, swiss2)$coef</code></pre>
+<pre><code>## (Intercept) Examination     regionB     regionC     regionD     regionE 
+##   90.339456   -0.741199  -12.142443    6.053810   -1.829081  -30.976148 
+##     regionF 
+##   -8.810613</code></pre>
 <p><code>regionB</code> の回帰係数 -12.1 は，<code>region</code> = A
 をベースラインとしたときの B の切片の違い（平均的に Fertility
 がどれだけ異なるか）を表す．</p>
+<div id="change-the-reference-group" class="section level3" number="3.3.1">
+<h3><span class="header-section-number">3.3.1</span> Change the
+reference group</h3>
+<p>ベースラインのカテゴリーを変更するには <code>relevel</code>
+関数を使う．</p>
+<pre class="r"><code>swiss2$region &lt;- relevel(as.factor(swiss2$region), ref = &quot;B&quot;)
+lm(Fertility ~ Examination + region, swiss2)$coef</code></pre>
+<pre><code>## (Intercept) Examination     regionA     regionC     regionD     regionE 
+##   78.197013   -0.741199   12.142443   18.196253   10.313362  -18.833705 
+##     regionF 
+##    3.331830</code></pre>
+</div>
+</div>
+<div id="multicollinearity-多重共線性" class="section level2" number="3.4">
+<h2><span class="header-section-number">3.4</span> Multicollinearity /
+多重共線性</h2>
+<div id="example-of-perfect-multico.-完全な多重共線性の例" class="section level3" number="3.4.1">
+<h3><span class="header-section-number">3.4.1</span> Example of perfect
+multico. / 完全な多重共線性の例</h3>
+<pre class="r"><code>lm(formula = Fertility ~ Examination + I(2 * Examination), data = swiss)$coef</code></pre>
+<pre><code>##        (Intercept)        Examination I(2 * Examination) 
+##          86.818529          -1.011317                 NA</code></pre>
+<pre class="r"><code>cor(swiss$Examination, 2 * swiss$Examination)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<p>R では，該当する変数（のうち一つ）が自動的に drop される．</p>
+</div>
+<div id="example-of-imperfect-multico.-不完全な多重共線性の例" class="section level3" number="3.4.2">
+<h3><span class="header-section-number">3.4.2</span> Example of
+imperfect multico. / 不完全な多重共線性の例</h3>
+<p>説明変数 <code>Examination</code>
+と非常に相関の高い変数が説明変数として追加される場合．</p>
+<pre class="r"><code>set.seed(2)
+swiss_multico &lt;- swiss %&gt;% 
+  mutate(Exam_with_noise = Examination + rnorm(nrow(swiss), sd = 1))
+cor(swiss_multico$Examination, swiss_multico$Exam_with_noise)</code></pre>
+<pre><code>## [1] 0.9900738</code></pre>
+<pre class="r"><code>summary(lm(formula = Fertility ~ Examination + Exam_with_noise, data = swiss_multico))$coef</code></pre>
+<pre><code>##                   Estimate Std. Error    t value     Pr(&gt;|t|)
+## (Intercept)     86.6475143   3.202510 27.0561290 4.660541e-29
+## Examination      0.9822164   1.245743  0.7884584 4.346563e-01
+## Exam_with_noise -1.9706250   1.219204 -1.6163209 1.131734e-01</code></pre>
+<p>（参考）<code>Examination</code> のみの場合．</p>
+<pre class="r"><code>summary(lm(formula = Fertility ~ Examination, data = swiss_multico))$coef</code></pre>
+<pre><code>##              Estimate Std. Error   t value     Pr(&gt;|t|)
+## (Intercept) 86.818529  3.2576034 26.651043 3.353924e-29
+## Examination -1.011317  0.1781971 -5.675275 9.450437e-07</code></pre>
+</div>
+<div id="using-vif-for-diagnostics-vif-による診断" class="section level3" number="3.4.3">
+<h3><span class="header-section-number">3.4.3</span> Using VIF for
+diagnostics / VIF による診断</h3>
+<p>変数 <span class="math inline">\(j\)</span> の分散拡大係数（variance
+inflation factor, VIF）は，変数 <span class="math inline">\(j\)</span>
+をそれ以外の変数に回帰したときの決定係数 <span class="math inline">\(R_j^2\)</span>
+を使って以下のように計算される．</p>
+<p><span class="math display">\[ VIF_j = \frac{1}{1 - R_j^2}
+\]</span></p>
+<p>あくまで一つの経験則でしかないが，「<span class="math inline">\(VIF
+&gt; 10\)</span> ならば多重共線性が生じている」と判断される．</p>
+<pre class="r"><code>lm_exam &lt;- lm(Examination ~ Education + Agriculture + Catholic, data = swiss)
+r2_exam &lt;- summary(lm_exam)$r.squared
+1 / (1 - r2_exam)  # VIF </code></pre>
+<pre><code>## [1] 3.675372</code></pre>
+<p><code>car</code> パッケージの <code>vif</code> 関数を使うと便利．</p>
+<pre class="r"><code># install.packages(&quot;car&quot;)
+library(car)
+lm0 &lt;- lm(formula = Fertility ~ Examination + Education + Agriculture + Catholic, data = swiss)
+car::vif(lm0)</code></pre>
+<pre><code>## Examination   Education Agriculture    Catholic 
+##    3.675372    2.689400    2.147410    1.856475</code></pre>
+</div>
+</div>
+<div id="comparing-the-size-of-the-coefficients-回帰係数の大きさを比較する" class="section level2" number="3.5">
+<h2><span class="header-section-number">3.5</span> Comparing the size of
+the coefficients / 回帰係数の大きさを比較する</h2>
+<p>例：<code>Examination</code> と <code>Agriculture</code>
+の回帰係数の（絶対値の）大きさを比較する．</p>
+<pre class="r"><code>lm(formula = Fertility ~ Examination + Agriculture, data = swiss)$coef</code></pre>
+<pre><code>## (Intercept) Examination Agriculture 
+## 94.60968827 -1.19502875 -0.09399751</code></pre>
+<p>上の結果から「<span class="math inline">\(|-1.195|&gt;|-0.094|\)</span> なので
+<code>Examination</code> の方が <code>Fertility</code>
+の分散をより説明する」と結論付けることはできない．</p>
+<p>なぜなら，係数の大きさは変数のスケール（ばらつき）に依存するから．</p>
+<p>たとえば，線形モデル <span class="math inline">\(y = \beta_0 +
+\beta_1 x + u\)</span> において金額ベースの変数 <span class="math inline">\(x\)</span>
+の単位を「円」から「千円」に変えると，推定される値そのもの (<span class="math inline">\(\hat{\beta}_1\)</span>)
+は1千倍になるが，推定された回帰係数の「解釈」は全く変わらない（この変数の重要性が1千倍になるわけではない）．</p>
+<div id="comparing-the-change-per-one-sd-1標準偏差当たりの変化量の比較" class="section level3" number="3.5.1">
+<h3><span class="header-section-number">3.5.1</span> Comparing the
+change per one SD / 1標準偏差当たりの変化量の比較</h3>
+<pre class="r"><code>-1.195 * sd(swiss$Examination)</code></pre>
+<pre><code>## [1] -9.533571</code></pre>
+<pre class="r"><code>-0.094 * sd(swiss$Agriculture)</code></pre>
+<pre><code>## [1] -2.134854</code></pre>
+<p>「<span class="math inline">\(|-9.5|&gt;|-2.1|\)</span> なので
+<code>Examination</code> の方が <code>Fertility</code>
+の分散をより説明する」と言える．</p>
+</div>
+<div id="standardized-partial-regression-coefficient-標準偏回帰係数" class="section level3" number="3.5.2">
+<h3><span class="header-section-number">3.5.2</span> Standardized
+partial regression coefficient / 標準偏回帰係数</h3>
+<p>より一般的な方法は，標準化（平均 0，分散 1
+になるように変換）した変数を使って回帰分析をするもの．</p>
+<pre class="r"><code>swiss_scaled &lt;- swiss %&gt;% 
+  mutate(Fertility_scaled = (Fertility - mean(Fertility)) / sd(Fertility),
+         Examination_scaled = (Examination - mean(Examination)) / sd(Examination),
+         Agriculture_scaled = (Agriculture - mean(Agriculture)) / sd(Agriculture))
+lm(formula = Fertility_scaled ~ Examination_scaled + Agriculture_scaled, data = swiss_scaled)$coef</code></pre>
+<pre><code>##        (Intercept) Examination_scaled Agriculture_scaled 
+##       3.846942e-16      -7.632109e-01      -1.708973e-01</code></pre>
+<p>「<span class="math inline">\(|-0.76|&gt;|-0.17|\)</span> なので
+<code>Examination</code> の方が <code>Fertility</code>
+の分散をより説明する」と言える．</p>
+<p>スケーリング（分散を 1 にする）とセンタリング（平均を 0
+にする）を同時に行ってくれる <code>scale</code>
+という関数を使えばより簡単．</p>
+<pre class="r"><code>lm(formula = Fertility ~ Examination + Agriculture, data = as.data.frame(scale(swiss)))</code></pre>
+<p>（出力は省略）</p>
+</div>
+</div>
+<div id="model-selection-モデル選択" class="section level2" number="3.6">
+<h2><span class="header-section-number">3.6</span> Model selection /
+モデル選択</h2>
+<p>被説明変数の予測を目的として回帰分析を行う場合，複数のモデル候補があった場合に，予測力が最も優れたモデルを一つ選択したい場合があるだろう．
+しかし，説明変数を追加すれば決定係数は必ず増加するが，それは標本に特有のデータの変動（あるいはノイズ）に過適合しているだけかもしれない．
+これを防ぐために，モデルの説明力とモデルの簡潔さのトレードオフの間でバランスを取るための何らかの指標が必要となる．</p>
+<p>自由度調整済みの決定係数はモデル選択の趣旨には当てはまっているが，実務的により広く利用されるのはAIC（赤池情報量規準）と呼ばれる規準（基準）．
+これはモデルを最尤推定することを前提として「最尤推定量の対数尤度」と「パラメタの数（＝定数項を含む説明変数の数＝K+1）」のトレードオフとして記述される．</p>
+<p><span class="math display">\[ AIC = -2 \log L + 2(K+1) \]</span></p>
+<p>対数尤度は大きいほど当てはまりが良く，パラメタ数は少ない方がよい．
+すなわち，複数のモデル間で AIC が最も小さいモデルが望ましい．</p>
+<p>注：</p>
+<ul>
+<li>因果推論を目的として回帰分析を行う場合には一般にモデル選択は行わない場合が多い．分析の目的に応じてモデル選択を行うかどうかを決めよう．
+<ul>
+<li>典型的な AIC の使いどころは，時系列分析におけるラグの次数決定．</li>
+</ul></li>
+<li>AICは「真のモデル」を選択する基準ではない．あくまで予測力の観点で（比較対象の中で相対的に最も）望ましいモデルを選択する基準である．</li>
+<li>モデル選択後に回帰係数の検定を行わない方が良い．少なくとも，オーソドックスな
+t 検定をナイーブに適用するのはNG．</li>
+</ul>
+<!--
+MODEL SELECTION AND INFERENCE: FACTS AND FICTION
+https://www.cambridge.org/core/journals/econometric-theory/article/abs/model-selection-and-inference-facts-and-fiction/EF3C7D79D5AFC4C6325345A3C8E26296
+-->
+<div id="find-aic" class="section level3" number="3.6.1">
+<h3><span class="header-section-number">3.6.1</span> Find AIC</h3>
+<pre class="r"><code>lm1 &lt;- lm(Fertility ~ Examination, data = swiss)
+lm2 &lt;- lm(Fertility ~ Examination + Education, data = swiss)
+lm3 &lt;- lm(Fertility ~ Examination + Education + Agriculture + Catholic, data = swiss)
+AIC(lm1, lm2, lm3)</code></pre>
+<pre><code>##     df      AIC
+## lm1  3 350.3525
+## lm2  4 344.6292
+## lm3  6 332.4121</code></pre>
+</div>
+<div id="stepwise-model-selection-with-aic" class="section level3" number="3.6.2">
+<h3><span class="header-section-number">3.6.2</span> Stepwise model
+selection with AIC</h3>
+<p>考え得る説明変数をすべて含めたモデル (full model) からスタートして
+stepwise で最適なモデルを選択することもできる．</p>
+<p><code>step</code> 関数を使うと AIC
+を規準としてモデル選択が行われる．</p>
+<pre class="r"><code>lm_full &lt;- lm(Fertility ~ Examination + Education + Agriculture + Catholic + Infant.Mortality, data = swiss)
+step(lm_full, trace = 0)  # trace = 1 にすると計算過程が出力される</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Fertility ~ Education + Agriculture + Catholic + 
+##     Infant.Mortality, data = swiss)
+## 
+## Coefficients:
+##      (Intercept)         Education       Agriculture          Catholic  
+##          62.1013           -0.9803           -0.1546            0.1247  
+## Infant.Mortality  
+##           1.0784</code></pre>
+</div>
 </div>
 </div>
 <div id="topics-in-econometrics" class="section level1" number="4">
@@ -2230,8 +2408,8 @@ E: ジュネーブ州, F: ヴァレー州</p>
 <pre class="r"><code>library(fixest)
 table(swiss2$region)  # 再掲</code></pre>
 <pre><code>## 
-##  A  B  C  D  E  F 
-##  6 19  5  6  3  8</code></pre>
+##  B  A  C  D  E  F 
+## 19  6  5  6  3  8</code></pre>
 <pre class="r"><code>feols(Fertility ~ Examination, data = swiss2, cluster = ~ region)</code></pre>
 <pre><code>## OLS estimation, Dep. Var.: Fertility
 ## Observations: 47 
