@@ -23,6 +23,8 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * [Discrete Regression Analysis / 離散回帰分析](https://kurodaecon.github.io/dasp/html/discrete_regression.html)
    * 最尤法：ベルヌーイ分布，正規分布，線形回帰モデル
    * 離散回帰モデル：二項プロビット・モデル（数値計算による最適化を含む），二項ロジット・モデル，限界効果
+* [Time Series Analysis / 時系列分析](https://kurodaecon.github.io/dasp/html/time_series.html)
+   * 自己相関，定常性の検定，自己回帰モデル（最小二乗法および最尤法による推定），移動平均モデル（最尤法による推定）
 * [Panel Data Analysis and DID / パネルデータ分析とDID](https://kurodaecon.github.io/dasp/html/did.html)
    * パネルデータ分析：個体固定効果（Within 推定，LSDV 推定，First difference 推定），個体・時間固定効果，パネルデータの Long ⇔ Wide の変換
    * DID（差分の差分法）：DID table の作成，回帰モデルの推定による DID 分析，Event study 
