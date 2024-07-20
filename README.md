@@ -54,6 +54,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/)
 * Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/)
 * 川田恵介 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
+* 田頭拓己 (2024) [マーケティングリサーチ講義ノート：Rを使ったリサーチ基礎固め](https://tak-tag.github.io/MktRes_Lecture/)
 * 宋財泫 (2023) [方法論特殊講義III](https://www.jaysong.net/kobe-ci/)
 * 安藤道人，三田匡能 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
 * 矢内勇生 (2023) [計量経済学応用](https://yukiyanai.github.io/jp/classes/econometrics2/contents/)
