@@ -66,3 +66,4 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * 矢内勇生 (2023) [計量経済学応用](https://yukiyanai.github.io/jp/classes/econometrics2/contents/)
 * 津田 (2020) [Rによる統計入門](https://htsuda.net/stats/) ... 回帰分析と因子分析がメイン
 * 浅野正彦 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
+* 岩田 [Rによる地理空間データの可視化](https://shinichiro-iwata.github.io/geospatial-data-visualization/)
