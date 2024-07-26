@@ -54,6 +54,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Bauer (2020) [Applied Causal Analysis (with R)](https://bookdown.org/paul/applied-causal-analysis/)
 * Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/) ... 因果推論もカバー
 * Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/) ... 因果推論までカバー
+* Buteikis (2024) Practical Econometrics & Data Science, [Book 0: Prerequisites](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B0/) and [Book I: Cross-sectional data](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B1/)
 * McNulty (2024) [Handbook of Regression Modeling in People Analytics: With Examples in R, Python and Julia](https://peopleanalytics-regression-book.org/) ... 多項選択・生存分析までカバー
 * McNulty (2024) [Handbook of Graphs and Networks in People Analytics: With Examples in R and Python](https://ona-book.org/)
 * 分寺 [統計的方法論特殊研究（多変量解析）（神戸大学大学院経営学研究科）](https://www2.kobe-u.ac.jp/~bunji/resource.html)
