@@ -55,15 +55,19 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/) ... 因果推論もカバー
 * Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/) ... 因果推論までカバー
 * Buteikis (2024) Practical Econometrics & Data Science, [Book 0: Prerequisites](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B0/) and [Book I: Cross-sectional data](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B1/)
+* Hanck, Arnold, Gerber, and Schmelzer (2024) [Introduction to Econometrics with R](https://www.econometrics-with-r.org/)  ... 因果推論・時系列までカバー
 * McNulty (2024) [Handbook of Regression Modeling in People Analytics: With Examples in R, Python and Julia](https://peopleanalytics-regression-book.org/) ... 多項選択・生存分析までカバー
 * McNulty (2024) [Handbook of Graphs and Networks in People Analytics: With Examples in R and Python](https://ona-book.org/)
 * 分寺 [統計的方法論特殊研究（多変量解析）（神戸大学大学院経営学研究科）](https://www2.kobe-u.ac.jp/~bunji/resource.html)
    * 心理尺度を用いたアンケート調査データに対して因子分析および構造方程式モデリングを適用．2024年度は本授業でこのトピックを扱わないため，R での実装に興味がある方はこの資料で勉強してください．R での実装ではなく手法そのものに興味がある方には，小杉『[言葉と数式で理解する多変量解析入門](https://www.kitaohji.com/book/b580216.html)』（北大路書房）がお薦めです．
-* 川田恵介 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
-* 田頭拓己 (2024) [マーケティングリサーチ講義ノート：Rを使ったリサーチ基礎固め](https://tak-tag.github.io/MktRes_Lecture/) ... 因子分析・価格感度分析までカバー
-* 宋財泫 (2023) [方法論特殊講義III](https://www.jaysong.net/kobe-ci/)
-* 安藤道人，三田匡能 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
-* 矢内勇生 (2023) [計量経済学応用](https://yukiyanai.github.io/jp/classes/econometrics2/contents/)
+* 川田 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
+* 田頭 (2024) [マーケティングリサーチ講義ノート：Rを使ったリサーチ基礎固め](https://tak-tag.github.io/MktRes_Lecture/) ... 因子分析・価格感度分析までカバー
+* 宋 (2023) [方法論特殊講義III](https://www.jaysong.net/kobe-ci/)
+* 安藤・三田 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
+* 矢内 (2020s) [計量経済学](https://yukiyanai.github.io/econometrics/) and [計量経済学応用](https://yukiyanai.github.io/jp/classes/econometrics2/contents/)
+* 土井 (2024) [R/Pythonで計量政治学入門](https://shohei-doi.github.io/quant_polisci/)
 * 津田 (2020) [Rによる統計入門](https://htsuda.net/stats/) ... 回帰分析と因子分析がメイン
-* 浅野正彦 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
+* 浅野 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
+* 森 (2021) [卒業論文のためのR入門](https://tomoecon.github.io/R_for_graduate_thesis/)
+* 宋・矢内 (2024) [私たちのR―ベストプラクティスの探求](https://www.jaysong.net/RBook/)
 * 岩田 [Rによる地理空間データの可視化](https://shinichiro-iwata.github.io/geospatial-data-visualization/)
