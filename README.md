@@ -71,3 +71,12 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * 森 (2021) [卒業論文のためのR入門](https://tomoecon.github.io/R_for_graduate_thesis/)
 * 宋・矢内 (2024) [私たちのR―ベストプラクティスの探求](https://www.jaysong.net/RBook/)
 * 岩田 [Rによる地理空間データの可視化](https://shinichiro-iwata.github.io/geospatial-data-visualization/)
+
+## Python 
+
+* 東京大学 (2023) [Pythonプログラミング入門](https://utokyo-ipp.github.io/)
+* 三谷 (2021) [Python ゼロからはじめるプログラミング](https://mitani.cs.tsukuba.ac.jp/book_support/python/) （翔泳社から出版された書籍の副教材）
+
+## Julia 
+
+* 裏 RjpWiki (2022) [Julia で統計解析](https://blog.goo.ne.jp/r-de-r/e/c7bbfac7ef96e99d98d903d8b3b959bf)
