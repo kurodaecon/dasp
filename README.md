@@ -59,6 +59,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * McNulty (2024) [Handbook of Regression Modeling in People Analytics: With Examples in R, Python and Julia](https://peopleanalytics-regression-book.org/) ... 多項選択・生存分析までカバー
 * McNulty (2024) [Handbook of Graphs and Networks in People Analytics: With Examples in R and Python](https://ona-book.org/)
 * Chabé-Ferret (2024) [Statistical Tools for Causal Inference](https://chabefer.github.io/STCI/) ... 2024年8月時点で中身が空のセクションがある
+* Gow and Ding (2024) [Empirical Research in Accounting: Tools and Methods](http://iangow.me/far_2021/)
 * 分寺 [統計的方法論特殊研究（多変量解析）（神戸大学大学院経営学研究科）](https://www2.kobe-u.ac.jp/~bunji/resource.html)
    * 心理尺度を用いたアンケート調査データに対して因子分析および構造方程式モデリングを適用．2024年度は本授業でこのトピックを扱わないため，R での実装に興味がある方はこの資料で勉強してください．R での実装ではなく手法そのものに興味がある方には，小杉『[言葉と数式で理解する多変量解析入門](https://www.kitaohji.com/book/b580216.html)』（北大路書房）がお薦めです．
 * 川田 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
