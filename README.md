@@ -44,32 +44,38 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 
 ## Learning resources for R programming, focusing on statistics and causal inference, developed by others 
 
+因果推論に関する内容あり
+
 * Cunningham (2021) [Causal Inference: The Mixtape](https://mixtape.scunning.com/)
-* Dalpiaz [Applied Statistics with R](https://book.stat420.org/) ... 確率からロジット回帰までカバー
-* Thulin (2021) [Modern Statistics with R](https://modernstatisticswithr.com/) ... 生存分析・構造方程式モデリング・機械学習までカバー
-* Kabacoff (2024) [Modern Data Visualization with R](https://rkabacoff.github.io/datavis/) ... ggplot2 を用いた可視化
 * Heiss (2020) [Using R for Introductory Econometrics](https://www.urfie.net/) ... Wooldridge’s “Introductory Econometrics” に対応
 * Fernandez (2024) [Econometrics for Business Analytics](https://bookdown.org/cuborican/RE_STAT/) ... 因果推論・多項選択・需要推定・制限従属変数モデル・生存分析・時系列まで幅広くカバー
-* Carilli (2021) [R Companion to Real Econometrics](https://bookdown.org/carillitony/bailey/) ... 因果推論・二項選択・時系列までカバー
+* Carilli (2021) [R Companion to Real Econometrics](https://bookdown.org/carillitony/bailey/) ... 二項選択・時系列もカバー
 * Bauer (2020) [Applied Causal Analysis (with R)](https://bookdown.org/paul/applied-causal-analysis/)
-* Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/) ... 因果推論もカバー
-* Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/) ... 因果推論までカバー
-* Buteikis (2024) Practical Econometrics & Data Science, [Book 0: Prerequisites](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B0/) and [Book I: Cross-sectional data](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B1/)
-* Hanck, Arnold, Gerber, and Schmelzer (2024) [Introduction to Econometrics with R](https://www.econometrics-with-r.org/)  ... 因果推論・時系列までカバー
-* McNulty (2024) [Handbook of Regression Modeling in People Analytics: With Examples in R, Python and Julia](https://peopleanalytics-regression-book.org/) ... 多項選択・生存分析までカバー
-* McNulty (2024) [Handbook of Graphs and Networks in People Analytics: With Examples in R and Python](https://ona-book.org/)
+* Oswald, Viers, Robin, Villedieu, and Kenedi (2020) [Introduction to Econometrics with R](https://scpoecon.github.io/ScPoEconometrics/)
+* Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/)
+* Hanck, Arnold, Gerber, and Schmelzer (2024) [Introduction to Econometrics with R](https://www.econometrics-with-r.org/)  ... 時系列もカバー
 * Chabé-Ferret (2024) [Statistical Tools for Causal Inference](https://chabefer.github.io/STCI/) ... 2024年8月時点で中身が空のセクションがある
 * Gow and Ding (2024) [Empirical Research in Accounting: Tools and Methods](http://iangow.me/far_2021/)
-* 分寺 [統計的方法論特殊研究（多変量解析）（神戸大学大学院経営学研究科）](https://www2.kobe-u.ac.jp/~bunji/resource.html)
-   * 心理尺度を用いたアンケート調査データに対して因子分析および構造方程式モデリングを適用．2024年度は本授業でこのトピックを扱わないため，R での実装に興味がある方はこの資料で勉強してください．R での実装ではなく手法そのものに興味がある方には，小杉『[言葉と数式で理解する多変量解析入門](https://www.kitaohji.com/book/b580216.html)』（北大路書房）がお薦めです．
 * 川田 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
-* 田頭 (2024) [マーケティングリサーチ講義ノート：Rを使ったリサーチ基礎固め](https://tak-tag.github.io/MktRes_Lecture/) ... 因子分析・価格感度分析までカバー
 * 宋 (2023) [方法論特殊講義III](https://www.jaysong.net/kobe-ci/)
 * 安藤・三田 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
 * 矢内 (2020s) [計量経済学](https://yukiyanai.github.io/econometrics/) and [計量経済学応用](https://yukiyanai.github.io/jp/classes/econometrics2/contents/)
+* 浅野 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
+
+それ以外
+
+* Dalpiaz [Applied Statistics with R](https://book.stat420.org/) ... 確率からロジット回帰までカバー
+* Thulin (2021) [Modern Statistics with R](https://modernstatisticswithr.com/) ... 生存分析・構造方程式モデリング・機械学習までカバー
+* Kabacoff (2024) [Modern Data Visualization with R](https://rkabacoff.github.io/datavis/) ... ggplot2 を用いた可視化
+* Buteikis (2024) Practical Econometrics & Data Science, [Book 0: Prerequisites](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B0/) and [Book I: Cross-sectional data](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B1/)
+* McNulty (2024) [Handbook of Regression Modeling in People Analytics: With Examples in R, Python and Julia](https://peopleanalytics-regression-book.org/) ... 多項選択・生存分析までカバー
+* McNulty (2024) [Handbook of Graphs and Networks in People Analytics: With Examples in R and Python](https://ona-book.org/)
+* Dauber (2024) [R for Non-Programmers: A Guide for Social Scientists](https://bookdown.org/daniel_dauber_io/r4np_book/)
+* 分寺 [統計的方法論特殊研究（多変量解析）（神戸大学大学院経営学研究科）](https://www2.kobe-u.ac.jp/~bunji/resource.html)
+   * 心理尺度を用いたアンケート調査データに対して因子分析および構造方程式モデリングを適用．2024年度は本授業でこのトピックを扱わないため，R での実装に興味がある方はこの資料で勉強してください．R での実装ではなく手法そのものに興味がある方には，小杉『[言葉と数式で理解する多変量解析入門](https://www.kitaohji.com/book/b580216.html)』（北大路書房）がお薦めです．
+* 田頭 (2024) [マーケティングリサーチ講義ノート：Rを使ったリサーチ基礎固め](https://tak-tag.github.io/MktRes_Lecture/) ... 因子分析・価格感度分析までカバー
 * 土井 (2024) [R/Pythonで計量政治学入門](https://shohei-doi.github.io/quant_polisci/)
 * 津田 (2020) [Rによる統計入門](https://htsuda.net/stats/) ... 回帰分析と因子分析がメイン
-* 浅野 (2023) [早稲田大学「計量分析（政治）」補助教材](https://www.asanoucla.com/%E8%A8%88%E9%87%8F%E5%88%86%E6%9E%90-%E8%A3%9C%E5%8A%A9%E6%95%99%E6%9D%90-r/)
 * 森 (2021) [卒業論文のためのR入門](https://tomoecon.github.io/R_for_graduate_thesis/)
 * 宋・矢内 (2024) [私たちのR―ベストプラクティスの探求](https://www.jaysong.net/RBook/)
 * 岩田 [Rによる地理空間データの可視化](https://shinichiro-iwata.github.io/geospatial-data-visualization/)
