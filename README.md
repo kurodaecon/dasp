@@ -56,6 +56,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Hanck, Arnold, Gerber, and Schmelzer (2024) [Introduction to Econometrics with R](https://www.econometrics-with-r.org/)  ... 時系列もカバー
 * Chabé-Ferret (2024) [Statistical Tools for Causal Inference](https://chabefer.github.io/STCI/) ... 2024年8月時点で中身が空のセクションがある
 * Gow and Ding (2024) [Empirical Research in Accounting: Tools and Methods](http://iangow.me/far_2021/)
+* Gerstenberg (2024) [Psych 252: Statistical Methods for Behavioral and Social Sciences](https://psych252.github.io/psych252book/)
 * 川田 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
 * 宋 (2023) [方法論特殊講義III](https://www.jaysong.net/kobe-ci/)
 * 安藤・三田 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
