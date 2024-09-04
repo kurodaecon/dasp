@@ -71,6 +71,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Buteikis (2024) Practical Econometrics & Data Science, [Book 0: Prerequisites](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B0/) and [Book I: Cross-sectional data](https://web.vu.lt/mif/a.buteikis/wp-content/uploads/PE_B1/)
 * McNulty (2024) [Handbook of Regression Modeling in People Analytics: With Examples in R, Python and Julia](https://peopleanalytics-regression-book.org/) ... 多項選択・生存分析までカバー
 * McNulty (2024) [Handbook of Graphs and Networks in People Analytics: With Examples in R and Python](https://ona-book.org/)
+* Brughmans and Peeples (2023) [Network Science in Archaeology](https://book.archnetworks.net/) ... 考古学関係なくネットワーク分析の入門用教材として有用
 * Dauber (2024) [R for Non-Programmers: A Guide for Social Scientists](https://bookdown.org/daniel_dauber_io/r4np_book/)
 * 分寺 [統計的方法論特殊研究（多変量解析）（神戸大学大学院経営学研究科）](https://www2.kobe-u.ac.jp/~bunji/resource.html)
    * 心理尺度を用いたアンケート調査データに対して因子分析および構造方程式モデリングを適用．2024年度は本授業でこのトピックを扱わないため，R での実装に興味がある方はこの資料で勉強してください．R での実装ではなく手法そのものに興味がある方には，小杉『[言葉と数式で理解する多変量解析入門](https://www.kitaohji.com/book/b580216.html)』（北大路書房）がお薦めです．
