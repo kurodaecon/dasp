@@ -85,6 +85,8 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 
 ## Python 
 
+* Py4DS Community (Turrell et al.) (2022) [Python for Data Science](https://aeturrell.github.io/python4DS/welcome.html)
+* Turrell (2022) [Coding for Economists](https://aeturrell.github.io/coding-for-economists/intro.html)
 * 東京大学 (2023) [Pythonプログラミング入門](https://utokyo-ipp.github.io/)
 * 三谷 (2021) [Python ゼロからはじめるプログラミング](https://mitani.cs.tsukuba.ac.jp/book_support/python/) （翔泳社から出版された書籍の副教材）
 
