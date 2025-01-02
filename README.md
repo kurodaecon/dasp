@@ -8,7 +8,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 
 * [Basic Operation of R / Rの基本的な操作](https://kurodaecon.github.io/dasp/html/basic.html) / [Stata ver.](https://github.com/kurodaecon/dasp/blob/main/do/basic.do)
    * 演算，オブジェクト，ベクトル，データフレーム，描画，CSVファイルからのデータ読み込み，関数，繰り返し処理，行列
-* [Descriptive Statistics / 記述統計](https://kurodaecon.github.io/dasp/html/descriptive_stat.html)
+* [Descriptive Statistics / 記述統計](https://kurodaecon.github.io/dasp/html/descriptive_stat.html) / [Stata ver.](https://github.com/kurodaecon/dasp/blob/main/do/descriptive_stat.do)
    * 質的データ：度数分布表，棒グラフ，円グラフ，分割表
    * 量的データ：ヒストグラム，平均，分位点・中央値，分散・標準偏差，散布図，共分散・相関係数
 * [Organizing and Visualizing Data / データのハンドリングと可視化](https://kurodaecon.github.io/dasp/html/organizing_data.html)
