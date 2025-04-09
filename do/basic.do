@@ -79,8 +79,11 @@ display x + 1
 
 clear
 
-// Beatles データを作ってみる
-// 注：欠損値は 「.」 で表される
+// Beatles データを作る
+
+// 注: 
+// 文字列変数は srt# (# = 文字列最大長) で定義する．
+// 欠損値は 「.」 で表される
 
 input str10 name     born decease height
             "John"   1940 1980    179
