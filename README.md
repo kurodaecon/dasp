@@ -14,7 +14,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * [Organizing and Visualizing Data / データのハンドリングと可視化](https://kurodaecon.github.io/dasp/html/organizing_data.html) / [Stata do file](https://github.com/kurodaecon/dasp/blob/main/do/organizing_data.do)
    * `dplyr` パッケージを用いたデータのハンドリング：`filter`, `mutate`, `group_by`, etc.
    * `ggplot2` パッケージを用いたデータの可視化：散布図，ヒストグラム，棒グラフ，箱ひげ図
-* [Inferential Statistics / 推測統計学](https://kurodaecon.github.io/dasp/html/inferential_stat.html)
+* [Inferential Statistics / 推測統計学](https://kurodaecon.github.io/dasp/html/inferential_stat.html) / [Stata do file](https://github.com/kurodaecon/dasp/blob/main/do/inferential_stat.do)
    * 確率：確率変数の期待値と分散，乱数の生成，中心極限定理
    * 信頼区間（母平均，母比率），統計的仮説検定（母平均，多重検定の問題に関するシミュレーション）
 * [Regression Analysis / 回帰分析](https://kurodaecon.github.io/dasp/html/regression.html)
