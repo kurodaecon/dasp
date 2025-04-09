@@ -12,7 +12,7 @@
 <meta name="author" content="Sho Kuroda / 黒田翔" />
 
 
-<title>Data Analysis Using Statistical Packages: Regression Analysis</title>
+<title>Data Analysis Using Statistical Packages: Regression Analysis in Econometrics</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1479,7 +1479,7 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">Data Analysis Using Statistical Packages:
-Regression Analysis</h1>
+Regression Analysis in Econometrics</h1>
 <h4 class="author">Sho Kuroda / 黒田翔</h4>
 <h4 class="date">2024年3月 (Last update: 2025年4月)</h4>
 
@@ -1492,79 +1492,17 @@ analysis / 単回帰分析</h1>
 <p>1つの説明変数をもつ次のような回帰モデル（単回帰モデル）を考える．</p>
 <p><span class="math display">\[ Fertility = \alpha + \beta Exam + u
 \]</span></p>
-<p>データは，R の built-in データセットの一つである <code>swiss</code>．
-1988年のスイスにおける47の province レベルの社会経済変数を含む．</p>
-<ul>
-<li><code>Fertility</code>: 標準化された出生率</li>
-<li><code>Agriculture</code>: 男性の農業従事者割合</li>
-<li><code>Examination</code>: 徴兵検査における最高得点取得者割合</li>
-<li><code>Education</code>:
-徴兵対象者のうち初等教育より高い教育を受けた人の割合</li>
-</ul>
 <div id="estimation-with-lm-function" class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Estimation with
 <code>lm</code> function</h2>
-<p><code>lm</code> (linear model) 関数で推定する．</p>
-<pre class="r"><code># str(swiss)  # built-in dataset
-lm(formula = Fertility ~ Examination, data = swiss)</code></pre>
-<pre><code>## 
-## Call:
-## lm(formula = Fertility ~ Examination, data = swiss)
-## 
-## Coefficients:
-## (Intercept)  Examination  
-##      86.819       -1.011</code></pre>
-<p>これは以下のように回帰式が推定されたことを意味している．</p>
-<p><span class="math display">\[ \hat{Fertility} = 86.8 - 1.01 Exam
-\]</span></p>
-<p><code>Exam</code> の回帰係数は「<code>Exam</code> が1単位高いと
-<code>Fertility</code> は 1.01 単位低い傾向にある」と解釈される．</p>
-<p>「Exam を1単位引き上げると Fertility は 1.01
-単位減少する」と解釈することはできない．
-この回帰係数はあくまで両変数の相関関係を記述しているだけであり因果効果を示すものではない．</p>
-<p><code>lm</code> 関数で計算した回帰オブジェクトを <code>summary</code>
-関数に渡すと決定係数なども表示される．</p>
-<pre class="r"><code>summary(lm(formula = Fertility ~ Examination, data = swiss))</code></pre>
-<pre><code>## 
-## Call:
-## lm(formula = Fertility ~ Examination, data = swiss)
-## 
-## Residuals:
-##      Min       1Q   Median       3Q      Max 
-## -25.9375  -6.0044  -0.3393   7.9239  19.7399 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)  86.8185     3.2576  26.651  &lt; 2e-16 ***
-## Examination  -1.0113     0.1782  -5.675 9.45e-07 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 9.642 on 45 degrees of freedom
-## Multiple R-squared:  0.4172, Adjusted R-squared:  0.4042 
-## F-statistic: 32.21 on 1 and 45 DF,  p-value: 9.45e-07</code></pre>
+<pre class="r"><code>lm(formula = Fertility ~ Examination, data = swiss)
+summary(lm(formula = Fertility ~ Examination, data = swiss))</code></pre>
+<p>（出力省略）</p>
 </div>
 <div id="estimation-by-hand" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Estimation by
 hand</h2>
-<p>回帰モデル</p>
-<p><span class="math display">\[ Y_i = \alpha + \beta X_i + u_i
-\]</span></p>
-<p>の係数パラメタ（<span class="math inline">\(\alpha,
-\beta\)</span>）を最小二乗法（OLS）によって求めよう．</p>
-<p>最小二乗法とは，誤差 <span class="math inline">\(u\)</span>
-（正確には残差）の二乗和を最小化するように係数パラメタを求める方法である．
-誤差の二乗和 <span class="math inline">\(Q\)</span>
-は以下で与えられる．</p>
-<p><span class="math display">\[ Q = \sum_{i} \hat{u}_i^2 = \sum_{i}
-(Y_i - \alpha - \beta X_i)^2 \]</span></p>
-<p>これは <span class="math inline">\(\hat \alpha, \hat \beta\)</span>
-のいずれについても下に凸の関数であるので，<span class="math inline">\(Q\)</span> をそれぞれで微分して 0 とおく．</p>
-<p><span class="math display">\[ \frac{\partial Q}{\partial \alpha} = -2
-\sum_i (Y_i - \alpha - \beta X_i) = 0 \]</span></p>
-<p><span class="math display">\[ \frac{\partial Q}{\partial \beta} = -2
-\sum_i x_i (Y_i - \alpha - \beta X_i) = 0 \]</span></p>
-<p>上の連立方程式を解くことによって，最小二乗推定量は次のように与えられる．</p>
+<p>回帰係数の最小二乗（OLS）推定量は次のように与えられる．</p>
 <p><span class="math display">\[ \hat{\alpha} = \bar{Y} - \hat{\beta}
 \bar{X}, \quad \hat{\beta} = \frac{S_{XY}}{S_{XX}} \]</span> <span class="math display">\[ S_{XX} = \sum_i (X_i - \bar{X})^2, \quad S_{XY}
 = \sum_i (X_i - \bar{X}) (Y_i - \bar{Y}) \]</span></p>
@@ -1581,107 +1519,36 @@ c(y_bar, x_bar, s_xx, s_xy)</code></pre>
 alpha_hat &lt;- y_bar - beta_hat * x_bar
 c(alpha_hat, beta_hat)</code></pre>
 <pre><code>## [1] 86.818529 -1.011317</code></pre>
-</div>
-<div id="estimation-by-numerical-calculation-数値計算による推定" class="section level2" number="1.3">
-<h2><span class="header-section-number">1.3</span> Estimation by
-numerical calculation / 数値計算による推定</h2>
-<p>OLSは残差二乗和の最小化によって回帰係数パラメタを推定する方法（モデルをデータに当てはめる原理）であるが，これを解析的に解くのではなく数値計算によって解いてみる．</p>
-<p>残差二乗和の関数（目的関数） <span class="math inline">\(Q\)</span>
-の最小化は R に built-in されている汎用の最適化関数 <code>optim</code>
-によって行う．</p>
-<div id="example-of-optim" class="section level3" number="1.3.1">
-<h3><span class="header-section-number">1.3.1</span> Example of
-<code>optim</code></h3>
-<p>例：次の二次関数は <span class="math inline">\(x=2\)</span> で最小値
-3 をとる．</p>
-<p><span class="math display">\[ f(x) = x^2 -4x + 7 = (x-2)^2 + 3
-\]</span></p>
-<pre class="r"><code>plot(function(x) x^2-4*x+7, xlim = c(-2,6))</code></pre>
-<p><img src="data:image/png;base64,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" width="672" /></p>
-<p>最小値を取るような <span class="math inline">\(x\)</span> の値を
-<code>optim</code> 関数を使って求めてみる．</p>
-<ul>
-<li><code>optim(par = パラメタの初期値ベクトル, fn = 目的関数)</code>
-の形で指定
-<ul>
-<li><code>$par</code>
-：最適化されたパラメタ（＝目的関数の引数；この例では <span class="math inline">\(x\)</span>）</li>
-<li><code>$value</code> ：最小化された目的関数の値</li>
-<li><code>$convergence</code> ： 最適化計算が収束していれば 0</li>
-</ul></li>
-</ul>
-<pre class="r"><code>obj_function &lt;- function (x) x^2 - 4*x + 7
-optim(par = 0, fn = obj_function, method = &quot;BFGS&quot;)  # ニュートン法の亜種を利用</code></pre>
-<pre><code>## $par
-## [1] 2
-## 
-## $value
-## [1] 3
-## 
-## $counts
-## function gradient 
-##        6        3 
-## 
-## $convergence
-## [1] 0
-## 
-## $message
-## NULL</code></pre>
-</div>
-<div id="in-the-case-of-regression" class="section level3" number="1.3.2">
-<h3><span class="header-section-number">1.3.2</span> In the case of
-regression</h3>
-<p>回帰分析の場合，目的関数は残差二乗和 <span class="math inline">\(Q\)</span>
-であり，その引数は推定したい回帰係数パラメタ <span class="math inline">\((\alpha, \beta)\)</span> となる．</p>
-<p><span class="math display">\[ (\hat{\alpha}, \hat{\beta}) = \arg
-\min_{\alpha, \beta} Q(\alpha, \beta) \]</span> <span class="math display">\[ Q (\alpha, \beta) := \sum_i \hat{u}_i^2 = \sum_i
-(Y_i - \alpha - \beta X_i)^2 \]</span></p>
-<pre class="r"><code>sum_of_squared_residuals &lt;- function (coef_vector) {
-  # coef_vector[1]: alpha (intercept)
-  # coef_vector[2]: beta (slope of X)
-  y &lt;- swiss$Fertility
-  x &lt;- swiss$Examination
-  sum((y - coef_vector[1] - coef_vector[2] * x)^2)
-}
-sum_of_squared_residuals(coef_vector = c(1, 2))  # alpha=1, beta=2</code></pre>
-<pre><code>## [1] 92200.11</code></pre>
-<pre class="r"><code>sum_of_squared_residuals(coef_vector = c(1, 3))  # alpha=1, beta=3</code></pre>
-<pre><code>## [1] 69485.91</code></pre>
-<pre class="r"><code>optim(par = c(0, 0), fn = sum_of_squared_residuals)</code></pre>
-<pre><code>## $par
-## [1] 86.822437 -1.011885
-## 
-## $value
-## [1] 4183.569
-## 
-## $counts
-## function gradient 
-##       93       NA 
-## 
-## $convergence
-## [1] 0
-## 
-## $message
-## NULL</code></pre>
-<p><span class="math inline">\(\hat{\alpha} = 86.8\)</span> に固定して
-<span class="math inline">\(\hat{\beta}\)</span>
-の値によって残差二乗和がどのように変化するかをプロットすると，<span class="math inline">\(\hat{\beta} = -1.01\)</span>
-で最小化されていることが分かる．</p>
-<p>（複雑なスクリプトなので，どのように動いているかは理解しなくてよい．）</p>
-<pre class="r"><code>sum_of_squared_residuals_beta &lt;- function (beta1) {
-  y &lt;- swiss$Fertility
-  x &lt;- swiss$Examination
-  sum((y - 86.8 - beta1 * x)^2)
-}
-beta_value &lt;- seq(-3, 2, by = 0.01)
-obj_fun &lt;- sapply(beta_value, sum_of_squared_residuals_beta)
-plot(x = beta_value, y = obj_fun, type = &quot;l&quot;, xlim = c(-3, 2))
-abline(v = -1.01, col = 2)</code></pre>
-<p><img src="data:image/png;base64,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" width="672" /></p>
+<div id="properties-of-fitted-values-and-residuals" class="section level3" number="1.2.1">
+<h3><span class="header-section-number">1.2.1</span> Properties of
+fitted values and residuals</h3>
+<p>アウトカムの当てはめ値 <span class="math inline">\(\hat{Y}_i =
+\hat{\alpha} + \hat{\beta} X_i\)</span>
+の平均はアウトカムの平均と一致する．</p>
+<p><span class="math display">\[ \bar{\hat{Y}} = \bar{Y} \]</span></p>
+<pre class="r"><code>y_pred &lt;- alpha_hat + beta_hat * swiss$Examination  # y hat
+c(mean(y_pred), y_bar)  # should be matched</code></pre>
+<pre><code>## [1] 70.14255 70.14255</code></pre>
+<p>残差（誤差変数の当てはめ値, <span class="math inline">\(\hat{u} = Y -
+\hat{Y}\)</span>）に関する幾つかの性質．</p>
+<p><span class="math display">\[ \sum_i \hat{u}_i = 0, \quad \sum_i
+\hat{u}_i X_i = 0 \]</span></p>
+<pre class="r"><code>resid_swiss &lt;- swiss$Fertility - y_pred  # residuals
+sum(resid_swiss)  # should be zero</code></pre>
+<pre><code>## [1] 1.065814e-13</code></pre>
+<pre class="r"><code>sum(resid_swiss * swiss$Examination)  # eX ... should be zero</code></pre>
+<pre><code>## [1] 1.58451e-12</code></pre>
+<p><span class="math display">\[ S_{X\hat{u}} = \sum_i (X - \bar{X})
+(\hat{u} - \bar{\hat{u}}) = 0, \quad S_{Y\hat{u}} = \sum_i (Y - \bar{Y})
+(\hat{u} - \bar{\hat{u}}) = 0 \]</span></p>
+<pre class="r"><code>sum((swiss$Examination - x_bar) * (resid_swiss - mean(resid_swiss)))  # S_Xe ... should be zero</code></pre>
+<pre><code>## [1] -1.501022e-13</code></pre>
+<pre class="r"><code>sum((y_pred - y_bar) * (resid_swiss - mean(resid_swiss)))  # S_Ye ... should be zero</code></pre>
+<pre><code>## [1] -8.354428e-14</code></pre>
 </div>
 </div>
-<div id="coefficient-of-determination-決定係数" class="section level2" number="1.4">
-<h2><span class="header-section-number">1.4</span> Coefficient of
+<div id="coefficient-of-determination-決定係数" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> Coefficient of
 determination / 決定係数</h2>
 <p><span class="math display">\[ R^2 = \frac{\mbox{Variation in } Y
 \mbox{ explained by } X}{\mbox{Total variation in } Y} =
@@ -1698,17 +1565,16 @@ s_yhyh / s_yy  # R^2</code></pre>
 <pre class="r"><code>resid_swiss &lt;- swiss$Fertility - y_pred  # residuals
 1 - sum(resid_swiss^2) / s_yy  # R^2 ... should be the same as above</code></pre>
 <pre><code>## [1] 0.4171645</code></pre>
-<p>決定係数が 0.417 ということは，説明変数 (Examination)
-によって被説明変数 (Fertility) の変動のうち 41.7%
-を説明することができる，という意味．</p>
-<p>余裕のある履修者向けの宿題：自由度調整済み決定係数を計算．</p>
+<p>自由度調整済み決定係数．</p>
 <p><span class="math display">\[ \bar{R}^2 = 1 - \frac{n - 1}{n - K - 1}
 \frac{\sum \hat{u}_i^2}{S_{YY}} \]</span></p>
 <p><span class="math inline">\(K\)</span>:
 説明変数の数（定数項は含めない）</p>
+<pre class="r"><code>1 - (nrow(swiss) - 1) / (nrow(swiss) - 1 - 1) * sum(resid_swiss^2) / s_yy</code></pre>
+<pre><code>## [1] 0.4042126</code></pre>
 </div>
-<div id="standard-error-and-test-標準誤差と検定" class="section level2" number="1.5">
-<h2><span class="header-section-number">1.5</span> Standard error and
+<div id="standard-error-and-test-標準誤差と検定" class="section level2" number="1.4">
+<h2><span class="header-section-number">1.4</span> Standard error and
 test / 標準誤差と検定</h2>
 <p>帰無仮説「<span class="math inline">\(H_0: \beta =
 0\)</span>」の検定を行うために，<span class="math inline">\(\hat{\beta}\)</span>
@@ -1739,21 +1605,6 @@ beta_se</code></pre>
 \times [1-\Pr(|t| \le T)]\)</span>．</p>
 <pre class="r"><code>2 * (1 - pt(q = abs(beta_hat / beta_se), df = nrow(swiss) - 2))</code></pre>
 <pre><code>## [1] 9.450437e-07</code></pre>
-<div id="cf.-critical-value-approach-臨界値を用いて検定を行う場合" class="section level3" number="1.5.1">
-<h3><span class="header-section-number">1.5.1</span> cf. Critical value
-approach / 臨界値を用いて検定を行う場合</h3>
-<p>t分布の2.5%臨界値（両側5%に対応）は？</p>
-<pre class="r"><code>qt(p = 0.025, df = nrow(swiss) - 2)  # df: degree of freedom (自由度)</code></pre>
-<pre><code>## [1] -2.014103</code></pre>
-<pre class="r"><code>qt(p = c(0.005, 0.025, 0.975, 0.995), df = nrow(swiss) - 2)  # 1% and 5%</code></pre>
-<pre><code>## [1] -2.689585 -2.014103  2.014103  2.689585</code></pre>
-<p>よって，<span class="math inline">\(t = -5.7\)</span>
-は有意水準1%に対応する臨界値 (-2.7)
-よりも小さいので，1%水準で有意である．</p>
-<p>自由度が大きければ標準正規分布の場合とほとんど同じ臨界値になる．</p>
-<pre class="r"><code>qt(p = 0.975, df = 10000)</code></pre>
-<pre><code>## [1] 1.960201</code></pre>
-</div>
 </div>
 </div>
 <div id="multiple-regression-analysis-重回帰分析" class="section level1" number="2">
@@ -1763,6 +1614,200 @@ analysis / 重回帰分析</h1>
 <p><span class="math display">\[ Fertility = \alpha + \beta_1 Exam +
 \beta_2 Educ + u \]</span></p>
 <pre class="r"><code>summary(lm(Fertility ~ Examination + Education, data = swiss))</code></pre>
+<p>（出力省略）</p>
+<div id="estimation-by-hand-1" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Estimation by
+hand</h2>
+<p>重回帰モデルの回帰係数のOLS推定量は行列形式で表現した方が分かりやすい．</p>
+<p>式中の <span class="math inline">\(\mathbf{X}, \mathbf{Y}\)</span>
+は（<span class="math inline">\(X, Y\)</span>
+とは異なり）太字かつ立体（斜体ではない）で，これは行列またはベクトルを表す．</p>
+<p>つまり，以下のように定義されている． <span class="math inline">\(X_{nm}\)</span> は <span class="math inline">\(n\)</span> 番目の個体の <span class="math inline">\(m\)</span> 番目の説明変数を表す． <span class="math inline">\(Y_{n}\)</span> は <span class="math inline">\(n\)</span>
+番目の個体の被説明変数（アウトカム）を表す．</p>
+<p><span class="math display">\[ \mathbf{X} = \left[ \matrix{X_{11}
+&amp; X_{12} &amp; X_{13} &amp; \cdots \\ X_{21} &amp; X_{22} &amp;
+X_{23} &amp; \cdots \\ X_{31} &amp; X_{32} &amp; X_{33} &amp; \cdots \\
+\vdots &amp; \vdots &amp; \vdots &amp; \ddots} \right], \quad \mathbf{Y}
+= \left[ \matrix{Y_1 \\ Y_2 \\ Y_3 \\ \vdots} \right] , \quad
+\boldsymbol{\beta} = \left[ \matrix{\beta_1 \\ \beta_2 \\ \beta_3 \\
+\vdots} \right] \]</span></p>
+<p>行列表記の回帰モデル．</p>
+<p><span class="math display">\[ \mathbf{Y} = \mathbf{X}
+\boldsymbol{\beta} + \mathbf{u} \]</span></p>
+<p>残差二乗和 <span class="math inline">\(Q\)</span> を <span class="math inline">\(\boldsymbol{\beta}\)</span> で微分して 0
+とおくことでOLS推定量が得られる．</p>
+<p><span class="math display">\[ Q = \mathbf{u}&#39;\mathbf{u} =
+(\mathbf{Y} - \mathbf{X} \boldsymbol{\beta})&#39; (\mathbf{Y} -
+\mathbf{X} \boldsymbol{\beta}), \quad \frac{\partial Q}{\partial
+\boldsymbol{\beta}} =0 \]</span></p>
+<p><span class="math display">\[ \hat{\boldsymbol{\beta}} =
+(\mathbf{X}&#39;\mathbf{X})^{-1}\mathbf{X}&#39;\mathbf{Y} \]</span></p>
+<p>まずは <span class="math inline">\(\mathbf{X}, \mathbf{Y}\)</span>
+を作成する． 説明変数には1（定数項）が含まれている点に注意しよう．</p>
+<ul>
+<li><code>as.matrix(データフレーム)</code> ：行列オブジェクトに変換</li>
+</ul>
+<pre class="r"><code>Y &lt;- as.matrix(swiss[, c(&quot;Fertility&quot;)])
+X &lt;- as.matrix(cbind(1, swiss[, c(&quot;Examination&quot;, &quot;Education&quot;)]))</code></pre>
+<p>転置は <code>t</code>，逆行列は <code>solve</code>，行列の積は
+<code>%*%</code>
+で計算できるので，回帰係数のOLS推定量は以下のように計算される．</p>
+<pre class="r"><code>beta_multi &lt;- solve(t(X) %*% X) %*% t(X) %*% Y
+beta_multi</code></pre>
+<pre><code>##                   [,1]
+## 1           85.2532753
+## Examination -0.5572183
+## Education   -0.5394570</code></pre>
+</div>
+<div id="standard-error-標準誤差" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Standard error /
+標準誤差</h2>
+<p><span class="math display">\[ V(\hat{\boldsymbol{\beta}}) = \sigma^2
+(\mathbf{X}&#39;\mathbf{X})^{-1} \]</span></p>
+<p>回帰係数の検定を行うためには誤差分散 <span class="math inline">\(\sigma^2\)</span> の推定値を求める必要がある．
+<span class="math inline">\(k\)</span>
+は（定数項を除いた）説明変数の数なので2である．</p>
+<p><span class="math display">\[ \hat{\sigma}^2 = \frac{1}{n-(1+k)}
+\sum_i (Y_i - \hat{Y}_i)^2 \]</span></p>
+<pre class="r"><code>resid_multi &lt;- Y - X %*% beta_multi
+s2 &lt;- sum(resid_multi^2) / (nrow(swiss)-3)  # estimates of sigma^2
+s2</code></pre>
+<pre><code>## [1] 80.67295</code></pre>
+<p>回帰係数の推定量ベクトルの分散は <span class="math inline">\(\sigma^2
+(\mathbf{X}&#39;\mathbf{X})^{-1}\)</span>
+（分散共分散行列）なので，個々の回帰係数の推定量の分散はこの分散共分散行列の対角成分である．</p>
+<pre class="r"><code>s2 * solve(t(X) %*% X)  # variance-covariance matrix of beta </code></pre>
+<pre><code>##                      1 Examination   Education
+## 1            9.5202985 -0.54480732  0.10745077
+## Examination -0.5448073  0.05379495 -0.03117276
+## Education    0.1074508 -0.03117276  0.03703237</code></pre>
+<pre class="r"><code>diag(s2 * solve(t(X) %*% X))  # extract diagonals</code></pre>
+<pre><code>##           1 Examination   Education 
+##  9.52029846  0.05379495  0.03703237</code></pre>
+<p>標準誤差はその平方根となる． すなわち，<span class="math inline">\(j\)</span>
+番目の説明変数の標準誤差は次のように計算される．</p>
+<p><span class="math display">\[ s.e.(\hat{\beta}_j) = \sqrt{\{\sigma^2
+(\mathbf{X}&#39;\mathbf{X})^{-1} \}_{jj}} \]</span></p>
+<pre class="r"><code>sqrt(diag(s2 * solve(t(X) %*% X)))  # standard errors </code></pre>
+<pre><code>##           1 Examination   Education 
+##   3.0854981   0.2319374   0.1924380</code></pre>
+<p>回帰係数の推定値を標準誤差で割れば t 値が求められる．</p>
+<pre class="r"><code>t_value &lt;- beta_multi / sqrt(diag(s2 * solve(t(X) %*% X)))
+t_value</code></pre>
+<pre><code>##                  [,1]
+## 1           27.630312
+## Examination -2.402451
+## Education   -2.803277</code></pre>
+<p>t 値が分かれば p 値も計算できる．</p>
+<p><span class="math display">\[ p = 2 \times (1 - \Pr(|t| \le T))
+\]</span></p>
+<pre class="r"><code>2 * (1 - pt(q = abs(t_value), df = nrow(swiss) - 3))</code></pre>
+<pre><code>##                    [,1]
+## 1           0.000000000
+## Examination 0.020571604
+## Education   0.007497224</code></pre>
+</div>
+</div>
+<div id="dummy-variables-ダミー変数" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Dummy variables
+ダミー変数</h1>
+<p><code>Examination</code> 変数が平均よりも大きい場合に 1
+をとるダミー変数を定義する．</p>
+<pre class="r"><code>library(tidyverse)
+swiss2 &lt;- swiss %&gt;%
+  mutate(exam_dummy = ifelse(Examination &gt; mean(Examination), 1, 0))</code></pre>
+<p><span class="math display">\[ Fertility = \alpha + \beta \ 1(Exam
+&gt; \bar{Exam}) + u \]</span></p>
+<pre class="r"><code>summary(lm(Fertility ~ exam_dummy, data = swiss2))$coef</code></pre>
+<pre><code>##              Estimate Std. Error   t value     Pr(&gt;|t|)
+## (Intercept)  76.05926   2.019806 37.656712 1.144221e-35
+## exam_dummy  -13.90426   3.096304 -4.490599 4.907175e-05</code></pre>
+<div id="relationship-to-the-test-of-difference-of-means-平均値の差の検定との関係" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> Relationship to the
+test of difference of means / 平均値の差の検定との関係</h2>
+<p><code>exam_dummy</code> の回帰係数 (-13.9)
+は，「<code>Examination</code> が平均を上回るサブサンプルにおける
+<code>Fertility</code> の平均」と「<code>Examination</code>
+が平均以下のサブサンプルにおける <code>Fertility</code>
+の平均」の差に等しい．</p>
+<pre class="r"><code>swiss2 %&gt;%
+  group_by(exam_dummy) %&gt;%
+  summarise(mean_fertility = mean(Fertility))</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   exam_dummy mean_fertility
+##        &lt;dbl&gt;          &lt;dbl&gt;
+## 1          0           76.1
+## 2          1           62.2</code></pre>
+<p>また，回帰係数の t
+検定は2標本の母平均の差の検定（等分散を仮定）に対応する．</p>
+<pre class="r"><code>t.test(Fertility ~ exam_dummy, data = swiss2, var.equal = TRUE)</code></pre>
+<pre><code>## 
+##  Two Sample t-test
+## 
+## data:  Fertility by exam_dummy
+## t = 4.4906, df = 45, p-value = 4.907e-05
+## alternative hypothesis: true difference in means between group 0 and group 1 is not equal to 0
+## 95 percent confidence interval:
+##   7.667982 20.140536
+## sample estimates:
+## mean in group 0 mean in group 1 
+##        76.05926        62.15500</code></pre>
+<p>このように，線形回帰モデルにおける回帰係数に対する検定は幾つかの検定と本質的に同じことを行っているものとして解釈できる．詳細は
+Lindeløv (2019) <a href="https://lindeloev.github.io/tests-as-linear/">Common statistical
+tests are linear models</a> を参照．</p>
+</div>
+</div>
+<div id="joint-hypothesis-test-結合有意性検定" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Joint hypothesis test /
+結合有意性検定</h1>
+<p>「<code>Education</code> と <code>Examination</code>
+のどちらの回帰パラメタも 0 に等しい」という帰無仮説を検定するためには
+Joint test を行う．</p>
+<p><span class="math display">\[ H_0: \beta_{Educ} = \beta_{Exam} = 0
+\]</span></p>
+<p>制約の本数 <span class="math inline">\(G\)</span>
+を用いて，検定統計量 <span class="math inline">\(F\)</span>
+は次のように計算される．</p>
+<p><span class="math display">\[ F = \chi^2 \frac{1}{G} = \frac{(Q_R -
+Q) / G}{Q / (n-k-1)} \sim F(G, n-k-1) \]</span></p>
+<p><span class="math inline">\(Q\)</span>
+は制約なしのモデル（対立仮説に対応．つまり，<code>Education</code> と
+<code>Examination</code>
+の2つの変数を説明変数として含むモデル）の残差二乗和を表す．</p>
+<p><span class="math display">\[ Fertility = \alpha + \beta_{Educ} Educ
++ \beta_{Exam} Exam+ u, \quad Q = \sum_i \hat{u}^2_i \]</span></p>
+<p><span class="math inline">\(Q_R\)</span> は制約あり (restricted)
+のモデル（帰無仮説に対応．つまり，<code>Education</code> と
+<code>Examination</code>
+の2つの変数を説明変数として含まないモデル）の残差二乗和を表す．</p>
+<p><span class="math display">\[ Fertility = \alpha + v, \quad Q_R =
+\sum_i \hat{v}^2_i \]</span></p>
+<pre class="r"><code>lm_swiss_unrestricted &lt;- lm(Fertility ~ Examination + Education, data = swiss)
+lm_swiss_restricted &lt;- lm(Fertility ~ 1, data = swiss)  # 定数項のみのモデル
+resid_unrestricted &lt;- sum(lm_swiss_unrestricted$resid^2)
+resid_restricted &lt;- sum(lm_swiss_restricted$resid^2)</code></pre>
+<p>計算した <span class="math inline">\(Q, Q_R\)</span> を用いて <span class="math inline">\(F\)</span> 値を計算する．</p>
+<pre class="r"><code>f_value &lt;- ((resid_restricted - resid_unrestricted) / 2) / (resid_unrestricted / (nrow(swiss) - 2 - 1))
+f_value</code></pre>
+<pre><code>## [1] 22.48799</code></pre>
+<pre class="r"><code>1 - pf(q = f_value, df1 = 2, df2 = nrow(swiss) - 2 - 1)  # p value</code></pre>
+<pre><code>## [1] 1.8705e-07</code></pre>
+<p>臨界値と比較する場合．</p>
+<pre class="r"><code>qf(p = 0.05, df1 = 2, df2 = nrow(swiss) - 2 - 1, lower.tail = F)  # critical value </code></pre>
+<pre><code>## [1] 3.209278</code></pre>
+<pre class="r"><code># qf(p = 0.95, df1 = 2, df2 = nrow(swiss) - 2 - 1, lower.tail = T)  # same as above</code></pre>
+<p><span class="math inline">\(F \approx 22.5 &gt; \mbox{critical
+value}\)</span> なので，帰無仮説は5%有意水準で棄却される．
+すなわち，<code>Education</code> と <code>Examination</code>
+という2つの説明変数のうち少なくともいずれか一方の回帰パラメタは0ではないと結論付けられる．</p>
+<div id="test-for-all-explanatory-variables" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> Test for all
+explanatory variables</h2>
+<p>すべての説明変数に対して <span class="math inline">\(\beta_1 =
+\beta_2 = \cdots = 0\)</span> を帰無仮説とする joint F test
+の検定統計量および対応する p 値は <code>summary(lm(...))</code>
+の一番下でレポートされている．</p>
+<pre class="r"><code>summary(lm_swiss_unrestricted)</code></pre>
 <pre><code>## 
 ## Call:
 ## lm(formula = Fertility ~ Examination + Education, data = swiss)
@@ -1782,314 +1827,217 @@ analysis / 重回帰分析</h1>
 ## Residual standard error: 8.982 on 44 degrees of freedom
 ## Multiple R-squared:  0.5055, Adjusted R-squared:  0.483 
 ## F-statistic: 22.49 on 2 and 44 DF,  p-value: 1.87e-07</code></pre>
-<p><code>Examination</code> の係数は「<code>Education</code>
-の水準を固定したもとで <code>Examination</code> が1単位高い値を取ると
-<code>Fertility</code> は 0.557
-単位低い値を取る傾向にある」と解釈される．</p>
-<p>「単回帰分析では因果関係が推定できないが，重回帰分析では因果関係が推定できる」という主張は一般には誤り．</p>
-<p>重回帰分析によって因果効果を推定するためには，処置変数の条件付き独立（かなり大雑把に言うと，交絡変数がすべてコントロール変数として正確な関数形でモデルに含められていること）が成立していなければならず，この仮定を社会経済データを用いた実証分析において満たすことは容易ではない．</p>
+<p>一番下の行が意味すること： <span class="math inline">\(F(2, 47-2-1) =
+22.49, \ \Pr(F &gt; 22.49) &lt; 0.001\)</span></p>
+<p>つまり，回帰分析においてよくデフォルトでレポートされるF値とは「すべての説明変数が説明力を持たない」という帰無仮説に対応する検定統計量である．</p>
+<p>対応する p
+値が十分に小さかったとしても，それはあくまでこの帰無仮説が棄却されることを意味しているだけであり，「すべての説明変数が有意である」と解釈することはできないし，「説明変数は被説明変数の変動を十分に説明する」と解釈することもできない．</p>
 </div>
-<div id="advanced-method-応用" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> Advanced method /
-応用</h1>
-<div id="adding-quardatic-or-interaction-terms-二次交差項" class="section level2" number="3.1">
-<h2><span class="header-section-number">3.1</span> Adding quardatic or
-interaction terms / 二次・交差項</h2>
-<p>新しい変数を作成するなどのデータフレームの操作をするためには
-<code>tidyverse</code> に含まれる関数 (<code>mutate</code>,
-<code>rename</code>, <code>group_by</code>, etc.) を用いると簡単．</p>
-<pre class="r"><code>library(tidyverse)
-swiss2 &lt;- swiss %&gt;%
-  mutate(Edu2 = Education^2,
-         ExamEdu = Examination * Education)
-# tidyverse を使わない場合
-# swiss2 &lt;- swiss
-# swiss2$Edu2 &lt;- swiss$Education^2</code></pre>
-<p><span class="math display">\[ Fertility = \alpha + \beta_1 Exam +
-\beta_2 Educ^2 + u \]</span></p>
-<pre class="r"><code>lm(Fertility ~ Examination + Edu2, data = swiss2)$coef</code></pre>
-<pre><code>## (Intercept) Examination        Edu2 
-## 83.22071855 -0.66068646 -0.01034904</code></pre>
-<p><span class="math display">\[ Fertility = \alpha + \beta_1 Exam
-\times Educ + u \]</span></p>
-<pre class="r"><code>lm(Fertility ~ ExamEdu, data = swiss2)$coef</code></pre>
-<pre><code>## (Intercept)     ExamEdu 
-## 75.73211009 -0.02394142</code></pre>
-<p>データセットを直接操作せずに，回帰モデルを指定する際に <code>I</code>
-関数を使って二乗項を表現することもできる．</p>
-<pre class="r"><code>lm(Fertility ~ Examination + I(Education^2), data = swiss)$coef</code></pre>
-<pre><code>##    (Intercept)    Examination I(Education^2) 
-##    83.22071855    -0.66068646    -0.01034904</code></pre>
-<p>「<code>var1 : var2</code>」は「<code>var1 × var2</code>」を表し，「<code>var1 * var2</code>」は「<code>var1 + var2 + (var1 × var2)</code>」を表す．</p>
-<pre class="r"><code>lm(Fertility ~ Examination : Education, data = swiss)$coef</code></pre>
-<pre><code>##           (Intercept) Examination:Education 
-##           75.73211009           -0.02394142</code></pre>
-<p><span class="math display">\[ Fertility = \alpha + \beta_1 Exam +
-\beta_2 Educ + \beta_3 Exam \times Educ + u \]</span></p>
-<pre class="r"><code>lm(Fertility ~ Examination * Education, data = swiss)$coef</code></pre>
-<pre><code>##           (Intercept)           Examination             Education 
-##          87.178103515          -0.625731412          -0.807551979 
-## Examination:Education 
-##           0.009201476</code></pre>
-<p>説明変数や被説明変数に対数を取る場合は <code>I</code> なしで
-<code>log</code> を使ってよい．</p>
-<p><span class="math display">\[ \log(Fertility) = \alpha + \beta \ Exam
-+ u \]</span></p>
-<pre class="r"><code>lm(log(Fertility) ~ Examination, data = swiss)$coef</code></pre>
-<pre><code>## (Intercept) Examination 
-##  4.49251492 -0.01573623</code></pre>
-</div>
-<div id="dummy-variables-ダミー変数" class="section level2" number="3.2">
-<h2><span class="header-section-number">3.2</span> Dummy variables
-ダミー変数</h2>
-<p><code>Examination</code> 変数が平均よりも大きい場合に 1
-をとるダミー変数を定義してみる．</p>
-<pre class="r"><code>swiss2 &lt;- swiss %&gt;%
-  mutate(exam_dummy = ifelse(Examination &gt; mean(Examination), 1, 0))</code></pre>
-<p><span class="math display">\[ Fertility = \alpha + \beta \ 1(Exam
-&gt; \bar{Exam}) + u \]</span></p>
-<pre class="r"><code>summary(lm(Fertility ~ exam_dummy, data = swiss2))</code></pre>
+<div id="using-carlinearhypothesis-function" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> Using
+<code>car::linearHypothesis</code> function</h2>
+<p><code>car</code> というパッケージの <code>linearHypothesis</code>
+という関数で検定できる．
+「<code>car::linearHypothesis</code>」のようにパッケージ名と関数名を
+<code>::</code>
+で繋いで使用すれば，当該パッケージを読み込まなくても関数を使える．</p>
+<pre class="r"><code>lm_swiss &lt;- lm(Fertility ~ Examination + Education, data = swiss)
+summary(lm_swiss)</code></pre>
 <pre><code>## 
 ## Call:
-## lm(formula = Fertility ~ exam_dummy, data = swiss2)
+## lm(formula = Fertility ~ Examination + Education, data = swiss)
 ## 
 ## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -31.359  -5.557   1.945   6.793  16.441 
+##      Min       1Q   Median       3Q      Max 
+## -15.9935  -6.8894  -0.3621   7.1640  19.2634 
 ## 
 ## Coefficients:
 ##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)   76.059      2.020  37.657  &lt; 2e-16 ***
-## exam_dummy   -13.904      3.096  -4.491 4.91e-05 ***
+## (Intercept)  85.2533     3.0855  27.630   &lt;2e-16 ***
+## Examination  -0.5572     0.2319  -2.402   0.0206 *  
+## Education    -0.5395     0.1924  -2.803   0.0075 ** 
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 10.5 on 45 degrees of freedom
-## Multiple R-squared:  0.3095, Adjusted R-squared:  0.2941 
-## F-statistic: 20.17 on 1 and 45 DF,  p-value: 4.907e-05</code></pre>
-<p>以下のように回帰式を指定することでダミー変数を表現することもできる．
-<code>Examination &gt; mean(Examination)</code> という変数は FALSE と
-TRUE のいずれかをとり，そのうちの一方（TRUE）に該当する場合に 1
-をとるダミー変数として推定が行われる．
-すなわち，この変数の回帰係数は，もう一方（FALSE）の場合をベースラインとして，TRUE
-の場合に切片が相対的にどれだけ異なるかを表す．</p>
-<pre class="r"><code>lm(Fertility ~ I(Examination &gt; mean(Examination)), data = swiss2)</code></pre>
+## Residual standard error: 8.982 on 44 degrees of freedom
+## Multiple R-squared:  0.5055, Adjusted R-squared:  0.483 
+## F-statistic: 22.49 on 2 and 44 DF,  p-value: 1.87e-07</code></pre>
+<pre class="r"><code>car::linearHypothesis(lm_swiss, &quot;Examination = 0&quot;)</code></pre>
+<pre><code>## Linear hypothesis test
+## 
+## Hypothesis:
+## Examination = 0
+## 
+## Model 1: restricted model
+## Model 2: Fertility ~ Examination + Education
+## 
+##   Res.Df    RSS Df Sum of Sq      F  Pr(&gt;F)  
+## 1     45 4015.2                              
+## 2     44 3549.6  1    465.63 5.7718 0.02057 *
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>p値はどちらも 0.0206 となっていることが確認できる．</p>
+<p><span class="math display">\[ H_0: \beta_{Educ} = \beta_{Exam} = 0
+\]</span></p>
+<pre class="r"><code>car::linearHypothesis(lm_swiss, c(&quot;Examination = 0&quot;, &quot;Education = 0&quot;))</code></pre>
 <p>（出力は省略）</p>
+<p><span class="math display">\[ H_0: \beta_{Educ} + \beta_{Exam} = 1
+\]</span></p>
+<pre class="r"><code>car::linearHypothesis(lm_swiss, &quot;Examination + Education = 1&quot;)</code></pre>
+<p>（出力は省略）</p>
+<!--
+See alos: <https://www.econometrics-with-r.org/7.3-joint-hypothesis-testing-using-the-f-statistic.html>
+-->
 </div>
-<div id="categorical-variables" class="section level2" number="3.3">
-<h2><span class="header-section-number">3.3</span> Categorical
-variables</h2>
-<p>複数の値を持つカテゴリー変数（質的変数）はそのまま回帰式に含めることで自動的にダミー変数として処理される．</p>
-<p>いずれか一つのカテゴリーはベースラインとされる（すべてのカテゴリーをダミー変数として含めると多重共線性により推定できなくなるため，一つは除外される）．</p>
-<p><code>swiss</code>
-データで，以下の6地域をカテゴリー変数として利用する（ChatGPT
-が提示してくれたもので，正確性・妥当性は未検証）．</p>
-<p>A: ジュラカントン, B: ヴォー州, C: フリブール州, D: ネウシャテル州,
-E: ジュネーブ州, F: ヴァレー州</p>
+<div id="advanced-anova" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> Advanced: ANOVA</h2>
+<p>分散分析について知っている履修者は次の2つの分析の関係を検討してみよう．</p>
+<ul>
+<li>被説明変数をカテゴリー変数ダミーに回帰する線形回帰モデル
+(<code>lm</code> 関数で推定)</li>
+<li>一元配置分散分析 (<code>aov</code> 関数で推定)</li>
+</ul>
+<p>カテゴリーを追加（詳細は「回帰分析」を参照）．</p>
 <pre class="r"><code>swiss2 &lt;- swiss
 swiss2$region &lt;- 
   c(&quot;A&quot;, &quot;A&quot;, &quot;A&quot;, &quot;A&quot;, &quot;A&quot;, &quot;A&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;,
     &quot;C&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;,
     &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;,
     &quot;F&quot;, &quot;F&quot;, &quot;F&quot;, &quot;F&quot;, &quot;F&quot;, &quot;F&quot;, &quot;F&quot;, &quot;F&quot;, &quot;D&quot;, &quot;D&quot;,
-    &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;E&quot;, &quot;E&quot;, &quot;E&quot;)
-table(swiss2$region)</code></pre>
-<pre><code>## 
-##  A  B  C  D  E  F 
-##  6 19  5  6  3  8</code></pre>
-<pre class="r"><code>lm(Fertility ~ Examination + region, swiss2)$coef</code></pre>
-<pre><code>## (Intercept) Examination     regionB     regionC     regionD     regionE 
-##   90.339456   -0.741199  -12.142443    6.053810   -1.829081  -30.976148 
-##     regionF 
-##   -8.810613</code></pre>
-<p><code>regionB</code> の回帰係数 -12.1 は，<code>region</code> = A
-をベースラインとしたときの B の切片の違い（平均的に Fertility
-がどれだけ異なるか）を表す．</p>
-<div id="change-the-reference-group" class="section level3" number="3.3.1">
-<h3><span class="header-section-number">3.3.1</span> Change the
-reference group</h3>
-<p>ベースラインのカテゴリーを変更するには <code>relevel</code>
-関数を使う．</p>
-<pre class="r"><code>swiss2$region &lt;- relevel(as.factor(swiss2$region), ref = &quot;B&quot;)
-lm(Fertility ~ Examination + region, swiss2)$coef</code></pre>
-<pre><code>## (Intercept) Examination     regionA     regionC     regionD     regionE 
-##   78.197013   -0.741199   12.142443   18.196253   10.313362  -18.833705 
-##     regionF 
-##    3.331830</code></pre>
+    &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;E&quot;, &quot;E&quot;, &quot;E&quot;)</code></pre>
+<p>回帰分析の枠組みにおけるカテゴリーの結合有意性検定とANOVAを比較．</p>
+<pre class="r"><code>summary(lm(Fertility ~ region, data = swiss2))$fstatistic</code></pre>
+<pre><code>##    value    numdf    dendf 
+## 29.07634  5.00000 41.00000</code></pre>
+<pre class="r"><code>anova(aov(Fertility ~ region, data = swiss2))$`F value`</code></pre>
+<pre><code>## [1] 29.07634       NA</code></pre>
 </div>
 </div>
-<div id="multicollinearity-多重共線性" class="section level2" number="3.4">
-<h2><span class="header-section-number">3.4</span> Multicollinearity /
-多重共線性</h2>
-<div id="example-of-perfect-multico.-完全な多重共線性の例" class="section level3" number="3.4.1">
-<h3><span class="header-section-number">3.4.1</span> Example of perfect
-multico. / 完全な多重共線性の例</h3>
-<pre class="r"><code>lm(formula = Fertility ~ Examination + I(2 * Examination), data = swiss)$coef</code></pre>
-<pre><code>##        (Intercept)        Examination I(2 * Examination) 
-##          86.818529          -1.011317                 NA</code></pre>
-<pre class="r"><code>cor(swiss$Examination, 2 * swiss$Examination)</code></pre>
-<pre><code>## [1] 1</code></pre>
-<p>R では，該当する変数（のうち一つ）が自動的に drop される．</p>
-</div>
-<div id="example-of-imperfect-multico.-不完全な多重共線性の例" class="section level3" number="3.4.2">
-<h3><span class="header-section-number">3.4.2</span> Example of
-imperfect multico. / 不完全な多重共線性の例</h3>
-<p>説明変数 <code>Examination</code>
-と非常に相関の高い変数（<code>Examination</code>
-にノイズを足したもの）が説明変数として追加される場合．</p>
-<pre class="r"><code>set.seed(2)
-swiss_multico &lt;- swiss %&gt;% 
-  mutate(Exam_with_noise = Examination + rnorm(nrow(swiss), sd = 1))
-cor(swiss_multico$Examination, swiss_multico$Exam_with_noise)</code></pre>
-<pre><code>## [1] 0.9900738</code></pre>
-<pre class="r"><code>summary(lm(formula = Fertility ~ Examination + Exam_with_noise, data = swiss_multico))$coef</code></pre>
-<pre><code>##                   Estimate Std. Error    t value     Pr(&gt;|t|)
-## (Intercept)     86.6475143   3.202510 27.0561290 4.660541e-29
-## Examination      0.9822164   1.245743  0.7884584 4.346563e-01
-## Exam_with_noise -1.9706250   1.219204 -1.6163209 1.131734e-01</code></pre>
-<p>（参考）<code>Examination</code> のみの場合．</p>
-<pre class="r"><code>summary(lm(formula = Fertility ~ Examination, data = swiss_multico))$coef</code></pre>
+<div id="white-standard-error-ホワイトの標準誤差" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> White standard error /
+ホワイトの標準誤差</h1>
+<p>残差 <span class="math inline">\(\hat{u} = Y - \hat{Y}\)</span>
+を用いた不均一分散に頑健な標準誤差（White
+によるオリジナルの方法；説明変数が1つの場合）．</p>
+<p><span class="math display">\[ s.e.(\hat{\beta}) = \sqrt{ \frac{\sum_i
+(X_i - \bar{X})^2 \hat{u}_i^2}{\left[\sum_i (X_i - \bar{X})^2\right]^2}
+} \]</span></p>
+<p>以下の回帰モデルの <span class="math inline">\(\beta\)</span>
+について考える．</p>
+<p><span class="math display">\[ Fertility = \alpha + \beta \ Exam + u
+\]</span></p>
+<p>まずは通常の標準誤差を計算．</p>
+<pre class="r"><code>summary(lm(Fertility ~ Examination, data = swiss))$coef</code></pre>
 <pre><code>##              Estimate Std. Error   t value     Pr(&gt;|t|)
 ## (Intercept) 86.818529  3.2576034 26.651043 3.353924e-29
 ## Examination -1.011317  0.1781971 -5.675275 9.450437e-07</code></pre>
-</div>
-<div id="using-vif-for-diagnostics-vif-による診断" class="section level3" number="3.4.3">
-<h3><span class="header-section-number">3.4.3</span> Using VIF for
-diagnostics / VIF による診断</h3>
-<p>変数 <span class="math inline">\(j\)</span> の分散拡大係数（variance
-inflation factor, VIF）は，変数 <span class="math inline">\(j\)</span>
-をそれ以外の変数に回帰したときの決定係数 <span class="math inline">\(R_j^2\)</span>
-を使って以下のように計算される．</p>
-<p><span class="math display">\[ VIF_j = \frac{1}{1 - R_j^2}
-\]</span></p>
-<p>あくまで一つの経験則でしかないが，「<span class="math inline">\(VIF
-&gt; 10\)</span> ならば多重共線性が生じている」と判断される．</p>
-<pre class="r"><code>lm_exam &lt;- lm(Examination ~ Education + Agriculture + Catholic, data = swiss)
-r2_exam &lt;- summary(lm_exam)$r.squared
-1 / (1 - r2_exam)  # VIF </code></pre>
-<pre><code>## [1] 3.675372</code></pre>
-<p><code>car</code> パッケージの <code>vif</code> 関数を使うと便利．</p>
-<pre class="r"><code># install.packages(&quot;car&quot;)
-library(car)
-lm0 &lt;- lm(formula = Fertility ~ Examination + Education + Agriculture + Catholic, data = swiss)
-car::vif(lm0)</code></pre>
-<pre><code>## Examination   Education Agriculture    Catholic 
-##    3.675372    2.689400    2.147410    1.856475</code></pre>
-</div>
-</div>
-<div id="comparing-the-size-of-the-coefficients-回帰係数の大きさを比較する" class="section level2" number="3.5">
-<h2><span class="header-section-number">3.5</span> Comparing the size of
-the coefficients / 回帰係数の大きさを比較する</h2>
-<p>例：<code>Examination</code> と <code>Agriculture</code>
-の回帰係数の（絶対値の）大きさを比較する．</p>
-<pre class="r"><code>lm(formula = Fertility ~ Examination + Agriculture, data = swiss)$coef</code></pre>
-<pre><code>## (Intercept) Examination Agriculture 
-## 94.60968827 -1.19502875 -0.09399751</code></pre>
-<p>上の結果から「<span class="math inline">\(|-1.195|&gt;|-0.094|\)</span> なので
-<code>Examination</code> の方が <code>Fertility</code>
-の分散をより説明する」と結論付けることはできない．</p>
-<p>なぜなら，係数の大きさは変数のスケール（ばらつき）に依存するから．</p>
-<p>たとえば，線形モデル <span class="math inline">\(y = \beta_0 +
-\beta_1 x + u\)</span> において金額ベースの変数 <span class="math inline">\(x\)</span>
-の単位を「円」から「千円」に変えると，推定される値そのもの (<span class="math inline">\(\hat{\beta}_1\)</span>)
-は1千倍になるが，推定された回帰係数の「解釈」は全く変わらない（この変数の重要性が1千倍になるわけではない）．</p>
-<div id="comparing-the-change-per-one-sd-1標準偏差当たりの変化量の比較" class="section level3" number="3.5.1">
-<h3><span class="header-section-number">3.5.1</span> Comparing the
-change per one SD / 1標準偏差当たりの変化量の比較</h3>
-<pre class="r"><code>c(-1.195 * sd(swiss$Examination), -0.094 * sd(swiss$Agriculture))</code></pre>
-<pre><code>## [1] -9.533571 -2.134854</code></pre>
-<p>「<span class="math inline">\(|-9.5|&gt;|-2.1|\)</span> なので
-<code>Examination</code> の方が <code>Fertility</code>
-の分散をより説明する」と言える．</p>
-</div>
-<div id="standardized-partial-regression-coefficient-標準偏回帰係数" class="section level3" number="3.5.2">
-<h3><span class="header-section-number">3.5.2</span> Standardized
-partial regression coefficient / 標準偏回帰係数</h3>
-<p>より一般的な方法は，標準化（平均 0，分散 1
-になるように変換）した変数を使って回帰分析をするもの．</p>
-<pre class="r"><code>swiss_scaled &lt;- swiss %&gt;% 
-  mutate(Fertility_scaled = (Fertility - mean(Fertility)) / sd(Fertility),
-         Examination_scaled = (Examination - mean(Examination)) / sd(Examination),
-         Agriculture_scaled = (Agriculture - mean(Agriculture)) / sd(Agriculture))
-lm(formula = Fertility_scaled ~ Examination_scaled + Agriculture_scaled, data = swiss_scaled)$coef</code></pre>
-<pre><code>##        (Intercept) Examination_scaled Agriculture_scaled 
-##       3.846942e-16      -7.632109e-01      -1.708973e-01</code></pre>
-<p>「<span class="math inline">\(|-0.76|&gt;|-0.17|\)</span> なので
-<code>Examination</code> の方が <code>Fertility</code>
-の分散をより説明する」と言える．</p>
-<p>なお，t 値と p 値は標準化の前後で不変．</p>
-<p>スケーリング（分散を 1 にする）とセンタリング（平均を 0
-にする）を同時に行ってくれる <code>scale</code>
-という関数を使えばより簡単．</p>
-<pre class="r"><code>lm(formula = Fertility ~ Examination + Agriculture, data = as.data.frame(scale(swiss)))</code></pre>
-<p>（出力は省略）</p>
-</div>
-</div>
-<div id="model-selection-モデル選択" class="section level2" number="3.6">
-<h2><span class="header-section-number">3.6</span> Model selection /
-モデル選択</h2>
-<p>被説明変数の予測を目的として回帰分析を行う場合，複数のモデル候補があった場合に，予測力が最も優れたモデルを一つ選択したい場合があるだろう．
-しかし，説明変数を追加すれば決定係数は必ず増加するが，それは標本に特有のデータの変動（あるいはノイズ）に過適合しているだけかもしれない．
-これを防ぐために，モデルの説明力とモデルの簡潔さのトレードオフの間でバランスを取るための何らかの指標が必要となる．</p>
-<p>自由度調整済みの決定係数はモデル選択の趣旨には当てはまっているが，実務的により広く利用されるのはAIC（赤池情報量規準）と呼ばれる規準（基準）．
-これはモデルを最尤推定することを前提として「最尤推定量の対数尤度」と「パラメタの数（＝定数項を含む説明変数の数＝K+1）」のトレードオフとして記述される．</p>
-<p><span class="math display">\[ AIC = -2 \log L + 2(K+1) \]</span></p>
-<p>対数尤度は大きいほど当てはまりが良く，パラメタ数は少ない方がよい．
-すなわち，複数のモデル間で AIC が最も小さいモデルが望ましい．</p>
-<p>注：</p>
-<ul>
-<li>因果推論を目的として回帰分析を行う場合には一般にモデル選択は行わない場合が多い．分析の目的に応じてモデル選択を行うかどうかを決めよう．
-<ul>
-<li>典型的な AIC の使いどころは時系列分析におけるラグの次数決定．</li>
-</ul></li>
-<li>AICは「真のモデル」を選択する基準ではない．あくまで予測力の観点で（比較対象の中で相対的に最も）望ましいモデルを選択する基準である．</li>
-<li>モデル選択後に回帰係数の検定を行わない方が良い．少なくとも，オーソドックスな
-t 検定をナイーブに適用するのはNG．</li>
-</ul>
+<p>White の標準誤差．</p>
+<pre class="r"><code>x &lt;- swiss$Examination
+lm_swiss &lt;- lm(Fertility ~ Examination, data = swiss)
+sqrt(sum((x - mean(x))^2 * lm_swiss$resid^2) / (sum((x - mean(x))^2))^2)  # White SE (original)</code></pre>
+<pre><code>## [1] 0.1776713</code></pre>
+<p>誤差分散を不偏推定するために自由度を調整する場合（一般に HC1
+として知られる）．</p>
+<p><span class="math display">\[ s.e._{HC1}(\hat{\beta}) = \sqrt{
+\frac{n}{n-(k+1)} \frac{\sum_i (X_i - \bar{X})^2
+\hat{u}_i^2}{\left[\sum_i (X_i - \bar{X})^2\right]^2} } \]</span></p>
+<pre class="r"><code>sqrt(nrow(swiss) / (nrow(swiss) - 2) * sum((x - mean(x))^2 * lm_swiss$resid^2) / (sum((x - mean(x))^2))^2)</code></pre>
+<pre><code>## [1] 0.1815766</code></pre>
+<p><code>fixest</code> パッケージで推定する場合． <code>feols</code>
+関数で <code>vcov = &quot;hetero&quot;</code> (誤差項の variance-covariance
+について heteroskedasticity を許容する，という意味) 引数を指定する．</p>
+<pre class="r"><code># install.packages(&quot;fixest&quot;)
+library(fixest)
+feols(Fertility ~ Examination, data = swiss, vcov = &quot;hetero&quot;)</code></pre>
+<pre><code>## OLS estimation, Dep. Var.: Fertility
+## Observations: 47 
+## Standard-errors: Heteroskedasticity-robust 
+##             Estimate Std. Error  t value  Pr(&gt;|t|)    
+## (Intercept) 86.81853   3.175114 27.34344 &lt; 2.2e-16 ***
+## Examination -1.01132   0.181577 -5.56965 1.353e-06 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## RMSE: 9.43462   Adj. R2: 0.404213</code></pre>
 <!--
-MODEL SELECTION AND INFERENCE: FACTS AND FICTION
-https://www.cambridge.org/core/journals/econometric-theory/article/abs/model-selection-and-inference-facts-and-fiction/EF3C7D79D5AFC4C6325345A3C8E26296
+https://cran.r-project.org/web/packages/fixest/vignettes/standard_errors.html
+
+# sqrt(diag(car::hccm(model = lm_swiss, type = "hc1")))  # using "car" package
+# lmtest::coeftest(lm_swiss, vcov. = sandwich::vcovHC(lm_swiss, type="HC1"))  # using "lmtest" and "sandwich" packages
 -->
-<div id="find-aic" class="section level3" number="3.6.1">
-<h3><span class="header-section-number">3.6.1</span> Find AIC</h3>
-<pre class="r"><code>lm1 &lt;- lm(Fertility ~ Examination, data = swiss)
-lm2 &lt;- lm(Fertility ~ Examination + Education, data = swiss)
-lm3 &lt;- lm(Fertility ~ Examination + Education + Agriculture + Catholic, data = swiss)
-AIC(lm1, lm2, lm3)</code></pre>
-<pre><code>##     df      AIC
-## lm1  3 350.3525
-## lm2  4 344.6292
-## lm3  6 332.4121</code></pre>
 </div>
-<div id="stepwise-model-selection-with-aic" class="section level3" number="3.6.2">
-<h3><span class="header-section-number">3.6.2</span> Stepwise model
-selection with AIC</h3>
-<p>考え得る説明変数をすべて含めたモデル (full model) からスタートして
-stepwise で最適なモデルを選択することもできる．</p>
-<p><code>step</code> 関数を使うと AIC
-を規準としてモデル選択が行われる．</p>
-<pre class="r"><code>lm_full &lt;- lm(Fertility ~ Examination + Education + Agriculture + Catholic + Infant.Mortality, data = swiss)
-step(lm_full, trace = 0)  # trace = 1 にすると計算過程が出力される</code></pre>
+<div id="cluster-robust-se-クラスターロバスト標準誤差" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Cluster robust SE /
+クラスターロバスト標準誤差</h1>
+<p><code>swiss</code>
+データにおいて，以下の6地域をクラスターとして利用する（再掲）．</p>
+<p>A: ジュラカントン, B: ヴォー州, C: フリブール州, D: ネウシャテル州,
+E: ジュネーブ州, F: ヴァレー州</p>
+<pre class="r"><code>library(fixest)
+table(swiss2$region)  # 再掲</code></pre>
 <pre><code>## 
-## Call:
-## lm(formula = Fertility ~ Education + Agriculture + Catholic + 
-##     Infant.Mortality, data = swiss)
-## 
-## Coefficients:
-##      (Intercept)         Education       Agriculture          Catholic  
-##          62.1013           -0.9803           -0.1546            0.1247  
-## Infant.Mortality  
-##           1.0784</code></pre>
+##  A  B  C  D  E  F 
+##  6 19  5  6  3  8</code></pre>
+<pre class="r"><code>feols(Fertility ~ Examination, data = swiss2, cluster = ~ region)</code></pre>
+<pre><code>## OLS estimation, Dep. Var.: Fertility
+## Observations: 47 
+## Standard-errors: Clustered (region) 
+##             Estimate Std. Error  t value   Pr(&gt;|t|)    
+## (Intercept) 86.81853   4.708134 18.44011 8.6278e-06 ***
+## Examination -1.01132   0.281775 -3.58910 1.5723e-02 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## RMSE: 9.43462   Adj. R2: 0.404213</code></pre>
 </div>
-</div>
-</div>
-<div id="take-home-messages" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Take home messages</h1>
-<ul>
-<li>回帰分析：<code>summary(lm(formula = Y ~ X1 + X2, data = dataset))</code></li>
-<li>説明変数の二乗は <code>I(X1^2)</code></li>
-<li>2つの説明変数の掛け算（交差項）は <code>X1:X2</code></li>
-</ul>
+<div id="ols-vs.-wls-monte-carlo-simulation-モンテカルロシミュレーション" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> OLS vs. WLS Monte Carlo
+simulation / モンテカルロシミュレーション</h1>
+<p>誤差の不均一性をもたらすメカニズムが既知で当該要因を観測可能な場合は
+OLS よりも加重最小二乗法（WLS）の方が効率よく推定できる．</p>
+<p>鹿野繁樹『新しい計量経済学』（日本評論社）第11章で行われたシミュレーションを再現．</p>
+<p>OLS:</p>
+<p><span class="math display">\[ Y_i = 1 + X_i + \sqrt{h} \tilde{u}_i
+\]</span> <span class="math display">\[ X_i \sim N(0, 1) , \quad
+\tilde{u}_i \sim \mbox{Uni}(0, 4 \sqrt{12}), \quad h_i \sim
+\mbox{Uni}(0, 1) \]</span></p>
+<p>WLS:</p>
+<p><span class="math display">\[ \frac{Y_i}{\sqrt{h_i}} =
+\frac{1}{\sqrt{h_i}} + \beta \frac{X_i}{\sqrt{h_i}} + u_i, \quad
+\tilde{Y}_i = I_i + \beta \tilde{X}_i + \tilde{u}_i \]</span></p>
+<p>注：<span class="math inline">\(E(u_i) \ne 0\)</span>
+であるため，WLSで定数項を0にして推定してはいけない．</p>
+<pre class="r"><code>ols_matrix &lt;- wls_matrix &lt;- NULL
+for (i in 1:1000) {
+  set.seed(i)
+  n &lt;- 50
+  x &lt;- rnorm(n, 0, 1)
+  u_tilde &lt;- runif(n, 0, 4*sqrt(12))
+  h &lt;- runif(n, 0, 1)
+  # OLS
+  y &lt;- 1 + x + u_tilde * h
+  ols_matrix &lt;- rbind(ols_matrix, lm(y ~ x)$coef)
+  # WLS
+  y_tilde &lt;- y / sqrt(h)
+  Ii &lt;- 1 / sqrt(h)
+  x_tilde &lt;- x / sqrt(h)
+  wls_matrix &lt;- rbind(wls_matrix, lm(y_tilde ~ x_tilde)$coef)
+}</code></pre>
+<p><span class="math inline">\(X\)</span>
+の回帰係数の推定値の分布を観察する．</p>
+<pre class="r"><code>summary(wls_matrix[, 2]); summary(ols_matrix[, 2])</code></pre>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+## -0.7191  0.8522  1.0012  1.0113  1.1636  2.5938</code></pre>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+## -0.3889  0.7342  0.9998  1.0167  1.3030  2.3599</code></pre>
+<pre class="r"><code>hist(wls_matrix[, 2], breaks = 30)
+hist(ols_matrix[, 2], breaks = 20, add = T, col = rgb(1,0,0, alpha = .2))
+legend(x = &quot;topright&quot;, col = c(8, 2), legend = c(&quot;WLS&quot;, &quot;OLS&quot;), lwd = 5)</code></pre>
+<p><img src="data:image/png;base64,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" width="672" /></p>
+<p>WLS で推定すると推定値のばらつきが小さい．
+このことは，誤差の不均一性を正確にモデル化できる場合にはWLSを適用することで推定精度を改善できる可能性があることを示している．</p>
+<!--
+plot(wls_matrix[, 2], ols_matrix[, 2], xlab = "beta of WLS", ylab = "beta of OLS", pch = ".")
+abline(a = 0, b = 1, col = 2)
+-->
 <p>.</p>
 </div>
 
