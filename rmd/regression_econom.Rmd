@@ -1,0 +1,520 @@
+---
+title: "Data Analysis Using Statistical Packages: Regression Analysis in Econometrics"
+author: "Sho Kuroda / 黒田翔"
+date: '2024年3月 (Last update: 2025年4月)'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Simple regression analysis / 単回帰分析
+
+1つの説明変数をもつ次のような回帰モデル（単回帰モデル）を考える．
+
+$$ Fertility = \alpha + \beta Exam + u $$
+
+
+## Estimation with `lm` function 
+
+```{r reg_summary, eval = F}
+lm(formula = Fertility ~ Examination, data = swiss)
+summary(lm(formula = Fertility ~ Examination, data = swiss))
+```
+
+（出力省略）
+
+## Estimation by hand
+
+回帰係数の最小二乗（OLS）推定量は次のように与えられる．
+
+$$ \hat{\alpha} = \bar{Y} - \hat{\beta} \bar{X}, \quad \hat{\beta} = \frac{S_{XY}}{S_{XX}} $$
+$$ S_{XX} = \sum_i (X_i - \bar{X})^2, \quad S_{XY} = \sum_i (X_i - \bar{X}) (Y_i - \bar{Y}) $$
+
+まず $\bar{Y}, \bar{X}, S_{XX}, S_{XY}$ という4つの統計量を計算する．
+
+```{r reg_mean_s}
+y_bar <- mean(swiss$Fertility)  # Y bar
+x_bar <- mean(swiss$Examination)  # X bar
+s_xx <- sum((swiss$Examination - x_bar)^2)  # S_XX
+s_xy <- sum((swiss$Examination - x_bar) * (swiss$Fertility - y_bar))  # S_XY
+c(y_bar, x_bar, s_xx, s_xy)
+```
+
+計算した統計量を使って回帰係数を計算する．
+
+```{r reg_coef}
+beta_hat <- s_xy / s_xx
+alpha_hat <- y_bar - beta_hat * x_bar
+c(alpha_hat, beta_hat)
+```
+
+
+### Properties of fitted values and residuals 
+
+アウトカムの当てはめ値 $\hat{Y}_i = \hat{\alpha} + \hat{\beta} X_i$ の平均はアウトカムの平均と一致する．
+
+$$ \bar{\hat{Y}} = \bar{Y} $$
+
+```{r reg_check_pred}
+y_pred <- alpha_hat + beta_hat * swiss$Examination  # y hat
+c(mean(y_pred), y_bar)  # should be matched
+```
+
+残差（誤差変数の当てはめ値, $\hat{u} = Y - \hat{Y}$）に関する幾つかの性質．
+
+$$ \sum_i \hat{u}_i = 0, \quad \sum_i \hat{u}_i X_i = 0 $$
+
+```{r reg_check1}
+resid_swiss <- swiss$Fertility - y_pred  # residuals
+sum(resid_swiss)  # should be zero
+sum(resid_swiss * swiss$Examination)  # eX ... should be zero
+```
+
+$$ S_{X\hat{u}} = \sum_i (X - \bar{X}) (\hat{u} - \bar{\hat{u}}) = 0, \quad S_{Y\hat{u}} = \sum_i (Y - \bar{Y}) (\hat{u} - \bar{\hat{u}}) = 0 $$
+
+```{r reg_check2}
+sum((swiss$Examination - x_bar) * (resid_swiss - mean(resid_swiss)))  # S_Xe ... should be zero
+sum((y_pred - y_bar) * (resid_swiss - mean(resid_swiss)))  # S_Ye ... should be zero
+```
+
+
+
+## Coefficient of determination / 決定係数
+
+$$ R^2 = \frac{\mbox{Variation in } Y \mbox{ explained by } X}{\mbox{Total variation in } Y} = \frac{S_{\hat{Y}\hat{Y}}}{S_{YY}} = 1 - \frac{\sum \hat{u}_i^2}{S_{YY}} $$
+
+$$ S_{YY} = \sum_i (Y_i - \bar{Y})^2, \quad S_{\hat{Y} \hat{Y}} = \sum_i (\hat{Y}_i - \bar{\hat{Y}})^2 $$
+
+```{r reg_r2}
+s_yy <- sum((swiss$Fertility - y_bar)^2)
+y_pred <- alpha_hat + beta_hat * swiss$Examination  # y hat
+s_yhyh <- sum((y_pred - y_bar)^2)
+s_yhyh / s_yy  # R^2
+resid_swiss <- swiss$Fertility - y_pred  # residuals
+1 - sum(resid_swiss^2) / s_yy  # R^2 ... should be the same as above
+```
+
+自由度調整済み決定係数．
+
+$$ \bar{R}^2 = 1 - \frac{n - 1}{n - K - 1} \frac{\sum \hat{u}_i^2}{S_{YY}} $$
+
+$K$: 説明変数の数（定数項は含めない）
+
+```{r }
+1 - (nrow(swiss) - 1) / (nrow(swiss) - 1 - 1) * sum(resid_swiss^2) / s_yy
+```
+
+
+## Standard error and test / 標準誤差と検定
+
+帰無仮説「$H_0: \beta = 0$」の検定を行うために，$\hat{\beta}$ の標準誤差（s.e.）を求める．
+
+$$ V(\hat{\beta}) = \frac{\sigma^2}{S_{XX}}, \quad s.e.(\hat{\beta}) = \sqrt{V(\hat{\beta})} $$
+
+誤差分散 $\sigma^2$ は残差 $\hat{u}$ を利用して次のように推定する．
+
+$$ \hat{\sigma}^2 = s^2 = \frac{1}{n - 2} \sum \hat{u}_i^2 $$
+
+```{r reg_var}
+sum(resid_swiss^2) / (nrow(swiss) - 2)  # estimated sigma^2
+beta_se <- sqrt(sum(resid_swiss^2)/(nrow(swiss) - 2) / s_xx)  # standard error
+beta_se
+```
+
+$$ t = \frac{\hat{\beta}}{\sqrt{V(\hat{\beta})}} $$
+
+```{r reg_tvalue}
+beta_hat / beta_se
+```
+
+$t < 0$ なので次のように p 値を計算できる．
+
+$$ p = 2 \times \Pr(T \le t) $$
+
+```{r reg_pvalue}
+2 * pt(q = beta_hat / beta_se, df = nrow(swiss) - 2)
+```
+
+補足：$t>0$ の場合も考慮してより一般的に書けば $p = 2 \times [1-\Pr(|t| \le T)]$．
+
+```{r reg_p_ver2}
+2 * (1 - pt(q = abs(beta_hat / beta_se), df = nrow(swiss) - 2))
+```
+
+
+# Multiple regression analysis / 重回帰分析
+
+2つの説明変数をもつ次のような回帰モデル（重回帰モデル）を考える．
+
+$$ Fertility = \alpha + \beta_1 Exam + \beta_2 Educ + u $$
+
+```{r multiple_reg_lm, eval = F}
+summary(lm(Fertility ~ Examination + Education, data = swiss))
+```
+
+（出力省略）
+
+## Estimation by hand
+
+重回帰モデルの回帰係数のOLS推定量は行列形式で表現した方が分かりやすい．
+
+式中の $\mathbf{X}, \mathbf{Y}$ は（$X, Y$ とは異なり）太字かつ立体（斜体ではない）で，これは行列またはベクトルを表す．
+
+つまり，以下のように定義されている．
+$X_{nm}$ は $n$ 番目の個体の $m$ 番目の説明変数を表す．
+$Y_{n}$ は $n$ 番目の個体の被説明変数（アウトカム）を表す．
+
+$$ \mathbf{X} = \left[ \matrix{X_{11} & X_{12} & X_{13} & \cdots \\ X_{21} & X_{22} & X_{23} & \cdots \\ X_{31} & X_{32} & X_{33} & \cdots \\ \vdots & \vdots & \vdots & \ddots} \right], \quad \mathbf{Y} = \left[ \matrix{Y_1 \\ Y_2 \\ Y_3 \\ \vdots} \right] , \quad \boldsymbol{\beta} = \left[ \matrix{\beta_1 \\ \beta_2 \\ \beta_3 \\ \vdots} \right] $$
+
+行列表記の回帰モデル．
+
+$$ \mathbf{Y} = \mathbf{X} \boldsymbol{\beta} + \mathbf{u} $$
+
+残差二乗和 $Q$ を $\boldsymbol{\beta}$ で微分して 0 とおくことでOLS推定量が得られる．
+
+$$ Q = \mathbf{u}'\mathbf{u} = (\mathbf{Y} - \mathbf{X} \boldsymbol{\beta})' (\mathbf{Y} - \mathbf{X} \boldsymbol{\beta}), \quad \frac{\partial Q}{\partial \boldsymbol{\beta}} =0 $$
+
+$$ \hat{\boldsymbol{\beta}} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{Y} $$
+
+まずは $\mathbf{X}, \mathbf{Y}$ を作成する．
+説明変数には1（定数項）が含まれている点に注意しよう．
+
+* `as.matrix(データフレーム)` ：行列オブジェクトに変換
+
+```{r reg_mr_XY_def}
+Y <- as.matrix(swiss[, c("Fertility")])
+X <- as.matrix(cbind(1, swiss[, c("Examination", "Education")]))
+```
+
+転置は `t`，逆行列は `solve`，行列の積は `%*%` で計算できるので，回帰係数のOLS推定量は以下のように計算される．
+
+```{r reg_mr_estimation}
+beta_multi <- solve(t(X) %*% X) %*% t(X) %*% Y
+beta_multi
+```
+
+## Standard error / 標準誤差
+
+$$ V(\hat{\boldsymbol{\beta}}) = \sigma^2 (\mathbf{X}'\mathbf{X})^{-1} $$
+
+回帰係数の検定を行うためには誤差分散 $\sigma^2$ の推定値を求める必要がある．
+$k$ は（定数項を除いた）説明変数の数なので2である．
+
+$$ \hat{\sigma}^2 = \frac{1}{n-(1+k)} \sum_i (Y_i - \hat{Y}_i)^2 $$
+
+```{r reg_mr_est_sigma2}
+resid_multi <- Y - X %*% beta_multi
+s2 <- sum(resid_multi^2) / (nrow(swiss)-3)  # estimates of sigma^2
+s2
+```
+
+回帰係数の推定量ベクトルの分散は $\sigma^2 (\mathbf{X}'\mathbf{X})^{-1}$ （分散共分散行列）なので，個々の回帰係数の推定量の分散はこの分散共分散行列の対角成分である．
+
+```{r reg_mr_var_beta}
+s2 * solve(t(X) %*% X)  # variance-covariance matrix of beta 
+diag(s2 * solve(t(X) %*% X))  # extract diagonals
+```
+
+標準誤差はその平方根となる．
+すなわち，$j$ 番目の説明変数の標準誤差は次のように計算される．
+
+$$ s.e.(\hat{\beta}_j) = \sqrt{\{\sigma^2 (\mathbf{X}'\mathbf{X})^{-1} \}_{jj}} $$
+
+```{r reg_mr_std_error}
+sqrt(diag(s2 * solve(t(X) %*% X)))  # standard errors 
+```
+
+回帰係数の推定値を標準誤差で割れば t 値が求められる．
+
+```{r reg_mr_t}
+t_value <- beta_multi / sqrt(diag(s2 * solve(t(X) %*% X)))
+t_value
+```
+
+t 値が分かれば p 値も計算できる．
+
+$$ p = 2 \times (1 - \Pr(|t| \le T)) $$
+
+```{r reg_mr_p}
+2 * (1 - pt(q = abs(t_value), df = nrow(swiss) - 3))
+```
+
+
+# Dummy variables ダミー変数
+
+`Examination` 変数が平均よりも大きい場合に 1 をとるダミー変数を定義する．
+
+```{r def_dum_exam, message = F}
+library(tidyverse)
+swiss2 <- swiss %>%
+  mutate(exam_dummy = ifelse(Examination > mean(Examination), 1, 0))
+```
+
+$$ Fertility = \alpha + \beta \ 1(Exam > \bar{Exam}) + u $$
+
+```{r reg_dum}
+summary(lm(Fertility ~ exam_dummy, data = swiss2))$coef
+```
+
+
+## Relationship to the test of difference of means / 平均値の差の検定との関係
+
+`exam_dummy` の回帰係数 (-13.9) は，「`Examination` が平均を上回るサブサンプルにおける `Fertility` の平均」と「`Examination` が平均以下のサブサンプルにおける `Fertility` の平均」の差に等しい．
+
+```{r reg_dummy_diff}
+swiss2 %>%
+  group_by(exam_dummy) %>%
+  summarise(mean_fertility = mean(Fertility))
+```
+
+また，回帰係数の t 検定は2標本の母平均の差の検定（等分散を仮定）に対応する．
+
+```{r regression_and_ttest}
+t.test(Fertility ~ exam_dummy, data = swiss2, var.equal = TRUE)
+```
+
+このように，線形回帰モデルにおける回帰係数に対する検定は幾つかの検定と本質的に同じことを行っているものとして解釈できる．詳細は Lindeløv (2019) [Common statistical tests are linear models](https://lindeloev.github.io/tests-as-linear/) を参照．
+
+
+# Joint hypothesis test / 結合有意性検定
+
+「`Education` と `Examination` のどちらの回帰パラメタも 0 に等しい」という帰無仮説を検定するためには Joint test を行う．
+
+$$ H_0: \beta_{Educ} = \beta_{Exam} = 0 $$
+
+制約の本数 $G$ を用いて，検定統計量 $F$ は次のように計算される．
+
+$$ F = \chi^2 \frac{1}{G} = \frac{(Q_R - Q) / G}{Q / (n-k-1)} \sim F(G, n-k-1) $$
+
+$Q$ は制約なしのモデル（対立仮説に対応．つまり，`Education` と `Examination` の2つの変数を説明変数として含むモデル）の残差二乗和を表す．
+
+$$ Fertility = \alpha + \beta_{Educ} Educ + \beta_{Exam} Exam+ u, \quad Q = \sum_i \hat{u}^2_i $$
+
+$Q_R$ は制約あり (restricted) のモデル（帰無仮説に対応．つまり，`Education` と `Examination` の2つの変数を説明変数として含まないモデル）の残差二乗和を表す．
+
+$$ Fertility = \alpha + v, \quad Q_R = \sum_i \hat{v}^2_i $$
+
+```{r reg_joint}
+lm_swiss_unrestricted <- lm(Fertility ~ Examination + Education, data = swiss)
+lm_swiss_restricted <- lm(Fertility ~ 1, data = swiss)  # 定数項のみのモデル
+resid_unrestricted <- sum(lm_swiss_unrestricted$resid^2)
+resid_restricted <- sum(lm_swiss_restricted$resid^2)
+```
+
+計算した $Q, Q_R$ を用いて $F$ 値を計算する．
+
+```{r reg_joint_f}
+f_value <- ((resid_restricted - resid_unrestricted) / 2) / (resid_unrestricted / (nrow(swiss) - 2 - 1))
+f_value
+1 - pf(q = f_value, df1 = 2, df2 = nrow(swiss) - 2 - 1)  # p value
+```
+
+臨界値と比較する場合．
+
+```{r reg_joint_F_critical}
+qf(p = 0.05, df1 = 2, df2 = nrow(swiss) - 2 - 1, lower.tail = F)  # critical value 
+# qf(p = 0.95, df1 = 2, df2 = nrow(swiss) - 2 - 1, lower.tail = T)  # same as above
+```
+
+$F \approx 22.5 > \mbox{critical value}$ なので，帰無仮説は5%有意水準で棄却される．
+すなわち，`Education` と `Examination` という2つの説明変数のうち少なくともいずれか一方の回帰パラメタは0ではないと結論付けられる．
+
+## Test for all explanatory variables 
+
+すべての説明変数に対して $\beta_1 = \beta_2 = \cdots = 0$ を帰無仮説とする joint F test の検定統計量および対応する p 値は `summary(lm(...))` の一番下でレポートされている．
+
+```{r joint_f_lm}
+summary(lm_swiss_unrestricted)
+```
+
+一番下の行が意味すること： $F(2, 47-2-1) = 22.49, \ \Pr(F > 22.49) < 0.001$
+
+つまり，回帰分析においてよくデフォルトでレポートされるF値とは「すべての説明変数が説明力を持たない」という帰無仮説に対応する検定統計量である．
+
+対応する p 値が十分に小さかったとしても，それはあくまでこの帰無仮説が棄却されることを意味しているだけであり，「すべての説明変数が有意である」と解釈することはできないし，「説明変数は被説明変数の変動を十分に説明する」と解釈することもできない．
+
+
+## Using `car::linearHypothesis` function 
+
+`car` というパッケージの `linearHypothesis` という関数で検定できる．
+「`car::linearHypothesis`」のようにパッケージ名と関数名を `::` で繋いで使用すれば，当該パッケージを読み込まなくても関数を使える．
+
+```{r reg_joint2}
+lm_swiss <- lm(Fertility ~ Examination + Education, data = swiss)
+summary(lm_swiss)
+car::linearHypothesis(lm_swiss, "Examination = 0")
+```
+
+p値はどちらも 0.0206 となっていることが確認できる．
+
+$$ H_0: \beta_{Educ} = \beta_{Exam} = 0 $$
+
+```{r reg_joint3, eval = FALSE}
+car::linearHypothesis(lm_swiss, c("Examination = 0", "Education = 0"))
+```
+
+（出力は省略）
+
+$$ H_0: \beta_{Educ} + \beta_{Exam} = 1 $$
+
+```{r reg_joint4, eval = FALSE}
+car::linearHypothesis(lm_swiss, "Examination + Education = 1")
+```
+
+（出力は省略）
+
+<!--
+See alos: <https://www.econometrics-with-r.org/7.3-joint-hypothesis-testing-using-the-f-statistic.html>
+-->
+
+## Advanced: ANOVA 
+
+分散分析について知っている履修者は次の2つの分析の関係を検討してみよう．
+
+* 被説明変数をカテゴリー変数ダミーに回帰する線形回帰モデル (`lm` 関数で推定)
+* 一元配置分散分析 (`aov` 関数で推定)
+
+カテゴリーを追加（詳細は「回帰分析」を参照）．
+
+```{r add_region_category}
+swiss2 <- swiss
+swiss2$region <- 
+  c("A", "A", "A", "A", "A", "A", "C", "C", "C", "C",
+    "C", "B", "B", "B", "B", "B", "B", "B", "B", "B",
+    "B", "B", "B", "B", "B", "B", "B", "B", "B", "B",
+    "F", "F", "F", "F", "F", "F", "F", "F", "D", "D",
+    "D", "D", "D", "D", "E", "E", "E")
+```
+
+回帰分析の枠組みにおけるカテゴリーの結合有意性検定とANOVAを比較．
+
+```{r anova}
+summary(lm(Fertility ~ region, data = swiss2))$fstatistic
+anova(aov(Fertility ~ region, data = swiss2))$`F value`
+```
+
+
+# White standard error / ホワイトの標準誤差
+
+残差 $\hat{u} = Y - \hat{Y}$ を用いた不均一分散に頑健な標準誤差（White によるオリジナルの方法；説明変数が1つの場合）．
+
+$$ s.e.(\hat{\beta}) = \sqrt{ \frac{\sum_i (X_i - \bar{X})^2 \hat{u}_i^2}{\left[\sum_i (X_i - \bar{X})^2\right]^2} } $$
+
+以下の回帰モデルの $\beta$ について考える．
+
+$$ Fertility = \alpha + \beta \ Exam + u $$
+
+まずは通常の標準誤差を計算．
+
+```{r ordinary_std_error}
+summary(lm(Fertility ~ Examination, data = swiss))$coef
+```
+
+White の標準誤差．
+
+```{r reg_white}
+x <- swiss$Examination
+lm_swiss <- lm(Fertility ~ Examination, data = swiss)
+sqrt(sum((x - mean(x))^2 * lm_swiss$resid^2) / (sum((x - mean(x))^2))^2)  # White SE (original)
+```
+
+誤差分散を不偏推定するために自由度を調整する場合（一般に HC1 として知られる）．
+
+$$ s.e._{HC1}(\hat{\beta}) = \sqrt{ \frac{n}{n-(k+1)} \frac{\sum_i (X_i - \bar{X})^2 \hat{u}_i^2}{\left[\sum_i (X_i - \bar{X})^2\right]^2} } $$
+
+```{r reg_white_modified}
+sqrt(nrow(swiss) / (nrow(swiss) - 2) * sum((x - mean(x))^2 * lm_swiss$resid^2) / (sum((x - mean(x))^2))^2)
+```
+
+`fixest` パッケージで推定する場合．
+`feols` 関数で `vcov = "hetero"` (誤差項の variance-covariance について heteroskedasticity を許容する，という意味) 引数を指定する．
+
+```{r reg_white2}
+# install.packages("fixest")
+library(fixest)
+feols(Fertility ~ Examination, data = swiss, vcov = "hetero")
+```
+<!--
+https://cran.r-project.org/web/packages/fixest/vignettes/standard_errors.html
+
+# sqrt(diag(car::hccm(model = lm_swiss, type = "hc1")))  # using "car" package
+# lmtest::coeftest(lm_swiss, vcov. = sandwich::vcovHC(lm_swiss, type="HC1"))  # using "lmtest" and "sandwich" packages
+-->
+
+
+# Cluster robust SE / クラスターロバスト標準誤差
+
+`swiss` データにおいて，以下の6地域をクラスターとして利用する（再掲）．
+
+A: ジュラカントン, B: ヴォー州, C: フリブール州, D: ネウシャテル州, E: ジュネーブ州, F: ヴァレー州
+
+```{r reg_cluster}
+library(fixest)
+table(swiss2$region)  # 再掲
+feols(Fertility ~ Examination, data = swiss2, cluster = ~ region)
+```
+
+
+# OLS vs. WLS Monte Carlo simulation / モンテカルロシミュレーション
+
+誤差の不均一性をもたらすメカニズムが既知で当該要因を観測可能な場合は OLS よりも加重最小二乗法（WLS）の方が効率よく推定できる．
+
+鹿野繁樹『新しい計量経済学』（日本評論社）第11章で行われたシミュレーションを再現．
+
+OLS:
+
+$$ Y_i = 1 + X_i + \sqrt{h} \tilde{u}_i $$
+$$ X_i \sim N(0, 1) , \quad \tilde{u}_i \sim \mbox{Uni}(0, 4 \sqrt{12}), \quad h_i \sim \mbox{Uni}(0, 1) $$
+
+WLS:
+
+$$ \frac{Y_i}{\sqrt{h_i}} = \frac{1}{\sqrt{h_i}} + \beta \frac{X_i}{\sqrt{h_i}} + u_i, \quad \tilde{Y}_i = I_i + \beta \tilde{X}_i + \tilde{u}_i $$
+
+注：$E(u_i) \ne 0$ であるため，WLSで定数項を0にして推定してはいけない．
+
+```{r reg_mc}
+ols_matrix <- wls_matrix <- NULL
+for (i in 1:1000) {
+  set.seed(i)
+  n <- 50
+  x <- rnorm(n, 0, 1)
+  u_tilde <- runif(n, 0, 4*sqrt(12))
+  h <- runif(n, 0, 1)
+  # OLS
+  y <- 1 + x + u_tilde * h
+  ols_matrix <- rbind(ols_matrix, lm(y ~ x)$coef)
+  # WLS
+  y_tilde <- y / sqrt(h)
+  Ii <- 1 / sqrt(h)
+  x_tilde <- x / sqrt(h)
+  wls_matrix <- rbind(wls_matrix, lm(y_tilde ~ x_tilde)$coef)
+}
+```
+
+$X$ の回帰係数の推定値の分布を観察する．
+
+```{r reg_mc_coef}
+summary(wls_matrix[, 2]); summary(ols_matrix[, 2])
+hist(wls_matrix[, 2], breaks = 30)
+hist(ols_matrix[, 2], breaks = 20, add = T, col = rgb(1,0,0, alpha = .2))
+legend(x = "topright", col = c(8, 2), legend = c("WLS", "OLS"), lwd = 5)
+```
+
+WLS で推定すると推定値のばらつきが小さい．
+このことは，誤差の不均一性を正確にモデル化できる場合にはWLSを適用することで推定精度を改善できる可能性があることを示している．
+
+<!--
+plot(wls_matrix[, 2], ols_matrix[, 2], xlab = "beta of WLS", ylab = "beta of OLS", pch = ".")
+abline(a = 0, b = 1, col = 2)
+-->
+
+
+.
