@@ -1,6 +1,6 @@
 // Title: Data Analysis Using Statistical Packages: Descriptive Statistics 
 // Author: Sho Kuroda 
-// Last update: Jan 2025 
+// Last update: Apr 2025 
 
 // R版 https://kurodaecon.github.io/dasp/html/descriptive_stat.html に対応
 
@@ -9,6 +9,7 @@
 ***************************************************************************
 
 import delimited using "https://raw.githubusercontent.com/kurodaecon/bs/main/data/titanic3_csv.csv", clear
+describe
 
 ***************************************************************************
 * 2 Qualitative data / 質的データ
@@ -22,7 +23,7 @@ tabulate sex
 
 ** 2.1.1 Count missing values / 欠損値をカウントする
 
-tabulate sex, missing
+tabulate sex, missing // no missing obs
 
 ** 2.2 Bar chart / 棒グラフ
 
@@ -169,5 +170,12 @@ correlate age fare parch  // listwise deletion
 
 pwcorr age fare parch  // pairwise deletion
 
+
+** 
+** Stata 独自の便利な関数
+** 
+
+inspect age // Display simple summary of data's attributes 
+codebook age // Describe data contents 
 
 // EOS 

@@ -1,14 +1,24 @@
 // Title: Data Analysis Using Statistical Packages: Basic Operation of Stata 
 // Author: Sho Kuroda
-// Last update: December 2024
+// Last update: Apr 2025
 
 // R版 https://kurodaecon.github.io/dasp/html/basic.html に対応
+
+// 早大生は次のページを参照して Stata を各自のPCにインストール可能
+// https://support.waseda.jp/it/s/software/stata?language=ja
 
 ***************************************************************************
 * 1 Basic operating instructions / 基本的な操作
 ***************************************************************************
 
+// 実行したい行またはその行の一部分を選択して 「実行 (do)」 ボタンをクリックすると実行される
+// 複数行（またはその一部）を選択して一気に実行することも可
+// キーボードのショートカットは 「Ctrl」 + 「D」 
+
+// （おまけ）　実行するが結果（計算結果など）を表示させたくない場合は 「Ctrl」 + 「R」 を同時に押す
+
 display 1 + 1
+di 1 + 1  // display に対応する短縮コマンドは di
 
 ** 1.1 Basic arithmetic operations / 四則演算 
 
@@ -159,6 +169,8 @@ describe
 
 // Stata では dta 形式でデータを保存できる
 
+cd "c:/ws_stat"  // change directory 
+pwd  // path of the current working directory 
 save beatles, replace  // replace は上書き（同名のファイルがなければ新規作成）
 
 // 呼び出す
@@ -226,8 +238,7 @@ graph combine graph1 graph2
 
 ** 4.1 import 
 
-cd "c:/ws_stat"  // change directory 
-pwd  // path of the current working directory 
+cd "c:/ws_stat"
 import delimited "titanic3_csv.csv", clear
 
 ** 4.3 import from the external URL link 
@@ -261,6 +272,52 @@ program define return_squared
 end
 
 return_squared 5
+
+program drop return_squared // erase program 
+program drop _all // erase all programs 
+
+** 補足： Local macro について
+// see https://www.stata.com/manuals13/u18.pdf 
+
+// 使い方1: 数値の例
+// Local macro を定義
+local localmacro1 123
+// Single-quote 「`」 と 「'」 を使って定義した local macro を使う
+display `localmacro1' + 10000
+
+// 注: 
+// local macro の定義と，定義した macro の使用は，一度に実行されないといけない
+// テクニカルに言うと，local macro は private な変数として定義されるため
+// program の中で定義した local macro をプログラム外から参照したりましてや変更することはできない
+
+// 使い方2: 文字列の例
+local localmacro2 Aa Bb Cc
+display "`localmacro2'"
+
+// 使い方3: 変数名
+sysuse auto, clear
+local localmacro3 price mpg
+list `localmacro3' in 1/6
+list price mpg in 1/6 // same as above
+
+// 使い方4: コマンド名
+local localmacro4 list
+`localmacro4' price in 1/6
+list price in 1/6 // same as above
+
+** 補足： Global macro について
+
+// Glocal macro を定義
+global globalmacro1 123
+// ドルマーク 「$」 を使って定義した global macro を使う
+display $globalmacro1 + 10000
+
+// 注: 
+// Global macro は local macro と異なり public な macro なので，定義と使用は別々に実行可能
+
+macro drop globalmacro1 // erase macro 
+macro drop _all // erase all macros 
+
 
 ** 5.1 Example: Examine whether it is a leap year or not / 閏年の判定
 
@@ -352,8 +409,8 @@ matrix list M3_inv
 
 // 単位行列になっているかどうかを確認
 
-matrix product_M3_M_3inv = M3 * M3_inv
-matrix list product_M3_M_3inv
+matrix product_M3_M3_inv = M3 * M3_inv
+matrix list product_M3_M3_inv
 
 
 ***************************************************************************
