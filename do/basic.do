@@ -60,6 +60,9 @@ scalar x = 1
 display x
 display x + 1
 
+// 作成した scalar 変数をすべて表示する
+scalar list 
+
 ** 1.6 Vectors / ベクトル
 
 // マクロ変数を使うことで R のベクトルオブジェクトに似たものをつくることができるが，R とは想定される使用法が異なるようなので省略
@@ -85,11 +88,11 @@ clear
 // 文字列変数は srt# (# = 文字列最大長) で定義する．
 // 欠損値は 「.」 で表される
 
-input str10 name     born decease height
-            "John"   1940 1980    179
-            "Paul"   1942 .       180
-            "George" 1943 .       178
-            "Ringo"  1940 .       170
+input str6 name born decease height
+      "John"    1940 1980    179
+      "Paul"    1942 .       180
+      "George"  1943 .       178
+      "Ringo"   1940 .       170
 end
 
 // 表示させる
