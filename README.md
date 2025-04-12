@@ -17,11 +17,11 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * [Inferential Statistics / 推測統計学](https://kurodaecon.github.io/dasp/html/inferential_stat.html) / [Stata do file](https://github.com/kurodaecon/dasp/blob/main/do/inferential_stat.do)
    * 確率：確率変数の期待値と分散，乱数の生成，中心極限定理
    * 信頼区間（母平均，母比率），統計的仮説検定（母平均，多重検定の問題に関するシミュレーション）
-* [Regression Analysis / 回帰分析](https://kurodaecon.github.io/dasp/html/regression.html)
-   * 基礎：最小二乗法 … `lm` 関数による推定，`lm` 関数を利用しない推定（数値計算による最適化および行列演算を含む）
-   * 応用：二次項・交差項の利用，ダミー変数の利用，結合有意性検定，頑健な標準誤差，加重最小二乗法
+* [Regression Analysis / 回帰分析](https://kurodaecon.github.io/dasp/html/regression.html) / [Stata do file](https://github.com/kurodaecon/dasp/blob/main/do/regression.do)
+   * 基礎：最小二乗法 … `lm` 関数による推定，`lm` 関数を利用しない推定（数値計算による最適化を含む）
+   * 応用：二次項・交差項の利用，ダミー変数の利用
 * [Regression Analysis in Econometrics / 回帰分析（計量経済学）](https://kurodaecon.github.io/dasp/html/regression_econom.html)
-   * 計量経済学の論点にウェイトを置いた回帰分析
+   * 計量経済学の論点にウェイトを置いた回帰分析 （結合有意性検定，頑健な標準誤差，加重最小二乗法，etc.）
 * [Discrete Regression Analysis / 離散回帰分析](https://kurodaecon.github.io/dasp/html/discrete_regression.html)
    * 最尤法：ベルヌーイ分布，正規分布，線形回帰モデル
    * 離散回帰モデル：二項プロビット・モデル（数値計算による最適化を含む），二項ロジット・モデル，限界効果
