@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Basic Operation of R"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年3月 (Last update: 2024年4月)'
+date: '最終更新：2025年4月'
 output:
   html_document:
     toc: yes
@@ -29,7 +29,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 このページのRコードをどのように実行すればよいか？
 
-* Rを利用：[Rをダウンロード](https://cran.ism.ac.jp/)
+* Rを利用：[Rをダウンロード](https://ftp.yz.yamagata-u.ac.jp/pub/cran/)
    * コンソールに直接コピーアンドペーストして「Enter」（Macの場合は「Return」）
    * 新しいスクリプトにコピーアンドペーストする場合
       * Windows: 「ファイル」→「新しいスクリプト」にペーストして，実行する箇所を選択 → 「Ctrl」＋「R」
@@ -96,8 +96,8 @@ pi  # pi (circle ratio)
 
 この `pi` は「オブジェクト」と呼ばれ，数値が割り当てられている．
 
-実は，ユーザーは任意の数字を適当な「オブジェクト」として定義することができる．
-数値を「オブジェクト」に割り当てることで，数値を複数の箇所で繰り返し使うことができる．
+実は，ユーザーは任意の数値を適当な「オブジェクト」と呼ばれる容器に入れる（代入する，または，割り当てる）ことができる．
+数値を「オブジェクト」に割り当てることで，その数値を複数の箇所で繰り返し使うことができる．
 
 「`オブジェクト名 <- 数値`」の形式で割り当てる．
 「`<-`」は割り当て（または代入）を行う演算子で，「`<`」（小なり）と「`-`」（ハイフン）を組み合わせて使用．
@@ -368,25 +368,56 @@ str(swiss)
 
 # Plot / 描画
 
-最も基本的な描画は `plot` 関数を使った散布図．
+## `plot` function 
+
+最も基本的な描画の一つは `plot` 関数を使った散布図．
 
 ```{r plot}
 plot(x = swiss$Education, y = swiss$Fertility)
 ```
 
-追加の引数を指定することで，グラフのタイトル，X軸・Y軸のラベル，マーカーの種類，色などを変更できる．
+追加の引数を指定することで，グラフのタイトル，X軸・Y軸のラベル，マーカーの種類と色などを変更できる．
+
+* `main`: overall title （図のタイトル）
+* `xlab`: title for x axis （X軸のタイトル）
+* `ylab`: title for y axis （Y軸のタイトル）
+* `pch`: plotting symbols ... `0` = □, `1` = ○, `2` = △, `3` = +, `4` = ×, `19` = ●,  etc. 
+* `col`: color ... 色名 (`"red"`, `"blue"`, etc.)，数字 (`0` = 黒, `1` = 赤, etc.)，RGB (`rgb(red, green, blue)`) などによって指定可
+* `cex`: size of symbols （マーカーのサイズ）
+* `cex.main`: size of overall title （図のタイトルのサイズ）
+* `cex.lab`: size of x- and y-axis labels （軸のラベルのサイズ）
+* `cex.axis`: size of axis tick labels （軸の目盛のサイズ）
 
 ```{r plot_additional}
-plot(x = swiss$Education, y = swiss$Fertility, pch = 20, col = "blue", 
-     main = "Fertility vs. Education", xlab = "Education (% beyond primary school)", ylab = "Fertility")
+plot(x = swiss$Education, y = swiss$Fertility, 
+     main = "Relationship between fertility and education", 
+     xlab = "Education (% beyond primary school)", ylab = "Standardized fertility measure",
+     pch = 19, col = "blue", cex = 1.5, cex.main = 1.5, cex.lab = 1.5, cex.axis = 1.5)
 ```
+
+論文やレポートで使う図では「`swiss$Fertility`」のような軸ラベルをそのままにしてはダメ．
+変数の内容を表す適切な表現を用いること．
+
+<!--
+## `hist` function 
+
+ヒストグラムを描画する `hist` は，前処理を含むデータ分析の過程では頻繁に使う．
+
+`hist` でも先ほどと同様にグラフのタイトルやX軸のラベルを変更することができる．
+
+```{r hist2}
+hist(swiss$Fertility, main = "Histogram of fertility", xlab = "Standardized fertility measure")
+```
+-->
+
+## Arranging multiple panels side by side 
 
 複数のパネルを並べる場合は `par(mfrow = c(行数, 列数))` を実行してから `plot` コマンドを実行する．
 
 ```{r multi_plot}
 par(mfrow = c(1, 2))
-plot(x = swiss$Education, y = swiss$Fertility, pch = 20)
-plot(x = swiss$Education, y = swiss$Examination, pch = 20)
+plot(x = swiss$Education, y = swiss$Fertility, pch = 19, xlab = "Edu", ylab = "Fert")
+plot(x = swiss$Education, y = swiss$Examination, pch = 19, xlab = "Edu", ylab = "Fert")
 ```
 
 Tips: `plot` 周りで何らかのエラーが生じたら，`dev.off()` で一旦描画デバイスを閉じるとうまくいくことがある．
