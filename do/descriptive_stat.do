@@ -1,6 +1,6 @@
 // Title: Data Analysis Using Statistical Packages: Descriptive Statistics 
 // Author: Sho Kuroda 
-// Last update: Apr 2025 
+// Last update: May 2025 
 
 // R版 https://kurodaecon.github.io/dasp/html/descriptive_stat.html に対応
 
@@ -162,13 +162,23 @@ graph matrix survived age fare sibsp parch
 
 // （略）
 
-** 3.8.2 Example of age variable of Titanic data / タイタニック号乗客データの年齢変数
+** 3.8.3 Example of age variable of Titanic data / タイタニック号乗客データの年齢変数
 
 // 次の2つのコマンドは欠損値がある場合の処理の仕方が異なる
 
 correlate age fare parch  // listwise deletion 
 
 pwcorr age fare parch  // pairwise deletion
+
+** 3.8.3.1 Simpson's paradox
+
+correlate age fare if pclass == 1
+correlate age fare if pclass == 2
+correlate age fare if pclass == 3
+
+summarize age fare if pclass == 1
+summarize age fare if pclass == 2
+summarize age fare if pclass == 3
 
 
 ** 
