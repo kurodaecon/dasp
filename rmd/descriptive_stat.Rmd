@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Descriptive Statistics"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年3月 (Last update: 2024年3月)'
+date: '最終更新：2025年5月'
 output:
   html_document:
     toc: yes
@@ -125,7 +125,7 @@ sum(titanic$sex == "male" & titanic$survived == 1)
 
 出港地 `embarked` を例として．
 
-* C＝Cherbourg（仏・シェルブール）, Q＝Queenstown（アイルランド）, S＝Southampton（英）
+* C＝Cherbourg（仏・シェルブール）, Q＝Queenstown（アイルランド）, S＝Southampton（イングランド）
 
 ```{r mode}
 table(titanic$embarked)
@@ -167,15 +167,14 @@ lines(density(titanic$age, na.rm = TRUE))
 
 ## Frequency distribution table of quantitative data / 数量データの度数分布表
 
-[0, 20), [20, 60), [60, 100) の3区間で作成する．
-そのために，`cut` 関数を利用して実数データを上の3区間に変換する．
+[0, 20), [20, 40), [40, 60), [60, 100) の4区間で作成する．
+そのために，`cut` 関数を利用して実数データを上の4区間に変換する．
 
 * `breaks` 引数で区間の区切り値のベクトルを指定
 * 「[0, 20)」は 0 以上 20 未満．右は閉じない（左側が閉じる）ので `right = FALSE` 引数を追加
 
 ```{r titanic_fd}
 titanic_age_interval <- cut(titanic$age, breaks = c(0, 20, 40, 60, 100), right = FALSE)
-# [right = F] means intervals should not be closed on the right
 table(titanic_age_interval)
 table(titanic_age_interval) / sum(table(titanic_age_interval))  # relative frequency
 ```
@@ -201,6 +200,18 @@ sum(x) / 3  # definition of mean
 mean(x)
 mean(c(1, 2, 6))  # same as above 
 ```
+
+「平均」はデータの分布の重心である．
+データの平均からの偏差 $x_i - \bar{x}$ およびその和を考えてみよう．
+
+```{r mean_dev}
+x - mean(x)
+sum(x - mean(x))
+```
+
+平均からの偏差（平均からの乖離）をすべて足すと 0 になる（そのような値が「平均」として定義されているともいえる）．
+
+$$ \sum_i (x_i - \bar{x}) = \sum_i x_i - n \bar{x} = \sum_i x_i - n \left( \frac{1}{n} \sum_i x_i \right) = 0 $$
 
 ### Example of age variable of Titanic data / タイタニック号乗客データの年齢変数
 
@@ -228,6 +239,13 @@ summary関数も四分位点を報告するが，quantile関数を使った場�
 The `summary` function also reports the quartiles.
 -->
 
+たとえば，25%tileは 21.0 と計算されており，以下のように確認できる．
+
+```{r quantiles_age_check}
+table(titanic$age < 21.0) / length(na.omit(titanic$age))
+table(titanic$age <= 21.0) / length(na.omit(titanic$age))
+```
+
 `probs` 引数で percentile を指定できる．
 
 ```{r apple_quantiles2}
@@ -241,7 +259,8 @@ median(titanic$age, na.rm = TRUE)  # median 中央値
 ## Maximum, Minimum, Range / 最大値，最小値，範囲
 
 ```{r max_min_range}
-max(titanic$age, na.rm = TRUE); min(titanic$age, na.rm = TRUE)
+max(titanic$age, na.rm = TRUE)
+min(titanic$age, na.rm = TRUE)
 max(titanic$age, na.rm = TRUE) - min(titanic$age, na.rm = TRUE)  # range
 ```
 
@@ -468,17 +487,35 @@ $$ \sigma_{x, y} = \frac{1}{N} \sum_i (x_i - \mu_{x})(y_i - \mu_{y}) $$
 
 $$ Cov(x, y) = \frac{1}{n-1} \sum_i (x_i - \bar{x})(y_i - \bar{y}) $$
 
-```{r cov}
+```{r cov0}
 x <- c(1, 2, 6)
 y <- c(1, 3, 4)
 plot(x, y)  # scatter plot
 (x - mean(x)) * (y - mean(y))
-sum((x - mean(x)) * (y - mean(y))) / 3  # definition of population covariance
+```
+
+平均からの偏差の積は何を意味しているのか？
+
+下の図で平均値を表す赤線をx軸・y軸とみなそう．
+このとき，第1象限・第3象限は正，第2象限（・第4象限）は負の値を取る．
+よって，片方の変数がその平均値よりも大きな値を取るとき，もう片方の変数もその平均値よりも大きな値を取る傾向にある時，第1象限と第3象限に多くのデータが集まり，結果として偏差の積は正の値をとるだろう．
+その逆に右下がりの傾向がある時，偏差の積は負の値を取るだろう．
+
+```{r cov1_plot}
+plot(x, y)
+text(x, y, labels = 1:3, cex = 2)
+abline(v = mean(x), h = mean(y), col = "red")
+```
+
+以上のように計算される「偏差の積」の平均値が共分散である．
+
+```{r cov2}
+# sum((x - mean(x)) * (y - mean(y))) / 3  # definition of population covariance
 sum((x - mean(x)) * (y - mean(y))) / (3-1)  # definition of sample covariance
 cov(x, y)  # sample covariance
 ```
 
-相関係数
+相関係数は，共分散をそれぞれの変数の標準偏差で割ることでスケーリングしたもの．
 
 $$ Cor(x, y) = \frac{Cov(x, y)}{\sqrt{s^2_x} \cdot \sqrt{s^2_y}} $$
 
@@ -487,19 +524,54 @@ cov(x, y) / (sd(x) * sd(y))  # definition of correlation coef.
 cor(x, y)  # correlation coefficient
 ```
 
+相関係数の大きさは，データがデータに最もよく当てはまる直線にどれだけ近いかによって決まる．
+
+```{r cor2}
+set.seed(0)
+x2 <- rnorm(10)
+y2a <- x2 + rnorm(10, sd = 1); cor(x2, y2a)
+y2b <- x2 + rnorm(10, sd = 2); cor(x2, y2b)
+par(mfrow = c(1, 2))
+plot(x2, y2a, ylim = c(-3, 3), main = paste("r =", round(cor(x2, y2a), 2)))
+abline(lm(y2a ~ x2), col = "red")  # Add fitted (regression) line 
+plot(x2, y2b, ylim = c(-3, 3), main = paste("r =", round(cor(x2, y2b), 2)))
+abline(lm(y2b ~ x2), col = "red")
+```
+
+<!--
+lm(y2a ~ x2)$coef; lm(y2b ~ x2)$coef # 直線の傾きはほとんど同じ（左 0.862, 右 0.856）
+-->
+
+相関係数の大きさは，直線の傾きの大きさを表すわけではない．
+
+```{r cor3}
+set.seed(0)
+x3 <- rnorm(10)
+y3a <- x3 + rnorm(10, sd = 1); cor(x3, y3a)
+y3b <- y3a / 2; cor(x3, y3b)
+par(mfrow = c(1, 2))
+plot(x3, y3a, ylim = c(-2, 2), main = paste("r =", round(cor(x3, y3a), 2)))
+abline(lm(y3a ~ x3), col = "red")
+plot(x3, y3b, ylim = c(-2, 2), main = paste("r =", round(cor(x3, y3b), 2)))
+abline(lm(y3b ~ x3), col = "red")
+lm(y3a ~ x3)$coef; lm(y3b ~ x3)$coef  # slope of fitted line 
+```
+
+### cor = ±1
+
 相関係数が 1 や -1 になるのは，一方の変数がもう一方の変数の定数倍・定数加算によって得られるような場合．
 <!--
 Correlation coefficients of 1 or -1 are obtained when one variable is a constant multiple or constant addition of the other variable.
 -->
 
-```{r cov2}
-x3 <- x * 2 + 3
-x4 <- x * (-0.5) + 3
+```{r cor_pm1}
+x4a <- x * 2 + 3
+cor(x, x4a)
+x4b <- x * (-0.5) + 3
+cor(x, x4b)
 par(mfrow = c(1, 2))
-plot(x, x3); abline(lm(x3 ~ x), col = "red")  # Add regression line (red line) / 回帰直線を追加
-plot(x, x4); abline(lm(x4 ~ x), col = "red")
-cor(x, x3)
-cor(x, x4)
+plot(x, x4a, cex = 2); abline(lm(x4a ~ x), col = "red")
+plot(x, x4b, cex = 2); abline(lm(x4b ~ x), col = "red")
 ```
 
 ### Anscombe's quartet / アンスコムの数値例
@@ -528,7 +600,7 @@ plot(anscombe$x3, anscombe$y3)
 plot(anscombe$x4, anscombe$y4)
 ```
 
-この例は，記述統計だけを見るのではなく，生のデータを描画することの重要性を我々に教えてくれる．
+この例は，生のデータを描画することの重要性を我々に教えてくれる．
 <!--
 This example shows us the importance of drawing raw data, rather than just looking at descriptive statistics. 
 -->
@@ -548,6 +620,45 @@ cor(titanic$age, titanic$fare, use = "complete.obs")
 
 ```{r cor_titanic_multi}
 cor(titanic[, c("age", "fare", "parch")], use = "complete.obs")
+```
+
+#### Simpson's paradox 
+
+客室等級ごとに年齢と運賃の相関係数を計算すると次のようになる．
+これは上で計算したサンプル全体に対して計算した相関係数と異なる．
+
+```{r cor_titanic_simpson}
+c(cor(titanic$age[titanic$pclass == 1], titanic$fare[titanic$pclass == 1], use = "complete.obs"),
+  cor(titanic$age[titanic$pclass == 2], titanic$fare[titanic$pclass == 2], use = "complete.obs"),
+  cor(titanic$age[titanic$pclass == 3], titanic$fare[titanic$pclass == 3], use = "complete.obs"))
+```
+
+各客室等級の年齢と運賃の平均値を計算すると次のようになる．
+
+```{r cor_titanic_simpson2}
+c(mean(titanic$age[titanic$pclass == 1], na.rm = TRUE),
+  mean(titanic$age[titanic$pclass == 2], na.rm = TRUE),
+  mean(titanic$age[titanic$pclass == 3], na.rm = TRUE))
+c(mean(titanic$fare[titanic$pclass == 1], na.rm = TRUE),
+  mean(titanic$fare[titanic$pclass == 2], na.rm = TRUE),
+  mean(titanic$fare[titanic$pclass == 3], na.rm = TRUE))
+```
+
+直感的に説明すれば，客室等級ごとに計算した相関は客室等級「内」の相関を捉えるのに対して，サンプル全体の相関は客室等級「間」の相関を捉えるためである．
+
+このように集団を分割したときに集団全体とは異なる傾向が観察される現象は「シンプソンのパラドックス」として知られる．
+下の図を参照．
+
+```{r cor_simpson_ex}
+set.seed(0)
+x1 <- rnorm(10, mean = 5);  y1 <- - x1 + rnorm(10)
+x2 <- rnorm(10, mean = 10); y2 <- - x2 + rnorm(10) + 5
+x3 <- rnorm(10, mean = 15); y3 <- - x3 + rnorm(10) + 15
+cor(x1, y1); cor(x2, y2); cor(x3, y3)
+x123 <- c(x1, x2, x3); y123 <- c(y1, y2, y3)
+cor(x123, y123)
+plot(x123, y123, col = rep(c("darkgreen", "blue", "darkorange"), each = 10), pch = 20)
+abline(lm(y123 ~ x123), col = "red")
 ```
 
 
