@@ -240,8 +240,8 @@ qt(p = c(0.005, 0.025, 0.975, 0.995), df = nrow(swiss) - 2)  # 1% and 5%
 
 ```{r pvalue_in_dist_cv}
 curve(dt(x, df = nrow(swiss) - 2), from = -4, to = 4, main = "Density of t-dist")
-abline(v = c(-2.7, 2.7), col = "red")
-text(c(-3.3, 3.3), 0.03, labels = "2.5%"); text(0, 0.15, labels = "95%")
+abline(v = c(-2.01, 2.01), col = "red")
+text(c(-3, 3), 0.04, labels = "2.5%"); text(0, 0.15, labels = "95%")
 ```
 
 よって，$t = -5.7$ は有意水準1%に対応する臨界値 (-2.7) よりも小さいので，1%水準で有意である．
@@ -249,8 +249,9 @@ text(c(-3.3, 3.3), 0.03, labels = "2.5%"); text(0, 0.15, labels = "95%")
 自由度が大きければ標準正規分布の場合とほとんど同じ臨界値になる．
 
 ```{r qt_large_n}
-qt(p = 0.975, df = 10000)
+qt(p = 0.975, df = 10000); qnorm(p = 0.975)
 ```
+
 
 # Multiple regression analysis / 重回帰分析
 
