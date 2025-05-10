@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Regression Analysis"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年3月 (Last update: 2025年4月)'
+date: '最終更新：2025年5月'
 output:
   html_document:
     toc: yes
@@ -212,6 +212,12 @@ $t < 0$ なので次のように p 値を計算できる．
 
 $$ p = 2 \times \Pr(T \le t) $$
 
+```{r pvalue_in_dist}
+curve(dt(x, df = nrow(swiss) - 2), from = -6, to = 6, main = "Density of t-dist")
+abline(v = beta_hat / beta_se * c(-1, 1), col = "red")
+text(c(-5.4, 5.4), 0.02, labels = c("Pr(T < -5.7)", "Pr(T > 5.7)"))
+```
+
 ```{r reg_pvalue}
 2 * pt(q = beta_hat / beta_se, df = nrow(swiss) - 2)
 ```
@@ -230,6 +236,12 @@ t分布の2.5%臨界値（両側5%に対応）は？
 ```{r reg_t}
 qt(p = 0.025, df = nrow(swiss) - 2)  # df: degree of freedom (自由度)
 qt(p = c(0.005, 0.025, 0.975, 0.995), df = nrow(swiss) - 2)  # 1% and 5%
+```
+
+```{r pvalue_in_dist_cv}
+curve(dt(x, df = nrow(swiss) - 2), from = -4, to = 4, main = "Density of t-dist")
+abline(v = c(-2.7, 2.7), col = "red")
+text(c(-3.3, 3.3), 0.03, labels = "2.5%"); text(0, 0.15, labels = "95%")
 ```
 
 よって，$t = -5.7$ は有意水準1%に対応する臨界値 (-2.7) よりも小さいので，1%水準で有意である．
