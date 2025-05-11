@@ -1814,10 +1814,10 @@ variable of Titanic data / タイタニック号乗客データの年齢変数</
 denominator of the sample variance <span class="math inline">\(n-1\)</span>?</h3>
 <p>なぜ標本分散の分母は <span class="math inline">\(n-1\)</span>
 なのか？</p>
-<p>平均1，分散1の乱数を生成する <code>rnorm</code>
+<p>平均0，分散1の乱数を生成する <code>rnorm</code>
 関数を使ってシミュレーションを行って確認してみる．</p>
 <pre class="r"><code>var(rnorm(n = 5, mean = 0, sd = 1))</code></pre>
-<pre><code>## [1] 0.370161</code></pre>
+<pre><code>## [1] 0.9135767</code></pre>
 <p>シミュレーション</p>
 <ul>
 <li><code>rnorm(n = サンプルサイズ, mean = 平均, sd = 標準偏差)</code>
@@ -1866,7 +1866,7 @@ summary(rnorm_pop_var)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 ## 0.02154 0.37973 0.67805 0.78518 1.06479 4.61459</code></pre>
 <div style="border: 2px solid #888; padding: 10px;">
-<p>なお，本来の導出は以下の通り．</p>
+<p>本来の導出は以下の通り．</p>
 <p><span class="math inline">\(X_1, X_2, \ldots, X_n\)</span> を平均
 <span class="math inline">\(\mu\)</span> 分散 <span class="math inline">\(\sigma^2\)</span>
 の同一分布に独立に従う確率変数とみなす． このとき，標本分散が母分散
@@ -2190,7 +2190,7 @@ paradox</h4>
   mean(titanic$fare[titanic$pclass == 2], na.rm = TRUE),
   mean(titanic$fare[titanic$pclass == 3], na.rm = TRUE))</code></pre>
 <pre><code>## [1] 87.50899 21.17920 13.30289</code></pre>
-<p>直感的に説明すれば，客室等級ごとに計算した相関は客室等級「内」の相関を捉えるのに対して，サンプル全体の相関は客室等級「間」の相関を捉えるためである．</p>
+<p>直感的に説明すれば，客室等級ごとに計算した相関は客室等級「内」の相関を捉えるのに対して，サンプル全体の相関は客室等級「間」の相関も捉えるためである．</p>
 <p>このように集団を分割したときに集団全体とは異なる傾向が観察される現象は「シンプソンのパラドックス」として知られる．
 下の図を参照．</p>
 <pre class="r"><code>set.seed(0)
