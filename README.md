@@ -42,7 +42,9 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
    * [Card and Krueger (AER 1994)](https://kurodaecon.github.io/dasp/html/card1994.html)
       * 手法：記述統計，t 検定，DID（差分の差分法），回帰分析
 
+<!--
 注：講義スライドは Moodle の授業ページからアクセスしてください．履修者以外（学外者を含む）で講義スライドをご覧になりたい方は黒田までお問い合わせください．
+-->
 
 ## Learning resources for R programming, focusing on statistics and causal inference, developed by others 
 
