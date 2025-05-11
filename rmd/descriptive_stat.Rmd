@@ -374,7 +374,7 @@ $X_1, X_2, \ldots, X_n$ を平均 $\mu$ 分散 $\sigma^2$ の同一分布に独�
 
 $$ E \left[ \sum_i (X_i - \bar{X})^2 \right] = E \left[ \sum_i (X_i - \mu)^2 \right] - n E \left[(\bar{X} - \mu)^2 \right] = n \sigma^2 - n \cdot \frac{\sigma^2}{n} = (n-1) \sigma^2 $$
 $$ \mbox{where} \quad E \left[(\bar{X} - \mu)^2 \right] = V(\bar{X}) = V \left( \frac{1}{n} \sum_i X_i \right) = \frac{1}{n^2} \sum_i V(X_i) = \frac{1}{n^2} \cdot n \sigma^2 = \frac{\sigma^2}{n} $$
-$$ \therefore E \left[ \frac{1}{n-1} \sum_i (X_i - \bar{X}) \right] = \sigma^2 $$
+$$ \therefore E \left[ \frac{1}{n-1} \sum_i (X_i - \bar{X})^2 \right] = \sigma^2 $$
 </div>
 
 ### Box plot / 箱ひげ図
