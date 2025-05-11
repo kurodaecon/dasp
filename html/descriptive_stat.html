@@ -1817,7 +1817,7 @@ denominator of the sample variance <span class="math inline">\(n-1\)</span>?</h3
 <p>平均0，分散1の乱数を生成する <code>rnorm</code>
 関数を使ってシミュレーションを行って確認してみる．</p>
 <pre class="r"><code>var(rnorm(n = 5, mean = 0, sd = 1))</code></pre>
-<pre><code>## [1] 0.9135767</code></pre>
+<pre><code>## [1] 2.209274</code></pre>
 <p>シミュレーション</p>
 <ul>
 <li><code>rnorm(n = サンプルサイズ, mean = 平均, sd = 標準偏差)</code>
@@ -1879,7 +1879,7 @@ summary(rnorm_pop_var)</code></pre>
 \left[(\bar{X} - \mu)^2 \right] = V(\bar{X}) = V \left( \frac{1}{n}
 \sum_i X_i \right) = \frac{1}{n^2} \sum_i V(X_i) = \frac{1}{n^2} \cdot n
 \sigma^2 = \frac{\sigma^2}{n} \]</span> <span class="math display">\[
-\therefore E \left[ \frac{1}{n-1} \sum_i (X_i - \bar{X}) \right] =
+\therefore E \left[ \frac{1}{n-1} \sum_i (X_i - \bar{X})^2 \right] =
 \sigma^2 \]</span></p>
 </div>
 </div>
