@@ -49,6 +49,15 @@ $$ \hat{Fertility} = 86.8 - 1.01 Exam $$
 「Exam を1単位引き上げると Fertility は 1.01 単位減少する」と解釈することはできない．
 この回帰係数はあくまで両変数の相関関係を記述しているだけであり因果効果を示すものではない．
 
+説明変数が1つの場合，回帰式は下図のように散布図に書き足すことができる．
+大雑把に言えば，回帰式の推定（＝回帰係数パラメタを計算すること）とはデータに当てはまる直線の切片 $\alpha$ と傾き $\beta$ を決める手続きである．
+
+```{r reg_lm_scatter}
+plot(x = swiss$Examination, y = swiss$Fertility, xlim = c(0, 40))
+abline(v = 0, col = "grey")
+abline(lm(Fertility ~ Examination, swiss), col = "red")
+```
+
 `lm` 関数で計算した回帰オブジェクトを `summary` 関数に渡すと決定係数なども表示される．
 
 ```{r reg_summary}
@@ -72,7 +81,7 @@ $$ Q = \sum_{i} u_i^2 = \sum_{i} (Y_i - \alpha - \beta X_i)^2 $$
 
 $$ \frac{\partial Q}{\partial \alpha} = -2 \sum_i (Y_i - \alpha - \beta X_i) = 0 $$
 
-$$ \frac{\partial Q}{\partial \beta} = -2 \sum_i x_i (Y_i - \alpha - \beta X_i) = 0 $$
+$$ \frac{\partial Q}{\partial \beta} = -2 \sum_i X_i (Y_i - \alpha - \beta X_i) = 0 $$
 
 上の連立方程式を解くことによって，最小二乗推定量は次のように与えられる．
 
