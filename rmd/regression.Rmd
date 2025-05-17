@@ -15,6 +15,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+このページに対応するRmdファイル：[GitHub](https://github.com/kurodaecon/dasp/blob/main/rmd/regression.Rmd)
 
 # Simple regression analysis / 単回帰分析
 
@@ -56,6 +57,9 @@ $$ \hat{Fertility} = 86.8 - 1.01 Exam $$
 plot(x = swiss$Examination, y = swiss$Fertility, xlim = c(0, 40))
 abline(v = 0, col = "grey")
 abline(lm(Fertility ~ Examination, swiss), col = "red")
+points(0, 86.8, pch = 15, col = "red")
+text(3, 88, expression(alpha == 86.8))
+text(35, 46, expression(beta == -1.01))
 ```
 
 `lm` 関数で計算した回帰オブジェクトを `summary` 関数に渡すと決定係数なども表示される．
@@ -118,8 +122,10 @@ OLSは残差二乗和の最小化によって回帰係数パラメタを推定�
 
 $$ f(x) = x^2 -4x + 7 = (x-2)^2 + 3 $$
 
-```{r fx}
+```{r fx, echo = FALSE}
 plot(function (x) x^2-4*x+7, xlim = c(-2, 6))
+points(2, 3, cex = 2, pch = 19, col = "red")
+text(2, 4, labels = "(2, 3)")
 ```
 
 最小値を取るような $x$ の値を `optim` 関数を使って求めてみる．
@@ -157,9 +163,11 @@ optim(par = c(0, 0), fn = sum_of_squared_residuals)
 
 $\hat{\alpha} = 86.8$ に固定して $\hat{\beta}$ の値によって残差二乗和がどのように変化するかをプロットすると，$\hat{\beta} = -1.01$ で最小化されていることが分かる．
 
+<!--
 （複雑なスクリプトなので，どのように動いているかは理解しなくてよい．）
+-->
 
-```{r reg_optim_given_beta0_plot}
+```{r reg_optim_given_beta0_plot, echo = FALSE}
 sum_of_squared_residuals_beta <- function (beta1) {
   y <- swiss$Fertility
   x <- swiss$Examination
@@ -167,8 +175,10 @@ sum_of_squared_residuals_beta <- function (beta1) {
 }
 beta_value <- seq(-3, 2, by = 0.01)
 obj_fun <- sapply(beta_value, sum_of_squared_residuals_beta)
-plot(x = beta_value, y = obj_fun, type = "l", xlim = c(-3, 2))
-abline(v = -1.01, col = 2)
+plot(x = beta_value, y = obj_fun, type = "l", xlim = c(-3, 2), ylab = "Objective function (Sum of squared errors)", xlab = expression(beta[1]))
+points(-1.01, 4183.569, pch = 19, cex = 2, col = "red")
+text(-1.01, 4183.569 + 13000, label = "(-1.01, 4183.569)")
+# abline(v = -1.01, col = 2)
 ```
 
 ## Coefficient of determination / 決定係数
@@ -283,27 +293,27 @@ summary(lm(Fertility ~ Examination + Education, data = swiss))
 
 ## Adding quardatic or interaction terms / 二次・交差項
 
-新しい変数を作成するなどのデータフレームの操作をするためには `tidyverse` に含まれる関数 (`mutate`, `rename`, `group_by`, etc.) を用いると簡単．
-
-```{r reg_mod, message = F}
-library(tidyverse)
-swiss2 <- swiss %>%
-  mutate(Edu2 = Education^2,
-         ExamEdu = Examination * Education)
-# tidyverse を使わない場合
-# swiss2 <- swiss
-# swiss2$Edu2 <- swiss$Education^2
-```
-
 $$ Fertility = \alpha + \beta_1 Exam + \beta_2 Educ^2 + u $$
 
-```{r reg_quad}
+<!--
+新しい変数を作成するなどのデータフレームの操作をするためには `tidyverse` に含まれる関数 (`mutate`, `rename`, `group_by`, etc.) を用いると簡単．
+-->
+
+```{r reg_mod, message = F}
+swiss2 <- swiss
+swiss2$Edu2 <- swiss$Education^2
+# tidyverse パッケージを使用する場合
+# library(tidyverse)
+# swiss2 <- swiss %>%
+#   mutate(Edu2 = Education^2,
+#          ExamEdu = Examination * Education)
 lm(Fertility ~ Examination + Edu2, data = swiss2)$coef
 ```
 
 $$ Fertility = \alpha + \beta_1 Exam \times Educ + u $$
 
 ```{r reg_interaction}
+swiss2$ExamEdu <- swiss$Examination * swiss$Education
 lm(Fertility ~ ExamEdu, data = swiss2)$coef
 ```
 
@@ -337,14 +347,14 @@ lm(log(Fertility) ~ Examination, data = swiss)$coef
 
 `Examination` 変数が平均よりも大きい場合に 1 をとるダミー変数を定義してみる．
 
-```{r reg_dummy_mutate}
-swiss2 <- swiss %>%
-  mutate(exam_dummy = ifelse(Examination > mean(Examination), 1, 0))
-```
-
 $$ Fertility = \alpha + \beta \ 1(Exam > \bar{Exam}) + u $$
 
-```{r reg_dummy}
+```{r reg_dummy_mutate}
+swiss2$exam_dummy <- ifelse(swiss$Examination > mean(swiss$Examination), 1, 0)
+# swiss2$exam_dummy <- 1 * (swiss$Examination > mean(swiss$Examination))  # same as above 
+# tidyverse パッケージを使用する場合
+# swiss2 <- swiss %>%
+#   mutate(exam_dummy = ifelse(Examination > mean(Examination), 1, 0))
 summary(lm(Fertility ~ exam_dummy, data = swiss2))
 ```
 
@@ -412,16 +422,18 @@ R では，該当する変数（のうち一つ）が自動的に drop される
 
 ```{r multico_imperfect}
 set.seed(2)
-swiss_multico <- swiss %>% 
-  mutate(Exam_with_noise = Examination + rnorm(nrow(swiss), sd = 1))
-cor(swiss_multico$Examination, swiss_multico$Exam_with_noise)
-summary(lm(formula = Fertility ~ Examination + Exam_with_noise, data = swiss_multico))$coef
+swiss2$Exam_with_noise <- swiss$Examination + rnorm(nrow(swiss), sd = 1)
+# tidyverse パッケージを使用する場合
+# swiss2 <- swiss %>% 
+#   mutate(Exam_with_noise = Examination + rnorm(nrow(swiss), sd = 1))
+cor(swiss2$Examination, swiss2$Exam_with_noise)
+summary(lm(formula = Fertility ~ Examination + Exam_with_noise, data = swiss2))$coef
 ```
 
 （参考）`Examination` のみの場合．
 
 ```{r multico_imperfect_base}
-summary(lm(formula = Fertility ~ Examination, data = swiss_multico))$coef
+summary(lm(formula = Fertility ~ Examination, data = swiss))$coef
 ```
 
 
@@ -435,7 +447,7 @@ $$ VIF_j = \frac{1}{1 - R_j^2} $$
 
 ```{r vif_manual}
 lm_exam <- lm(Examination ~ Education + Agriculture + Catholic, data = swiss)
-r2_exam <- summary(lm_exam)$r.squared
+r2_exam <- summary(lm_exam)$r.squared  # cf. str(summary(lm_exam))
 1 / (1 - r2_exam)  # VIF 
 ```
 
@@ -478,10 +490,15 @@ c(-1.195 * sd(swiss$Examination), -0.094 * sd(swiss$Agriculture))
 より一般的な方法は，標準化（平均 0，分散 1 になるように変換）した変数を使って回帰分析をするもの．
 
 ```{r swiss_scaled}
-swiss_scaled <- swiss %>% 
-  mutate(Fertility_scaled = (Fertility - mean(Fertility)) / sd(Fertility),
-         Examination_scaled = (Examination - mean(Examination)) / sd(Examination),
-         Agriculture_scaled = (Agriculture - mean(Agriculture)) / sd(Agriculture))
+swiss_scaled <- swiss
+swiss_scaled$Fertility_scaled <- (swiss$Fertility - mean(swiss$Fertility)) / sd(swiss$Fertility)
+swiss_scaled$Examination_scaled <- (swiss$Examination - mean(swiss$Examination)) / sd(swiss$Examination)
+swiss_scaled$Agriculture_scaled <- (swiss$Agriculture - mean(swiss$Agriculture)) / sd(swiss$Agriculture)
+# tidyverse パッケージを使用する場合
+# swiss_scaled <- swiss %>% 
+#   mutate(Fertility_scaled = (Fertility - mean(Fertility)) / sd(Fertility),
+#          Examination_scaled = (Examination - mean(Examination)) / sd(Examination),
+#          Agriculture_scaled = (Agriculture - mean(Agriculture)) / sd(Agriculture))
 lm(formula = Fertility_scaled ~ Examination_scaled + Agriculture_scaled, data = swiss_scaled)$coef
 ```
 
@@ -502,14 +519,14 @@ lm(formula = Fertility ~ Examination + Agriculture, data = as.data.frame(scale(s
 
 被説明変数の予測を目的として回帰分析を行う場合，複数のモデル候補があった場合に，予測力が最も優れたモデルを一つ選択したい場合があるだろう．
 しかし，説明変数を追加すれば決定係数は必ず増加するが，それは標本に特有のデータの変動（あるいはノイズ）に過適合しているだけかもしれない．
-これを防ぐために，モデルの説明力とモデルの簡潔さのトレードオフの間でバランスを取るための何らかの指標が必要となる．
+この過適合によって説明変数過剰のモデルが選択されることを防ぐために，モデルの説明力とモデルの簡潔さのトレードオフの間でバランスを取るための何らかの指標が必要となる．
 
-自由度調整済みの決定係数はモデル選択の趣旨には当てはまっているが，実務的により広く利用されるのはAIC（赤池情報量規準）と呼ばれる規準（基準）．
+実務的に広く利用されるのはAIC（赤池情報量規準）と呼ばれる規準．
 これはモデルを最尤推定することを前提として「最尤推定量の対数尤度」と「パラメタの数（＝定数項を含む説明変数の数＝K+1）」のトレードオフとして記述される．
 
 $$ AIC = -2 \log L + 2(K+1) $$
 
-対数尤度は大きいほど当てはまりが良く，パラメタ数は少ない方がよい．
+対数尤度は大きいほどモデルのデータへの当てはまりが良く，principle of parsimony の観点からパラメタ数は少ない方がよい．
 すなわち，複数のモデル間で AIC が最も小さいモデルが望ましい．
 
 注：
@@ -517,7 +534,7 @@ $$ AIC = -2 \log L + 2(K+1) $$
 * 因果推論を目的として回帰分析を行う場合には一般にモデル選択は行わない場合が多い．分析の目的に応じてモデル選択を行うかどうかを決めよう．
   * 典型的な AIC の使いどころは時系列分析におけるラグの次数決定．
 * AICは「真のモデル」を選択する基準ではない．あくまで予測力の観点で（比較対象の中で相対的に最も）望ましいモデルを選択する基準である．
-* モデル選択後に回帰係数の検定を行わない方が良い．少なくとも，オーソドックスな t 検定をナイーブに適用するのはNG．
+* モデル選択後に回帰係数の検定は行わない．少なくとも，オーソドックスな t 検定をナイーブに適用するのはNG．
 
 <!--
 MODEL SELECTION AND INFERENCE: FACTS AND FICTION
