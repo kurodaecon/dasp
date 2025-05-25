@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Basics of Inferential Statistics"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年4月 (Last update: 2024年4月)'
+date: '最終更新：2025年5月'
 output:
   html_document:
     toc: yes
@@ -15,70 +15,122 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Probability / 確率
+このページに対応するRmdファイル：[GitHub](https://github.com/kurodaecon/dasp/blob/main/rmd/inferential_stat.Rmd)
 
-## Expectation and Variance of random variable 
 
-離散確率変数 $X$ の期待値と分散は確率関数 $f$ を用いて以下のように定義される．
+# Generating random numbers / 乱数の生成
 
-$$ \mu = E(X) = \sum_j^k x_j f(x_j) $$
+疑似乱数を `rxxx` 関数で生成することができる．
 
-$$ \sigma^2 = V(X) = E[(X-E(X))^2] = \sum_j^k (x_j - E(X))^2 f(x_j) = E(X^2) - (E(X))^2 $$ 
-
-連続確率変数の場合（ここでは $f$ は確率密度関数）
-
-$$ \mu = E(X) = \int_{-\infty}^{\infty} x f(x) dx $$
-
-$$ \sigma^2 = V(X) = \int_{-\infty}^{\infty} (x - \mu)^2 f(x) dx$$
-
-### Example: Dice roll 
-
-例：サイコロの出目 $X$ の期待値と分散 / Example of dice roll
+たとえば，一様分布から乱数をドローするには，`runif`関数を使う．この関数名は r (random) + unif (uniform distribution) から来ている．
 <!--
-Expected value and variance of the dice roll.
+To draw random numbers from a uniform distribution, use the `runif` function. The function name comes from r (random) + unif (uniform distribution).
 -->
 
-$$ E(X) = \sum_{j=1}^6 x_j \frac{1}{6} = 1 \times \frac{1}{6} + 2 \times \frac{1}{6} + 3 \times \frac{1}{6} + 4 \times \frac{1}{6} + 5 \times \frac{1}{6} + 6 \times \frac{1}{6} = \frac{7}{2} $$
+`runif(n = サンプルサイズ, min = 下限, max = 上限)` で乱数を生成．
 
-```{r dice}
-dice <- 1:6  # c(1, 2, 3, 4, 5, 6) と同じ
-sum(dice * (1/6))  # definition of expectation
-mean(dice)  # mean
+```{r runif}
+runif(n = 5, min = 0, max = 1)
+runif(5, 0, 1)  # 引数の順番を守れば「n=」などを省略可
+runif(5)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）
 ```
 
-$$ V(X) = \sum_{j=1}^6 (x_j - E(X))^2 \frac{1}{6} = \left( 1-\frac{7}{2} \right) ^2 \frac{1}{6} + \left( 2-\frac{7}{2} \right) ^2 \frac{1}{6} + \cdots + \left( 6-\frac{7}{2} \right) ^2 \frac{1}{6} \approx 2.917 $$ 
+乱数をドローするたびに異なる値が出力される．
+再現性のために乱数のシードを指定することができる．
 
-```{r dice_variance}
-sum((dice - mean(dice))^2 * (1/6))  # variance: sum[(x-E(X))*f(x)]
+```{r runif_set_seed}
+set.seed(0)
+runif(5)
+set.seed(0)
+runif(5)
 ```
 
-なお，`var(dice)` は 3.5 となり，上記と一致しないが，これは `var` 関数が標本を引数として標本分散（不偏分散）を計算するためである．
-`dice` は標本ではなく母集団なので，この場合は母分散を計算しなければならない．
+正規乱数（正規分布からドローする乱数）は `rnorm` で生成できる．
 
-cf. 標本分散 $s^2$ と母分散 $\sigma^2$
-
-$$ s^2 = \frac{1}{n-1} \sum_i (x_i-\bar{x})^2, \quad \sigma^2 = \frac{1}{n} \sum_i (x_i-\mu)^2 $$
-
-標本分散に $(n-1)/n$ を乗じて母分散に変換できる．
-
-```{r convert_to_}
-3.5 * (6-1) / 6  # approx. 2.917
+```{r rnorm}
+rnorm(n = 5, mean = 0, sd = 10)
 ```
 
-$V(X) = E(X^2) - (E(X))^2$ でもある．
+# Probability and Probability distribution / 確率と確率分布
 
-```{r dice_variance2}
-sum(dice^2 * (1/6)) - sum(dice * (1/6))^2  # variance: E(X^2)-E(X)^2
+## Bernoulli distribution / ベルヌーイ分布
+
+$$ \Pr(X = 1) = p, \quad \Pr(X = 0) = 1-p $$
+
+例：60%の確率で表が出るコインをトスし，表が出れば1，裏が出れば0とする．
+
+```{r bernoulli}
+rbinom(n = 1, size = 1, prob = 0.6)
+table(rbinom(n = 10000, size = 1, prob = 0.6))
 ```
 
-<!--
-The value of `var(dice)` is 3.5, which does not equal the above, but this is because the `var` function calculates the sample variance (unbiased variance); `3.5*(n-1)/n = 3.5*5/6 ≈ 2.9`.
--->
+## Binomial distribution / 二項分布
 
+$$ \Pr(X = k) = \left( \matrix{n \\ k} \right) p^k (1-p)^{n-k} $$
 
-## Z score
+例：60%の確率で表が出るコインを10回トスしたときに表が出る回数．
 
-標準正規分布の $z = 1.96$ より左側の面積は確率 $Pr(Z \le 1.96)$ である．
+```{r binom}
+rbinom(n = 1, size = 10, prob = 0.6)
+table(rbinom(n = 10000, size = 10, prob = 0.6))
+```
+
+上の式より，理論上は次の確率になる．
+
+```{r binom_theo}
+c(choose(10, 0) * 0.6^0 * (1 - 0.6)^(10 - 0),  # choose(n, k) = nCk
+  choose(10, 1) * 0.6^1 * (1 - 0.6)^(10 - 1),
+  choose(10, 2) * 0.6^2 * (1 - 0.6)^(10 - 2),
+  choose(10, 3) * 0.6^3 * (1 - 0.6)^(10 - 3),
+  choose(10, 4) * 0.6^4 * (1 - 0.6)^(10 - 4))
+```
+
+## Uniform distribution / 一様分布
+
+```{r unif}
+runif(n = 1, min = 0, max = 1)
+ru <- runif(n = 10000, min = 0, max = 1)
+hist(ru, breaks = 100)
+```
+
+### Prob
+
+連続確率変数について所与の区間の値を取る確率は密度関数 $f$ を用いて次で与えられる．
+
+$$ \Pr(a \le X \le b) = \int_a^b f(x) dx $$
+
+最大値1，最小値0の一様分布の場合は次のとおり（ただし $0<a<b<1$）．
+
+$$ \Pr(a \le X \le b) = \int_a^b \frac{1}{1-0} dx = b-a $$
+
+たとえば $\Pr(0.2 \le X \le 0.9) = 0.7$ であり，これは次のように確かめられる．
+
+```{r unif_check}
+table(ru >= 0.2 & ru <= 0.9)
+```
+
+## Normal distribution / 正規分布
+
+```{r norm}
+rnorm(n = 1, mean = 10, sd = 1)
+hist(rnorm(n = 10000, mean = 10, sd = 1), breaks = 100)
+```
+
+### Z score
+
+標準正規分布の密度関数 $\phi$ について $z = 1.96$ より左側の面積は確率 $\Pr(Z \le 1.96)$ である．
+
+$$ \Pr(Z \le 1.96) = \int_{-\infty}^{1.96} \phi (x) dx $$
+
+```{r phi_196, echo = FALSE}
+z <- seq(-4, 4, length = 1000)
+y <- dnorm(z)
+plot(z, y, type = "l", lwd = 2, col = "black", ylab = "Density", main = "Density function of the standard normal distribution")
+z_fill <- z[z <= 1.96]
+y_fill <- dnorm(z_fill)
+polygon(c(z_fill, 1.96), c(y_fill, 0), col = "lightblue", border = NA)
+abline(v = 1.96, col = "blue")
+```
 
 `pnorm` は与えられた $z$ スコアに対応する確率を返す関数で，関数名は p (probability) + norm (normal distribution) から来ている．
 
@@ -116,45 +168,84 @@ $$ \Pr(-1.96 \le Z \le 1.96) = \int_{-1.96}^{1.96} \phi(z) dz \approx 0.95 $$
 integrate(dnorm, -1.96, 1.96)  # 積分: 約 95%
 ```
 
-この `dnorm` 関数は密度関数の描画にも使える．
+次のように正規乱数を用いて確認することもできる．
+
+```{r z_095}
+rn <- rnorm(n = 10000, mean = 0, sd = 1)
+table(rn >= -1.96 & rn <= 1.96)
+```
+
+
+<!--
+余談．この `dnorm` 関数は密度関数の描画にも使える．
 
 ```{r curve_drnom}
 curve(dnorm(x, mean = 0, sd = 1), xlim = c(-5, 5))
 ```
-
-
-## Generating random numbers / 乱数の生成
-
-一様分布から乱数をドローするには，`runif`関数を使う．この関数名は r (random) + unif (uniform distribution) から来ている．
-<!--
-To draw random numbers from a uniform distribution, use the `runif` function. The function name comes from r (random) + unif (uniform distribution).
 -->
 
-`runif(n = サンプルサイズ, min = 下限, max = 上限)` で乱数を生成．
 
-```{r runif}
-runif(n = 5, min = 0, max = 1)
-runif(5, 0, 1)  # 引数の順番を守れば「n=」などを省略可
-runif(5)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）
+# Expectation and Variance of random variable 
+
+離散確率変数 $X$ の期待値と分散は確率関数 $f$ を用いて以下のように定義される．
+
+$$ \mu = E(X) = \sum_j^k x_j f(x_j) $$
+
+$$ \sigma^2 = V(X) = E[(X-E(X))^2] = \sum_j^k (x_j - E(X))^2 f(x_j) = E(X^2) - (E(X))^2 $$ 
+
+連続確率変数の場合（ここでは $f$ は確率密度関数）
+
+$$ \mu = E(X) = \int_{-\infty}^{\infty} x f(x) dx $$
+
+$$ \sigma^2 = V(X) = \int_{-\infty}^{\infty} (x - \mu)^2 f(x) dx$$
+
+## Dice roll 
+
+例：サイコロの出目 $X$ の期待値と分散 / Example of dice roll
+<!--
+Expected value and variance of the dice roll.
+-->
+
+$$ E(X) = \sum_{j=1}^6 x_j \frac{1}{6} = 1 \times \frac{1}{6} + 2 \times \frac{1}{6} + 3 \times \frac{1}{6} + 4 \times \frac{1}{6} + 5 \times \frac{1}{6} + 6 \times \frac{1}{6} = \frac{7}{2} $$
+
+```{r dice}
+dice <- 1:6  # c(1, 2, 3, 4, 5, 6) と同じ
+sum(dice * (1/6))  # definition of expectation
+mean(dice)  # mean
 ```
 
-乱数をドローするたびに異なる値が出力される．
-再現性のために乱数のシードを指定することができる．
+$$ V(X) = \sum_{j=1}^6 (x_j - E(X))^2 \frac{1}{6} = \left( 1-\frac{7}{2} \right) ^2 \frac{1}{6} + \left( 2-\frac{7}{2} \right) ^2 \frac{1}{6} + \cdots + \left( 6-\frac{7}{2} \right) ^2 \frac{1}{6} \approx 2.917 $$ 
 
-```{r runif_set_seed}
-set.seed(0)
-runif(5)
-set.seed(0)
-runif(5)
+```{r dice_variance}
+sum((dice - mean(dice))^2 * (1/6))  # variance: sum[(x-E(X))*f(x)]
 ```
 
-正規乱数（正規分布からドローする乱数）は `rnorm` で生成できる．
+なお，`var(dice)` は 3.5 となり，上記と一致しないが，これは `var` 関数が標本を引数として標本分散（不偏分散）を計算するためである．
+`dice` は母集団から抽出された標本ではないため，標本分散として確率変数の分散を求めることはできない．
 
-```{r rnorm}
-rnorm(n = 5, mean = 0, sd = 10)
+<!--
+cf. 標本分散 $s^2$ と母分散 $\sigma^2$
+
+$$ s^2 = \frac{1}{n-1} \sum_i (x_i-\bar{x})^2, \quad \sigma^2 = \frac{1}{n} \sum_i (x_i-\mu)^2 $$
+
+標本分散に $(n-1)/n$ を乗じて母分散に変換できる．
+
+```{r convert_to_}
+3.5 * (6-1) / 6  # approx. 2.917
+```
+-->
+
+$V(X) = E(X^2) - (E(X))^2$ でもある．
+
+```{r dice_variance2}
+sum(dice^2 * (1/6)) - sum(dice * (1/6))^2  # variance: E(X^2)-E(X)^2
 ```
 
-### Expectation and variance: Random variables from the uniform distribution 
+<!--
+The value of `var(dice)` is 3.5, which does not equal the above, but this is because the `var` function calculates the sample variance (unbiased variance); `3.5*(n-1)/n = 3.5*5/6 ≈ 2.9`.
+-->
+
+## Uniformly distributed random variable 
 
 一様分布 $U(a, b)$ から乱数を生成して標本平均と標本分散を計算し，それが理論値と一致するかを確認する．
 
@@ -379,6 +470,24 @@ t_value
 
 $$ \Pr (T \le 2.41) = 0.98 , \quad p = 2 \times (1 - \Pr (T \le 2.41)) \approx 0.039 $$
 
+```{r t_hand_plot, echo = FALSE}
+x <- seq(-5, 5, length = 1000)
+y <- dt(x, df = 9)
+plot(x, y, type = "l", lwd = 2, col = "black", ylab = "Density",
+     main = "Density function of the t-distribution (df = 9)")
+x_right <- x[x > 2.41]
+y_right <- dt(x_right, df = 9)
+polygon(c(2.41, x_right, max(x_right)), c(0, y_right, 0),
+        col = "lightblue", border = NA)
+x_left <- x[x < -2.41]
+y_left <- dt(x_left, df = 9)
+polygon(c(min(x_left), x_left, -2.41), c(0, y_left, 0),
+        col = "lightblue", border = NA)
+abline(v = c(1,-1)*2.41, col = "blue")
+text(-4, .05, labels = "1 - Pr(T < 2.41)")
+text(4, .05, labels = "1 - Pr(T < 2.41)")
+```
+
 ```{r t_hand_p_value}
 pt(q = t_value, df = 10 - 1)  # Pr(T <= t)
 1 - pt(q = t_value, df = 10 - 1)  # one sided p value ... p = Pr(T > t)
@@ -392,11 +501,23 @@ Thus, $H_0$ is rejected and $H_1$ is accepted.
 
 ### Calculation from the data itself / データそのものから計算
 
-`t.test(ベクトル, mu = 帰無仮説の仮説値)` と指定．
+上と同様に帰無仮説を $\mu=1100$ とする．
+
+```{r ttest_hand}
+wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
+mean(wage); sd(wage); length(wage)
+t_value <- (mean(wage) - 1100) / (sd(wage) / sqrt(length(wage)))
+2 * (1 - pt(q = t_value, df = length(wage) - 1))  # two-sided p value
+```
+
+<!--
+ちなみに正規性の検定を行うと以下の通り．
+shapiro.test(wage)  # p-value = 0.5901
+-->
+
+`t.test(ベクトル, mu = 帰無仮説の仮説値)` 関数を使用．
 
 ```{r t_ttest}
-wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
-mean(wage); sd(wage)
 t.test(wage, mu = 1100)  # default: two sided ... H1 is [mu != 1100]
 ```
 
