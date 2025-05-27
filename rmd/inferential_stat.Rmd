@@ -20,7 +20,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Generating random numbers / 乱数の生成
 
-疑似乱数を `rxxx` 関数で生成することができる．
+確率分布 $F$ に従う確率変数 $X$ があったとき，この確率変数の実現値を疑似的に作り出す手続きを乱数の生成と呼ぶ．
+
+$$ X_1, \ldots, X_n \sim F $$
+
+疑似乱数は `rxxx` 関数で生成することができる．
+
+* `xxx` は確率分布の略称（一様分布 unif, 正規分布 norm, 二項分布 binom）
 
 たとえば，一様分布から乱数をドローするには，`runif`関数を使う．この関数名は r (random) + unif (uniform distribution) から来ている．
 <!--
@@ -36,6 +42,17 @@ runif(5)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設
 ```
 
 乱数をドローするたびに異なる値が出力される．
+
+<!--
+正規乱数（正規分布からドローする乱数）は `rnorm` で生成できる．
+
+```{r rnorm}
+rnorm(n = 5, mean = 0, sd = 10)
+```
+-->
+
+## Set seed 
+
 再現性のために乱数のシードを指定することができる．
 
 ```{r runif_set_seed}
@@ -45,11 +62,6 @@ set.seed(0)
 runif(5)
 ```
 
-正規乱数（正規分布からドローする乱数）は `rnorm` で生成できる．
-
-```{r rnorm}
-rnorm(n = 5, mean = 0, sd = 10)
-```
 
 # Probability and Probability distribution / 確率と確率分布
 
@@ -64,28 +76,45 @@ rbinom(n = 1, size = 1, prob = 0.6)
 table(rbinom(n = 10000, size = 1, prob = 0.6))
 ```
 
+確率分布（確率変数が取りうる値とその確率を対応させたもの）は次の通り．
+
+```{r bernoulli_dist}
+barplot(c(0.4, 0.6), names.arg = 0:1, ylab = "Probability")
+```
+
 ## Binomial distribution / 二項分布
 
 $$ \Pr(X = k) = \left( \matrix{n \\ k} \right) p^k (1-p)^{n-k} $$
 
-例：60%の確率で表が出るコインを10回トスしたときに表が出る回数．
+例：60%の確率で表が出るコインを5回トスしたときに表が出る回数．
 
 ```{r binom}
-rbinom(n = 1, size = 10, prob = 0.6)
-table(rbinom(n = 10000, size = 10, prob = 0.6))
+rbinom(n = 1, size = 5, prob = 0.6)
+table(rbinom(n = 10000, size = 5, prob = 0.6))
 ```
 
-上の式より，理論上は次の確率になる．
+上の式より，表が 0, 1, 2, 3, 4, 5 回出る理論上の確率は次のように計算される．
 
 ```{r binom_theo}
-c(choose(10, 0) * 0.6^0 * (1 - 0.6)^(10 - 0),  # choose(n, k) = nCk
-  choose(10, 1) * 0.6^1 * (1 - 0.6)^(10 - 1),
-  choose(10, 2) * 0.6^2 * (1 - 0.6)^(10 - 2),
-  choose(10, 3) * 0.6^3 * (1 - 0.6)^(10 - 3),
-  choose(10, 4) * 0.6^4 * (1 - 0.6)^(10 - 4))
+binom_prob <- c(
+  choose(5, 0) * 0.6^0 * (1 - 0.6)^(5 - 0),  # choose(n, k) = nCk
+  choose(5, 1) * 0.6^1 * (1 - 0.6)^(5 - 1),
+  choose(5, 2) * 0.6^2 * (1 - 0.6)^(5 - 2),
+  choose(5, 3) * 0.6^3 * (1 - 0.6)^(5 - 3),
+  choose(5, 4) * 0.6^4 * (1 - 0.6)^(5 - 4),
+  choose(5, 5) * 0.6^5 * (1 - 0.6)^(5 - 5))
+binom_prob
+```
+
+よって，確率分布は次の通り．
+
+```{r binom_dist}
+barplot(binom_prob, names.arg = 0:5, ylab = "Probability")
 ```
 
 ## Uniform distribution / 一様分布
+
+$$ X \sim U(\mbox{min}, \mbox{max}) $$
 
 ```{r unif}
 runif(n = 1, min = 0, max = 1)
@@ -97,26 +126,72 @@ hist(ru, breaks = 100)
 
 連続確率変数について所与の区間の値を取る確率は密度関数 $f$ を用いて次で与えられる．
 
-$$ \Pr(a \le X \le b) = \int_a^b f(x) dx $$
+$$ \Pr(a \le X \le b) = \int_a^b f(x) dx = \int_a^b \frac{1}{\mbox{max} - \mbox{min}} dx $$
 
 最大値1，最小値0の一様分布の場合は次のとおり（ただし $0<a<b<1$）．
 
 $$ \Pr(a \le X \le b) = \int_a^b \frac{1}{1-0} dx = b-a $$
 
-たとえば $\Pr(0.2 \le X \le 0.9) = 0.7$ であり，これは次のように確かめられる．
+たとえば $\Pr(0.2 \le X \le 0.9) = 0.7$ である．
+
+```{r unif_area, echo = FALSE}
+a <- 0.2
+b <- 0.9
+x_vals <- seq(-0.2, 1.2, length.out = 10000)
+y_vals <- ifelse(x_vals >= 0 & x_vals <= 1, 1, 0)
+plot(x_vals, y_vals, type = "l", lwd = 2, col = "black", ylim = c(0, 1.2), xlim = c(-.2, 1.2),
+     xlab = "x", ylab = "Density", main = "Density function of the uniform distribution U(0,1)")
+x_fill <- seq(a, b, length.out = 100)
+y_fill <- rep(1, length(x_fill))
+polygon(c(a, x_fill, b), c(0, y_fill, 0), col = "skyblue", border = NA)
+text(0.55, 1.07, paste("P(", a, "≤ X ≤", b, ") = ", b - a), cex = 1.2)
+```
 
 ```{r unif_check}
+head(data.frame(random_num = ru, is_in_range = ru >= 0.2 & ru <= 0.9))
 table(ru >= 0.2 & ru <= 0.9)
 ```
 
-## Normal distribution / 正規分布
+分布関数 $F$ に基づいて下図のように考えてもよい．
 
-```{r norm}
-rnorm(n = 1, mean = 10, sd = 1)
-hist(rnorm(n = 10000, mean = 10, sd = 1), breaks = 100)
+```{r cdf_unif, echo = FALSE}
+a <- 0.2
+b <- 0.9
+x_vals <- seq(-0.2, 1.2, length.out = 1000)
+cdf_vals <- punif(x_vals, min = 0, max = 1)
+plot(x_vals, cdf_vals, type = "l", lwd = 2, 
+     xlab = "x", ylab = "F(x)", main = "CDF of Uniform Distribution U(0,1)")
+segments(x0 = a, y0 = punif(a), x1 = b, y1 = punif(b), col = "skyblue", lwd = 4)
+abline(h = punif(a), col = "gray", lty = 2)
+abline(h = punif(b), col = "gray", lty = 2)
 ```
 
-### Z score
+この場合，所与の $x$ の値に対応する累積確率を返す関数 `punif` を用いて次のように計算することもできる．
+関数名は p (probability) + unif より．
+
+```{r punif}
+punif(0.9) - punif(0.2)
+```
+
+つまり，`punif` 関数と密度関数 $f$ および分布関数 $F$ は次のような関係にある．
+
+$$ \mbox{punif}(x, \mbox{min}, \mbox{max}) = \int_{\mbox{min}}^{x} f(u) du = F(x) = \Pr(X \le x) $$
+$$ \mbox{where} \quad f(u) = \frac{1}{\mbox{max} - \mbox{min}} $$
+
+## Normal distribution / 正規分布
+
+$$ X \sim N(\mu, \sigma^2) $$
+
+```{r norm}
+rnorm(n = 1, mean = 0, sd = 1)
+hist(rnorm(n = 10000, mean = 00, sd = 1), breaks = 100)
+```
+
+### Prob
+
+平均 0 分散 1 の正規分布を標準正規分布と呼ぶ．
+
+$$ Z \sim N(0, 1) $$
 
 標準正規分布の密度関数 $\phi$ について $z = 1.96$ より左側の面積は確率 $\Pr(Z \le 1.96)$ である．
 
@@ -132,7 +207,10 @@ polygon(c(z_fill, 1.96), c(y_fill, 0), col = "lightblue", border = NA)
 abline(v = 1.96, col = "blue")
 ```
 
-`pnorm` は与えられた $z$ スコアに対応する確率を返す関数で，関数名は p (probability) + norm (normal distribution) から来ている．
+一様分布のときと同様に，累積分布関数に基づいて次のように計算できる．
+
+`pnorm` は与えられた $z$ スコアに対応する累積確率を返す関数．
+関数名は p (probability) + norm (normal distribution) から来ている．
 
 <!--
 The area of the standard normal distribution to the left of $z = 1.96$ is the probability of $\Pr(Z \le 1.96)$. 
@@ -143,7 +221,28 @@ The function name `pnorm` comes from p (probability) + norm (normal distribution
 pnorm(q = 1.96, mean = 0, sd = 1)
 ```
 
-その逆に，`qnorm` は与えられた確率に対応する $z$ スコアを返す関数．
+```{r prob_norm_cdf, echo = FALSE}
+x_vals <- seq(-4, 4, length.out = 1000)
+cdf_vals <- pnorm(x_vals, mean = 0, sd = 1)
+plot(x_vals, cdf_vals, type = "l", lwd = 2, col = "black",
+     xlab = "x", ylab = "F(x)",
+     main = "CDF of Standard Normal Distribution",
+     ylim = c(0, 1.05))
+abline(v = 1.96, col = "blue")
+abline(h = pnorm(1.96), lty = 2, col = "gray")
+```
+
+次のように正規乱数を用いて確認することもできる．
+
+```{r z_0975}
+rn <- rnorm(n = 10000, mean = 0, sd = 1)
+head(data.frame(random_num = rn, is_in_range = rn <= 1.96))
+table(rn <= 1.96)
+```
+
+### `qnorm`
+
+`pnorm` とは逆に，`qnorm` は与えられた確率に対応する $z$ スコアを返す関数．
 <!--
 Conversely, `qnorm` is a function that returns the z-score corresponding to a given probability. 
 -->
@@ -152,6 +251,8 @@ Conversely, `qnorm` is a function that returns the z-score corresponding to a gi
 qnorm(p = 0.975, mean = 0, sd = 1)
 qnorm(p = 0.975)  # for N(0,1), the mean and sd arguments may be omitted 
 ```
+
+### `dnorm`
 
 確率密度．
 `dnorm` = d (density) + norm (normal distribution). 
@@ -167,14 +268,6 @@ $$ \Pr(-1.96 \le Z \le 1.96) = \int_{-1.96}^{1.96} \phi(z) dz \approx 0.95 $$
 ```{r integrate_dnorm}
 integrate(dnorm, -1.96, 1.96)  # 積分: 約 95%
 ```
-
-次のように正規乱数を用いて確認することもできる．
-
-```{r z_095}
-rn <- rnorm(n = 10000, mean = 0, sd = 1)
-table(rn >= -1.96 & rn <= 1.96)
-```
-
 
 <!--
 余談．この `dnorm` 関数は密度関数の描画にも使える．
@@ -284,11 +377,19 @@ summary(runif_var)
 
 # Central limit theorem / 中心極限定理
 
-標本平均 $\bar{x}$ は母平均 $\mu$, 母分散 $\sigma^2$, サンプルサイズ $n$ で決まる正規分布に従う．
+平均 $\mu$ 分散 $\sigma^2$ の母集団から得られた標本の平均 $\bar{X}$ は次の正規分布に従う．
 
-$$ \bar{x} \sim N \left( \mu, \frac{\sigma^2}{n} \right) $$
+$$ \bar{X} \sim N \left( \mu, \frac{\sigma^2}{n} \right) $$
 
-一様確率変数の標本平均の分布を求める．標本サイズが大きくなるほど正規分布に近づき，分布の分散が小さくなることが分かる．
+ポイント
+
+* 一つの標本から計算される標本平均は特定の値 $\bar{x}$ をとるが，同じ母集団から何度もサンプリングを行いその度に繰り返し標本平均を計算すればその標本平均はばらつく．これを確率変数 $\bar{X}$ として扱う．
+* サンプルサイズ $n$ が大きくなると標本平均は母平均に近い値を取る．
+* 母集団分布によらずに（例外あり）標本平均は正規分布に従う．
+* サンプルサイズ $n$ がある程度大きくないと正規分布に近似されない場合がある．
+* 中心極限定理は母平均の信頼区間の計算や平均値の差の検定を行う上で重要．
+
+以下では一様確率変数の標本平均の分布を求める．標本サイズが大きくなるほど正規分布に近づき，分布の分散が小さくなることが分かる．
 <!--
 Find the distribution of the sample mean of the uniform random variable $x \sim U(0, 1)$. We see that the larger the sample size, the closer to a normal distribution, and the smaller the variance of the distribution. Such a simulation is called a Monte Carlo simulation. 
 -->
@@ -300,7 +401,7 @@ Find the distribution of the sample mean of the uniform random variable $x \sim 
 This is equivalent to the distribution of the random numbers themselves. 
 -->
 
-$$ \bar{x} = x_i, \quad x_i \sim U(0, 1) $$
+$$ \bar{X} = X_i, \quad X_i \sim U(0, 1) $$
 
 ```{r clt1}
 x_bar <- NULL  # create empty (null) object
@@ -309,11 +410,13 @@ for (i in 1:10000) {
   x_bar <- c(x_bar, x_bar_i)
 }
 hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=1")
+var(x_bar)  # シミュレーションによる分散
+(1/12) / 1  # 理論上の分散
 ```
 
 ## $n=2$
 
-$$ \bar{x} = \frac{1}{2} \sum_{i=1}^{2} x_i, \quad x_i \sim U(0, 1) $$
+$$ \bar{X} = \frac{1}{2} \sum_{i=1}^{2} X_i, \quad X_i \sim U(0, 1) $$
 
 ```{r clt2}
 x_bar <- NULL
@@ -322,11 +425,13 @@ for (i in 1:10000) {
   x_bar <- c(x_bar, x_bar_i)
 }
 hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=2")
+var(x_bar)  # シミュレーションによる分散
+(1/12) / 2  # 理論上の分散
 ```
 
 ## $n=10$
 
-$$ \bar{x} = \frac{1}{10} \sum_{i=1}^{10} x_i, \quad x_i \sim U(0, 1) $$
+$$ \bar{X} = \frac{1}{10} \sum_{i=1}^{10} X_i, \quad X_i \sim U(0, 1) $$
 
 ```{r clt10}
 x_bar <- NULL
@@ -336,6 +441,8 @@ for (i in 1:10000) {
 }
 hist(x_bar, breaks = 50, main = "Sample mean of uniform random variables with sample size n=10",
      xlim = c(0, 1))
+var(x_bar)  # シミュレーションによる分散
+(1/12) / 10  # 理論上の分散
 ```
 
 ## For advanced students / 中級者向け
@@ -351,8 +458,58 @@ hist(sapply(X = 1:10000, FUN = function (x) mean(runif(10)) ), breaks = 50)
 
 （出力は省略）
 
+## Normal distribution, $n=2$
+
+正規母集団の場合はサンプルサイズが小さくても正規分布に従う（再生性と呼ばれる性質）．
+
+$$ \bar{X} = \frac{1}{2} \sum_{i=1}^2 X_i, \quad X_i \sim N(0, 1) $$
+
+```{r clt10_normal}
+x_bar <- NULL
+for (i in 1:10000) {
+  x_bar_i <- mean(rnorm(n = 2, mean = 0, sd = 1))
+  x_bar <- c(x_bar, x_bar_i)
+}
+hist(x_bar, breaks = 50)
+var(x_bar)  # シミュレーションによる分散
+1 / 2  # 理論上の分散
+```
+
+この性質は，t検定による平均値の差の検定を適用してよいか判断する際の次の条件と関連する．
+
+* 母集団が正規分布であるか分からないがサンプルサイズが大きい → 中心極限定理により $\bar{X} \sim N$
+* 母集団が正規分布 → 正規分布の再生性により $\bar{X} \sim N$
+
+## Log-normal distribution, $n=10$
+
+母集団分布の形状によってはサンプルサイズが小さいと正規分布で十分に近似できない．
+たとえば，対数正規分布のような歪んだ分布からサンプリングされた標本の場合は次のようになる．
+
+$$ \bar{X} = \frac{1}{10} \sum_{i=1}^{10} X_i, \quad X_i \sim \ln N(0, 1) $$
+
+```{r clt10_lognormal}
+x_bar <- NULL
+for (i in 1:10000) {
+  x_bar_i <- mean(rlnorm(n = 10, meanlog = 0, sdlog = 1))
+  x_bar <- c(x_bar, x_bar_i)
+}
+hist(x_bar, breaks = 50)
+var(x_bar)  # シミュレーションによる分散
+(exp(2) - exp(1)) / 10  # 理論上の分散
+```
+
 
 # Confidence interval / 信頼区間
+
+パラメタ $\theta$ に関する信頼水準 $\alpha$ の信頼区間 $[\hat{\theta}_\mbox{lower}, \hat{\theta}_\mbox{upper}]$ は，直感的には次のように理解できる．
+
+$$ \Pr(\hat{\theta}_\mbox{lower} \le \theta \le \hat{\theta}_\mbox{upper}) = 1 - \alpha $$
+
+たとえば，母平均 $\mu$ の95%信頼区間は $\sigma$ が既知の場合次のように求められる．
+
+$$ \Pr (-1.96 \le \frac{\bar{X} - \mu}{\sigma/\sqrt{n}} \le 1.96) = 0.95 $$
+$$ \therefore \Pr (\bar{X} - 1.96 \times \frac{\sigma}{\sqrt{n}} \le \mu \le \bar{X} + 1.96 \times \frac{\sigma}{\sqrt{n}}) = 0.95 $$
+
 
 ## Population mean with known $\sigma$ / 母集団の標準偏差が既知の場合の母平均
 
@@ -363,11 +520,43 @@ For a sample mean of 100, **population** standard deviation of 2, and sample siz
 
 $$ \bar{x} \pm z \frac{\sigma}{\sqrt{n}} = 100 \pm 1.96 \frac{2}{\sqrt{100}} = 100 \pm 0.392, \quad \mbox{95% CI}: [99.61, 100.39] $$
 
-```{r ci_known}
-qnorm(p = 0.025, mean = 0, sd = 1)  # P(Z<z) = 0.025
+$z = 1.96$ は，標準正規分布に従う確率変数 $Z$ について $\Pr(Z \le z) = 0.975$ を満たす値．
+
+```{r ci_qnorm}
+# qnorm(p = 0.025, mean = 0, sd = 1)  # P(Z<z) = 0.025
 qnorm(p = 0.975, mean = 0, sd = 1)  # P(Z<z) = 0.975
-100 + qnorm(p = 0.025) * 2 / sqrt(100)  # lower limit
+```
+
+```{r ci_pdf_norm, echo = FALSE}
+curve(dnorm, xlim = c(-4, 4), ylab = "density", main = "Density function of standard normal distribution")
+abline(v = c(-1, 1) * 1.96, col = "blue")
+```
+
+```{r ci_known}
+100 - qnorm(p = 0.975) * 2 / sqrt(100)  # lower limit
 100 + qnorm(p = 0.975) * 2 / sqrt(100)  # upper limit
+```
+
+### Simulation 
+
+信頼区間とは，同じ母集団から何度も繰り返し「サンプリング → 母平均の信頼区間を計算」をしたときに，母平均が $1-\alpha$ の割合で含まれる区間である．
+
+このことを，次のようなシミュレーションで確認してみよう．
+
+* 母集団 ... 母平均 $\mu = 100$, 母分散 $\sigma^2 = 2^2=4$
+* 標本と信頼水準 ... サンプルサイズ $n = 100$, $\alpha = 0.05$
+
+```{r ci_sim}
+ci_list <- NULL
+for (i in 1:1000) {
+  sample_i <- rnorm(n = 100, mean = 100, sd = 2)
+  ci_i_lower <- mean(sample_i) - (1.96 * 2 / sqrt(100))
+  ci_i_upper <- mean(sample_i) + (1.96 * 2 / sqrt(100))
+  ci_list <- rbind(ci_list, c(lower = ci_i_lower, upper = ci_i_upper))
+}
+ci_list <- data.frame(ci_list, is_incl_mu = ci_list[,1] <= 100 & ci_list[,2] >= 100)
+ci_list[100:105, ]
+table(ci_list$is_incl_mu)
 ```
 
 ## Population mean with unknown $\sigma$ / 母集団の標準偏差が未知の場合の母平均
@@ -384,8 +573,8 @@ Note that we use t-value, not z-value.
 -->
 
 ```{r ci_unknown}
-qt(p = 0.025, df = 100-1)  # P(T<t) = 0.025
-100 + qt(p = 0.025, df = 100-1) * 2 / sqrt(100)  # lower limit
+qt(p = 0.975, df = 100-1)  # P(T<t) = 0.025
+100 - qt(p = 0.975, df = 100-1) * 2 / sqrt(100)  # lower limit
 100 + qt(p = 0.975, df = 100-1) * 2 / sqrt(100)  # upper limit
 ```
 
@@ -401,20 +590,21 @@ The function `t.test`, which performs a $t$-test (to be covered in the next clas
 
 ```{r ci_unknown_ttest_manual}
 wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
-mean(wage)  # mean 
-sd(wage)  # standard deviation 
-length(wage)  # sample size (length of the vector)
-mean(wage) + qt(p = 0.025, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # lower bound 
+c(mean(wage), sd(wage), length(wage))
+mean(wage) - qt(p = 0.975, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # lower bound 
 mean(wage) + qt(p = 0.975, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # upper bound 
 ```
 
 同じ結果が `t.test` 関数で確認できる．
 
+```{r ci_unknown_ttest_func}
+t.test(wage)  # default: 95% CI
+```
+
 信頼水準 ($1 - \alpha$) はデフォルトで95%に設定されている．
 `conf.level` 引数を指定すればそれ以外の信頼水準に変更できる．
 
-```{r ci_unknown_ttest_func}
-t.test(wage)  # default: 95% CI
+```{r ci_unknown_ttest_func_conflev}
 t.test(wage, conf.level = 0.99)  # 99% CI
 ```
 
@@ -435,7 +625,7 @@ Of the 382 children, 148 received immunizations.
 n1 <- 148; n0 <- 382  # intervention B
 p <- n1 / n0
 p
-p + qnorm(p = .025) * sqrt(p * (1 - p) / n0)  # lower limit of 95% CI
+p - qnorm(p = .975) * sqrt(p * (1 - p) / n0)  # lower limit of 95% CI
 p + qnorm(p = .975) * sqrt(p * (1 - p) / n0)  # upper limit
 ```
 
@@ -449,7 +639,36 @@ In fact, these figures differ from those reported in the paper. Because a cluste
 
 # Statistical hypothesis testing / 統計的仮説検定
 
+仮説検定の手続き：
+
+- 帰無仮説 $H_0$ と対立仮説 $H_1$ を宣言
+    - 帰無仮説は母集団パラメタが特定の値（または他のパラメタ）と等しいという形で定式化され［例：$\theta = \theta_0$］，対立仮説は特定の値（または他のパラメタ）と異なるという形で定式化される［例：$\theta > \theta_0$ または $\theta \ne \theta_0$］
+- 検定統計量を選択
+    - 例：平均値の差の検定で母分散が既知であれば $z$，平均値の差の検定で母分散が未知であれば $t$
+- 帰無仮説のもとでの検定統計量の標本分布を導出
+    - 例：検定統計量が $z$ であれば標準正規分布，検定統計量が $t$ であれば $t$ 分布
+- 有意水準 $\alpha$ を選択
+    - $\alpha = 0.05$ または $\alpha = 0.01$ が慣習的によく用いられる
+- $p$ 値を計算
+    - $p$ 値とは，検定統計量が実際に観察された値あるいはそれ以上に極端な値を取る確率として定義される
+    - 対立仮説が $\theta > \theta_0$ の形の場合は片側 $p$ 値を計算
+    - 対立仮説が $\theta \ne \theta_0$ の形の場合は両側 $p$ 値を計算
+- $p \le \alpha$ ならば帰無仮説を棄却し対立仮説を採択する
+    - 注：$p > \alpha$ のときに「帰無仮説を採択する」ことはできない
+
 ## One-sample $t$ test for population mean / 1標本の母平均の $t$ 検定
+
+帰無仮説：
+
+$$ H_0: \mu = \mu_0 $$
+
+- 母集団分布は未知だがサンプルサイズが十分に大きい → 中心極限定理より $\bar{X} \sim N$
+    - 母分散が既知であれば $N$，未知であれば $t$ が検定統計量が従う分布
+
+$$ Z = \frac{\bar{X} - \mu_0}{\sigma/\sqrt{n}} \sim N(0, 1), \quad T = \frac{\bar{X} - \mu_0}{s/\sqrt{n}} \sim t(n-1) $$
+
+- 母集団が正規分布 → 正規分布の再生性より $\bar{X} \sim N$
+    - 同上
 
 ### Calculation from the sample mean and sd of the data / データの標本平均・標準偏差から計算
 
@@ -499,13 +718,32 @@ pt(q = t_value, df = 10 - 1)  # Pr(T <= t)
 Thus, $H_0$ is rejected and $H_1$ is accepted. 
 -->
 
+#### Supplement 
+
+直感的には（＝厳密ではないけれども）次のように理解できる．
+
+我々は，データと帰無仮説がどの程度矛盾しているかを知りたい．
+もし矛盾の程度が大きければ，帰無仮説は間違っているだろうと考える（これは背理法のアイデア）．
+すなわち，この矛盾の程度の測定が仮説検定のポイントとなる．
+
+矛盾の程度は $p$ 値として測られる．これを測定するために次のように考える．
+
+- まず，注目するパラメタに対応する推定量は何で，その推定量（データの関数）がどのように分布するかを考える．たとえば，注目するパラメタが母平均 $\mu$ であれば，それに対応する推定量は標本平均 $\bar{X}$ である．サンプルサイズが大きければ中心極限定理より標本平均は正規分布に従う．
+- 次いで，帰無仮説が正しいときに，そのような母集団から得られる標本から計算される推定量はどのような分布に従うかを考える．たとえば，帰無仮説が $\mu = 0$ でこれが実際に正しければ，その母集団から得られる標本の平均は 0 に近い値になるはずである．標本平均のばらつき（標準誤差）は母集団分布の分散およびサンプルサイズに依存するので，これらの情報を用いて標本平均をスケーリングする．これが検定統計量 $Z = (\bar{X}-0)/(\sigma/\sqrt{n})$ となる．
+- この検定統計量は，標準正規分布に従う．これは「もし帰無仮説が本当に正しければ，検定統計量は標準正規分布に従うはずである」という意味であり，ラフに言えば「帰無仮説が正しければ，検定統計量は 0.5 や -1.0 のような 0 に近い値をとるはず．2.0 や -3.0 のように 0 から離れた値をとることはほとんどないはず．」ということである．
+- 以上に基づいて，「帰無仮説のもとで検定統計量が従う確率分布」において実際に観察された検定統計量がどこに位置するかを測る．このために計算されるのが $p$ 値である（$p = 2 \times (1 - \Pr(Z \le |z|))$）．
+    - 実際に観察された検定統計量が分布の中央に位置するなら $p$ 値は大きな値を取り（例：$p = 2 \times (1 - 0.5)=1$），「帰無仮説と観察されたデータの間に矛盾は認められない」と結論付けられる．この場合，帰無仮説を棄却できない．言い換えれば「母平均が 0 と異なると結論付けることはできない」が結論となる．
+    - 一方で実際に観察された検定統計量が分布の端に位置するなら $p$ 値は小さな値を取り（例：$p = 2 \times (1 - 0.99)=0.02$），「帰無仮説と観察されたデータは矛盾する」と結論付けられる．この場合，帰無仮説は棄却され，対立仮説が採択される．言い換えれば「母平均は 0 と異なる値を取る」と結論付けることができる．ただしこの結論は母集団からのサンプリングという不確実性を含む値に基づいているため，ある一定の確率で誤る．すなわち「本当は帰無仮説が正しいのだが，偶然にも偏った値ばかりがサンプリングされてしまった結果，誤って帰無仮説が棄却された」（第一種の過誤）という可能性がある．この誤りの程度として許容できる水準は有意水準 $\alpha$ として分析手続きにおいて明示的・定量的に扱われている．
+- いずれにせよ，上記の結論は我々分析者が想定する統計モデル（標本が同一母集団からの独立なサンプリングによって得られること，中心極限定理が適用できるような母集団でありサンプルサイズが十分に大きいこと or 正規母集団であること，母分散の値が正確であること，etc.）が正しいという前提のもとで正当化される．前提が間違っていれば結論は（実務的にはともかく，理論上は）意味を持たない．
+
+
 ### Calculation from the data itself / データそのものから計算
 
 上と同様に帰無仮説を $\mu=1100$ とする．
 
 ```{r ttest_hand}
 wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
-mean(wage); sd(wage); length(wage)
+c(mean(wage), sd(wage), length(wage))
 t_value <- (mean(wage) - 1100) / (sd(wage) / sqrt(length(wage)))
 2 * (1 - pt(q = t_value, df = length(wage) - 1))  # two-sided p value
 ```
@@ -536,13 +774,34 @@ In this way, the confidence intervals are calculated at the same time.
 
 ### Independent $t$ test
 
+$$ T = \frac{\bar{X}_1 - \bar{X}_2}{\sqrt{s_1^2 / n_1 + s_2^2 / n_2}} \sim t \left( \frac{[s_1^2 / n_1 + s_2^2 / n_2]^2}{\frac{(s_1^2 / n_1)^2}{n_1 - 1} + \frac{(s_2^2 / n_2)^2}{n_2 - 1}} \right) $$
+
 #### Example of "wage" data 
+
+データ
+
+```{r ttest_two_sample_data}
+wage_jp <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # Japan
+wage_us <- c(900, 1300, 1200, 800, 1600, 850, 1000, 950)  # US
+c(length(wage_jp), mean(wage_jp), sd(wage_jp))
+c(length(wage_us), mean(wage_us), sd(wage_us))
+```
+
+定義に基づいて計算する場合．
+
+```{r ttest_two_sample_hand}
+t_value <- (mean(wage_jp) - mean(wage_us)) / 
+  sqrt(var(wage_jp) / length(wage_jp) + var(wage_us) / length(wage_us))
+df_wage <- (var(wage_jp) / length(wage_jp) + var(wage_us) / length(wage_us))^2 / 
+  (var(wage_jp)^2 / length(wage_jp)^2 / (length(wage_jp)-1) +
+     var(wage_us)^2 / length(wage_us)^2 / (length(wage_us) - 1))
+c(t_value, df_wage, pt(q = t_value, df = df_wage))
+2 * (1 - pt(q = abs(t_value), df = df_wage))
+```
 
 `t.test(x = 1つ目のベクトル, y = 2つ目のベクトル)` のように指定する．
 
-```{r t2}
-wage_jp <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)  # Japan
-wage_us <- c(900, 1300, 1200, 800, 1600, 850, 1000, 950)  # US
+```{r ttest_two_sample_function}
 t.test(wage_jp, wage_us)  # default: Welch's t test (assuming unequal variance)
 t.test(wage_jp, wage_us, var.equal = TRUE)  # t test (assuming equal variance)
 ```
