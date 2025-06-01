@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Miller et al. (AJPS 2016)"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年3月 (Last update: 2024年4月)'
+date: '最終更新：2025年5月'
 output:
   html_document:
     toc: yes
@@ -14,6 +14,8 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+このページに対応するRmdファイル：[GitHub](https://github.com/kurodaecon/dasp/blob/main/rmd/miller2016.Rmd)
 
 # Overview 
 
@@ -134,11 +136,15 @@ t.test(con_index_dem4 ~ Conservative, data = cons)  # index
 
 個人属性（年齢，性別，人種，所得，政治に関する知識，etc.）を制御したもとで，保守派かどうかが「保守派が好む陰謀論」に与える影響と，保守派かどうかが「リベラル派が好む陰謀論」に与える影響の大きさを比べる．
 
+要するに次のようなイメージ：
+
+* 調べたい関係：「保守自認 → 陰謀論を信じる」
+* 懸念（交絡）：「保守自認 ← 性別・年齢 → 陰謀論を信じる」
+* 対処：性別・年齢などをコントロール変数として回帰モデルに追加
+
 影響の大きさは回帰式の回帰係数として定量化する．
 
 $$ \mbox{Conservative conspiracy} = \beta_0 + \beta_1 \mbox{Self-identified as conservative} + \beta_2 \mbox{Political knowledge} + \beta_3 \mbox{Trust} + \cdots $$
-
-懸念：教育や所得など bad control となっている可能性のある変数がコントロールに含まれる．
 
 Stata: `reg con_index_rep2 Conservative polknow_alt ...` etc. 
 
@@ -164,6 +170,22 @@ msummary(list(lm_cons, lm_lib), gof_omit = "AIC|BIC|Log.Lik.|F|RMSE",
 <!--
 https://www.stata.com/manuals/rsuest.pdf
 Section: Testing cross-model hypotheses
+-->
+
+### Supplement
+
+懸念：教育や所得など bad control となっている可能性のある変数がコントロールに含まれる．
+
+* 想定される関係：「保守自認 → 教育・所得 → 陰謀論を信じる」
+* ただし，明らかに問題の在りそうな変数（教育，所得）のみ除外して分析しても注目する推定値はほとんど変わらない
+
+<!--
+```{r h1_reg_supp}
+lm_cons <- lm(con_index_rep2 ~ Conservative + polknow_alt + trust_comb + extraversion + agreeableness + conscientiousness + emostab + openness + auth + efficacy + needcog_comb + needeval_comb_alt + ideo_extr + fed_power + religiosity + female + age_alt + latino + white, data = cons)
+summary(lm_cons)
+lm_lib <- lm(con_index_dem4 ~ Conservative + polknow_alt + trust_comb + extraversion + agreeableness + conscientiousness + emostab + openness + auth + efficacy + needcog_comb + needeval_comb_alt + ideo_extr + fed_power + religiosity + female + age_alt + latino + white, data = cons)
+summary(lm_lib)
+```
 -->
 
 
@@ -194,7 +216,27 @@ msummary(list(lm_cons_h2, lm_lib_h2), gof_omit = "AIC|BIC|Log.Lik.|F|RMSE",
          stars = TRUE, coef_omit = c(5:16, 21:22))
 ```
 
-知識によってイデオロギーの効果がどのように異なるかを可視化する（Figure 1）．
+この分析において重要な部分は次の箇所：
+
+$$ \mbox{Cons. conspiracy} = - 0.030 (\mbox{Self-id Cons.}) - 0.296 (\mbox{knowledge}) + \\ 0.362 (\mbox{Self-id Cons.} \times \mbox{knowledge}) + \cdots $$
+
+上の部分（$\cdots$ より前の部分）に限定すれば，アウトカム変数は次のように予測される．
+
+| Knowledge | Self-id Conservative <br /> (Self-id Cons. = 1) | Self-id Liberal <br /> (Self-id Cons. = 0) |
+| :---: | :---: | :---: |
+| 0 | $-0.030 \cdot 1 - 0.296 \cdot 0 + 0.362 \cdot 1 \cdot 0 \\ = -0.030$ | $-0.030 \cdot 0 - 0.296 \cdot 0 + 0.362 \cdot 0 \cdot 0 \\ = 0$ |
+| 0.5 | $-0.030 \cdot 1 - 0.296 \cdot 0.5 + 0.362 \cdot 1 \cdot 0.5 \\ = 0.003$ | $-0.030 \cdot 0 - 0.296 \cdot 0.5 + 0.362 \cdot 0 \cdot 0.5 \\ = -0.148$ |
+| 1 | $-0.030 \cdot 1 - 0.296 \cdot 1 + 0.362 \cdot 1 \cdot 1 \\ = 0.036$ | $-0.030 \cdot 0 - 0.296 \cdot 1 + 0.362 \cdot 0 \cdot 1 \\ = - 0.296$ |
+
+要するに，（客観的に測定される）政治的知識が高い人はそうでない人と比べて保守的陰謀論に陥る可能性がどのように異なるかは，自認するイデオロギーによって変わる．
+
+- 保守を自認する人は，知識が高いほど僅かに保守的陰謀論に染まる（あるいは，ほとんど変わらない）．
+知識がある人でもイデオロギーに一致する陰謀論を否定することは難しい（あるいは，否定するどころか僅かに陰謀論により傾く）．
+- その一方で，リベラルを自認する人は，知識が高いほど保守的陰謀論から遠ざかる．
+- 興味深いことに，知識水準が低い人々が保守的陰謀論に染まる可能性は自認するイデオロギーによってほとんど変わらない．
+（知識水準が低い人々はイデオロギーに沿って陰謀論を取捨選択しているわけではなく，接する陰謀論がどのようなイデオロギーに一致するかすら理解できていないということ？？）
+
+以上を踏まえて，知識によってイデオロギーの効果がどのように異なるかを可視化する（Figure 1）．
 
 Stata: `marginsplot` ect. 
 
