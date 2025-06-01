@@ -375,6 +375,35 @@ summary(runif_var)
 ```
 
 
+# Law of large numbers / 大数の法則
+
+ラフに言えば，サンプルサイズが大きくなれば標本平均が母平均に収束するという法則．
+
+確率変数 $X_1, \ldots, X_n$ が互いに独立に同一の分布に従い $E(X_i) = \mu < \infty$ のとき，任意の $\epsilon > 0$ に対して次が成立（証明はチェビシェフの不等式によるものが有名）．
+
+$$ \Pr ( |\bar{X} - \mu| \le \epsilon ) \to 1 \quad (\mbox{as } n \to \infty) $$
+
+正規分布に従う確率変数 $X_i \sim N(0, 1)$ の標本平均 $\bar{X}_n = (1/n) \sum_{i=1}^n X_n$ がサンプルサイズ $n$ とともにどのように変化するかを観察する．
+
+```{r lln}
+rn <- rn_mean <- NULL
+for (i in 1:10000) {
+  rn <- c(rn, rnorm(n = 1)) 
+  rn_mean <- c(rn_mean, mean(rn)) 
+}
+head(cbind(random_num = rn, cumulative_mean = rn_mean))
+plot(rn_mean, type = "l", log = "x")
+abline(h = 0, col = "grey", lty = 1)  # mu = 0 (true mean) 
+abline(h = c(0.05, -0.05), col = "grey", lty = 2)  # epsilon = 0.05 
+```
+
+余談だが，実は次のような短いコードでも同じ（出力は省略）．
+
+```{r lln_cumsum, eval = FALSE}
+plot(cumsum(rnorm(n = 10000)) / 1:10000, type = "l", log = "x")
+```
+
+
 # Central limit theorem / 中心極限定理
 
 平均 $\mu$ 分散 $\sigma^2$ の母集団から得られた標本の平均 $\bar{X}$ は次の正規分布に従う．
@@ -501,14 +530,14 @@ var(x_bar)  # シミュレーションによる分散
 
 # Confidence interval / 信頼区間
 
-パラメタ $\theta$ に関する信頼水準 $\alpha$ の信頼区間 $[\hat{\theta}_\mbox{lower}, \hat{\theta}_\mbox{upper}]$ は，直感的には次のように理解できる．
+パラメタ $\theta$ に関する信頼水準 $(1-\alpha)$ の信頼区間 $[\hat{\theta}_\mbox{lower}, \hat{\theta}_\mbox{upper}]$ は，直感的には次のように理解できる．
 
 $$ \Pr(\hat{\theta}_\mbox{lower} \le \theta \le \hat{\theta}_\mbox{upper}) = 1 - \alpha $$
 
 たとえば，母平均 $\mu$ の95%信頼区間は $\sigma$ が既知の場合次のように求められる．
 
-$$ \Pr (-1.96 \le \frac{\bar{X} - \mu}{\sigma/\sqrt{n}} \le 1.96) = 0.95 $$
-$$ \therefore \Pr (\bar{X} - 1.96 \times \frac{\sigma}{\sqrt{n}} \le \mu \le \bar{X} + 1.96 \times \frac{\sigma}{\sqrt{n}}) = 0.95 $$
+$$ \Pr \left( -1.96 \le \frac{\bar{X} - \mu}{\sigma/\sqrt{n}} \le 1.96 \right) = 0.95 $$
+$$ \therefore \Pr \left( \bar{X} - 1.96 \times \frac{\sigma}{\sqrt{n}} \le \mu \le \bar{X} + 1.96 \times \frac{\sigma}{\sqrt{n}} \right) = 0.95 $$
 
 
 ## Population mean with known $\sigma$ / 母集団の標準偏差が既知の場合の母平均
@@ -539,11 +568,11 @@ abline(v = c(-1, 1) * 1.96, col = "blue")
 
 ### Simulation 
 
-信頼区間とは，同じ母集団から何度も繰り返し「サンプリング → 母平均の信頼区間を計算」をしたときに，母平均が $1-\alpha$ の割合で含まれる区間である．
+信頼区間とは，同じ母集団から何度も繰り返し「サンプリング → 母平均の信頼区間を計算」をしたときに，母平均が $(1-\alpha)$ の割合で含まれる区間である．
 
 このことを，次のようなシミュレーションで確認してみよう．
 
-* 母集団 ... 母平均 $\mu = 100$, 母分散 $\sigma^2 = 2^2=4$
+* 母集団 ... 母平均 $\mu = 100$, 母分散 $\sigma^2 = 2^2=4$ の正規分布
 * 標本と信頼水準 ... サンプルサイズ $n = 100$, $\alpha = 0.05$
 
 ```{r ci_sim}
@@ -555,7 +584,7 @@ for (i in 1:1000) {
   ci_list <- rbind(ci_list, c(lower = ci_i_lower, upper = ci_i_upper))
 }
 ci_list <- data.frame(ci_list, is_incl_mu = ci_list[,1] <= 100 & ci_list[,2] >= 100)
-ci_list[100:105, ]
+head(ci_list)
 table(ci_list$is_incl_mu)
 ```
 
@@ -590,7 +619,7 @@ The function `t.test`, which performs a $t$-test (to be covered in the next clas
 
 ```{r ci_unknown_ttest_manual}
 wage <- c(1000, 1200, 1300, 1200, 1150, 1000, 1450, 1500, 1150, 1350)
-c(mean(wage), sd(wage), length(wage))
+c(mean(wage), sd(wage), length(wage))  # mean, standard deviation, sample size
 mean(wage) - qt(p = 0.975, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # lower bound 
 mean(wage) + qt(p = 0.975, df = length(wage)-1) * sd(wage) / sqrt(length(wage))  # upper bound 
 ```
@@ -759,6 +788,17 @@ shapiro.test(wage)  # p-value = 0.5901
 t.test(wage, mu = 1100)  # default: two sided ... H1 is [mu != 1100]
 ```
 
+帰無仮説 $\mu = \mu_0$ の $\mu_0$ の値が異なったら $p$ 値はどのように異なるか？
+
+```{r ttest_mu0}
+t.test(wage, mu = 100)$p.value
+t.test(wage, mu = 1000)$p.value
+t.test(wage, mu = 1100)$p.value
+t.test(wage, mu = 1200)$p.value
+t.test(wage, mu = 1230)$p.value
+t.test(wage, mu = 1250)$p.value
+```
+
 片側検定をする場合は `alternative = "greater"` または `= "less"` 引数で指定．
 
 ```{r t_greater}
@@ -769,6 +809,51 @@ t.test(wage, mu = 1100, alternative = "greater")  # one sided ... H1 is [mu > 11
 <!--
 In this way, the confidence intervals are calculated at the same time. 
 -->
+
+## $p$ and $\alpha$
+
+$p$ 値はどのように分布し，その値と有意水準 $\alpha$ はどのような関係にあるのか？
+
+「標準正規分布 $N(0, 1)$ から $n=100$ の乱数をドローして，その平均が 0 に等しいかどうかを検定する（$H_0: \mu = 0$ とする一標本の母平均の検定）」という手続きを1,000回繰り返し，検定で計算されたp値の分布を観察する．
+
+設定上，帰無仮説は棄却されないはずだが，現実には偶然に大きな値（または小さな値）ばかりがドローされることで標本平均が 0 から大きく乖離し，帰無仮説が棄却される場合がありうる．
+
+`t.test` 関数で計算される p 値は `t.test(...)$p.value` で抽出できる．
+
+```{r ttest_extract_p_value}
+t.test(x = 1:10)$p.value
+```
+
+```{r mtp_sim}
+p_value <- NULL
+for (i in 1:1000) {
+  p_value_i <- t.test(rnorm(100, mean = 0, sd = 1))$p.value
+  p_value <- c(p_value, p_value_i)
+}
+hist(p_value, breaks = 20, col = c("lightblue", rep("grey", 19)))
+table(p_value <= 0.05)
+```
+
+母集団分布の母平均は $\mu = 0$ であるからこの帰無仮説は棄却されないことが望まれるが（$p > \alpha$），上記の通り5%程度の確率で誤って棄却されてしまう（$p \le \alpha$, 第一種の過誤）．
+
+### $t$-test on a sample mean that is not normally distributed 
+
+中心極限定理が適用できないような標本平均に対して $t$ 検定を適用したらどうなるだろうか？
+
+歪んだ分布の例として対数正規分布 $X \sim \ln N (\mu, \sigma^2)$ を取り上げ，ここからサイズ 10 の標本を作成する．
+母平均が理論上の平均値 $\exp(\mu + \sigma^2/2)$ と一致するかを検定する．
+
+```{r ttest_lognormal}
+p_value <- numeric(1000)  # 事前にベクトルを作成すると計算速度が向上
+for (i in 1:1000) {
+  p_value[i] <- t.test(rlnorm(n = 10), mu = exp(0 + 1/2))$p.value
+}
+hist(p_value, breaks = 20, col = c("lightblue", rep("grey", 19)))
+table(p_value <= 0.05)
+```
+
+$p \le \alpha$ （第一種の過誤）となる割合が $\alpha$ より遥かに大きいことが確認できる．
+
 
 ## Two-sample $t$ test for population mean / 2標本の母平均の $t$ 検定
 
@@ -858,37 +943,21 @@ t.test(wage_w - wage_h)  # same as an ordinary "one-sample t test"
 
 ## Multiple testing problem: Simulation / 多重検定の問題に関するシミュレーション
 
-「標準正規分布 $N(0, 1)$ から $n=100$ の乱数をドローして，その平均が 0 に等しいかどうかを検定する（$H_0: \mu = 0$ とする一標本の母平均の検定）」という手続きを1,000回繰り返し，検定で計算されたp値の分布を観察する．
-
-設定上，帰無仮説は棄却されないはずだが，現実には偶然に大きな値（または小さな値）ばかりがドローされることで標本平均が 0 から大きく乖離し，帰無仮説が棄却される場合がありうる．
-
-`t.test` 関数で計算される p 値は `t.test(...)$p.value` で抽出できる．
-
-```{r ttest_extract_p_value}
-t.test(x = 1:10)$p.value
-```
-
-```{r mtp_sim}
-p_value_list <- NULL
-for (i in 1:1000) {
-  p_value_i <- t.test(rnorm(100, mean = 0, sd = 1))$p.value
-  p_value_list <- c(p_value_list, p_value_i)
-}
-hist(p_value_list, breaks = 20)
-```
-
-母集団分布の母平均は $\mu = 0$ であるからこの帰無仮説は棄却されないことが望まれるが，上記の通り5%程度の確率で誤って棄却されてしまう（第一種の過誤）．
-
-この簡単なシミュレーションは有意水準 $\alpha$ が何を表しているかを理解するのに役立つと同時に，多重検定の問題を理解するのにも役立つ．
-
-### Multiple tests performed independently 
-
 複数の標本（または複数の標本組み合わせ）に関する帰無仮説を独立して検定すると，そのうち少なくとも一つで誤って帰無仮説を棄却する確率が事前に設定した有意水準（5%など）を上回ってしまう．
 
-1,000 の標本のうち「1つ」について $H_0: \mu = 0$ を検定した場合，帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね5%）．
+1,000 の標本のうち「1つ」について $H_0: \mu = 0$ を有意水準 $\alpha = 0.05$ で検定した場合，帰無仮説が誤って棄却されてしまう理論上の割合は有意水準である5%．
+
+$$ 1 - \mbox{(1つの標本について棄却されない確率)} = 1 - (1 - 0.05) = 0.05 $$
+
+シミュレーション上は以下の通り（概ね5%）．
 
 ```{r multiple_test_1}
-table(p_value_list <= 0.05)
+p_value <- NULL
+for (i in 1:1000) {
+  p_value_i <- t.test(rnorm(100, mean = 0, sd = 1))$p.value
+  p_value <- c(p_value, p_value_i)
+}
+table(p_value <= 0.05)
 ```
 
 1,000 の標本のうち「2つ」について $H_0: \mu = 0$ を検定した場合，少なくともどちらか一方で帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね10%）．
@@ -900,7 +969,7 @@ $$ 1 - \mbox{(2回とも棄却されない確率)} = 1 - (1 - 0.05)^2 = 0.0975 $
 * `any(論理値ベクトル)` ：論理値ベクトルの要素の1つ以上が TRUE の場合に TRUE を返す
 
 ```{r multiple_test_2}
-table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value_list, 2) <= 0.05)))
+table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value, 2) <= 0.05)))
 ```
 
 1,000 の標本のうち「5つ」について $H_0: \mu = 0$ を検定した場合，少なくとも1つで帰無仮説が誤って棄却されてしまう割合は以下の通り（概ね23%）．
@@ -908,7 +977,32 @@ table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value_list, 2) <= 0.05)
 $$ 1 - (1 - 0.05)^5 \approx 0.226 $$
 
 ```{r multiple_test_5}
-table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value_list, 5) <= 0.05)))
+table(sapply(X = 1:1000, FUN = function (x) any(sample(p_value, 5) <= 0.05)))
 ```
+
+### ANOVA
+
+同一母集団から3つの標本を作成し分散分析（ANOVA）を適用する．
+
+```{r anova}
+df <- data.frame(val = rnorm(100 * 3), group = rep(1:3, 100))
+head(df)
+summary(aov(val ~ group, data = df))
+summary(aov(val ~ group, data = df))[[1]]$`Pr(>F)`[1]  # extract p-value
+```
+
+以下のように $p$ 値の分布を確認できる．
+
+```{r anova_p_dist}
+p_value <- NULL
+for (i in 1:1000) {
+  df_i <- data.frame(val = rnorm(100 * 3), group = rep(1:3, 100))
+  p_i <- summary(aov(val ~ group, data = df_i))[[1]]$`Pr(>F)`[1]
+  p_value <- c(p_value, p_i)
+}
+hist(p_value, breaks = 20, col = c("lightblue", rep("grey", 19)))
+table(p_value <= 0.05)
+```
+
 
 .
