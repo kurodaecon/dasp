@@ -709,7 +709,7 @@ Wage population is normally distributed, $\sigma$ is unknown, $\bar{x} = 1230$, 
 
 $$ H_0: \mu = 1100, \quad H_1: \mu \ne 1100 $$
 
-$$ t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}} = \frac{1230 - 1110}{170.3 / \sqrt{10}} \approx 2.41 $$
+$$ t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}} = \frac{1230 - 1100}{170.3 / \sqrt{10}} \approx 2.41 $$
 
 ```{r t_hand}
 t_value <- (1230 - 1100) / (170.3 / sqrt(10))  # t value
