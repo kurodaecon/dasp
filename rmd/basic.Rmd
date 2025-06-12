@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Basic Operation of R"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年4月'
+date: '最終更新：2025年6月'
 output:
   html_document:
     toc: yes
@@ -15,7 +15,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-詳細は [An Introduction to R](https://intro2r.com/) を参照．
+このページに対応するRmdファイル：[GitHub](https://github.com/kurodaecon/dasp/blob/main/rmd/basic.Rmd)
+
+R の基本的な使用方法の詳細は [An Introduction to R](https://intro2r.com/) を参照．
 
 # Basic operating instructions / 基本的な操作
 
@@ -39,6 +41,7 @@ knitr::opts_chunk$set(echo = TRUE)
    * コンソールに直接コピーアンドペーストして「Enter」
    * 作成したスクリプトページにコピーアンドペーストして，実行する箇所を選択 → 「Ctrl」＋「Enter」
    * [GitHub](https://github.com/kurodaecon/dasp/tree/main/rmd) から .rmd ファイルをダウンロードして，チャンクの右上にある「▶」(Run Current Chunk) を押す．一番簡単だが，一番勉強にならない
+   * RStudio 起動時に位置情報へのアクセスを許可するか聞かれることがあるが，拒否してよい．
 
 ## Basic arithmetic operations / 四則演算
 
@@ -388,6 +391,12 @@ plot(x = swiss$Education, y = swiss$Fertility)
 * `cex.lab`: size of x- and y-axis labels （軸のラベルのサイズ）
 * `cex.axis`: size of axis tick labels （軸の目盛のサイズ）
 
+`plot(Y軸の変数 ~ X軸の変数, data名)` と書くこともできる．
+
+```{r plot2}
+plot(Fertility ~ Education, swiss)
+```
+
 ```{r plot_additional}
 plot(x = swiss$Education, y = swiss$Fertility, 
      main = "Relationship between fertility and education", 
@@ -417,7 +426,7 @@ hist(swiss$Fertility, main = "Histogram of fertility", xlab = "Standardized fert
 ```{r multi_plot}
 par(mfrow = c(1, 2))
 plot(x = swiss$Education, y = swiss$Fertility, pch = 19, xlab = "Edu", ylab = "Fert")
-plot(x = swiss$Education, y = swiss$Examination, pch = 19, xlab = "Edu", ylab = "Fert")
+plot(x = swiss$Examination, y = swiss$Fertility, pch = 19, xlab = "Exam", ylab = "Fert")
 ```
 
 Tips: `plot` 周りで何らかのエラーが生じたら，`dev.off()` で一旦描画デバイスを閉じるとうまくいくことがある．
@@ -448,6 +457,8 @@ Step 1.
 Step 2. 
 `setwd` 関数を使って保存したフォルダを作業ディレクトリとして指定する．
 `getwd` 関数で指定された作業ディレクトリを確認できる（カッコの中には何も書かない）．
+
+- ディレクトリの指定が `c://dir` でうまくいかない場合は `c:/dir` に変更を．
 
 Step 3. 
 `read.csv` 関数でファイル名を引数として指定して読み込む．
