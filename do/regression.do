@@ -1,34 +1,60 @@
 // Title: Data Analysis Using Statistical Packages: Regression Analysis 
 // Author: Sho Kuroda 
-// Last update: Apr 2025 
+// Last update: Jun 2025 
 
 // R版 https://kurodaecon.github.io/dasp/html/regression.html に対応
 
 ***************************************************************************
-* 1 Simple regression analysis / 単回帰分析
+* 1 Data 
 ***************************************************************************
 
-** 1.1 Estimation with regress function
-
-// R のサンプルデータ swiss (public domain) を読み込む
-use "https://raw.githubusercontent.com/kurodaecon/bs/main/data/swiss.dta", clear
+import delimited using "https://raw.githubusercontent.com/kurodaecon/dasp/refs/heads/main/data/carsensor_ranking_of_most_popular_car_models_asof202506.csv", clear
 describe
 
-regress Fertility Examination
+// 欠損値が NA で記録されているので，欠損値を含む変数は文字列型で読み込まれている
+// 文字列型を数値型に変換　（「NA」 という文字列は欠損値扱いで 「.」 に変換される）
+destring wltc ps disp, replace force
 
-** 1.2 Estimation by hand
+** 1.1 Summary stats 
 
-summarize Fertility
+summarize
+
+** 1.2 Create variables 
+
+generate accel = ps / weight
+generate kei = (disp <= 660)
+
+** 1.3 Trim dataset
+
+keep if inrange(seat, 4, 5)
+drop if inlist(maker, "BMW", "Jeep", "Mercedes-Benz", "Porsche")
+keep if price <= 1000
+keep if electric == 0
+drop electric
+
+***************************************************************************
+* 2 Simple regression analysis / 単回帰分析
+***************************************************************************
+
+** 2.1 Estimation with regress function
+
+regress price weight
+
+reghdfe price weight  // same as above 
+
+** 2.2 Estimation by hand
+
+summarize price
 scalar y_bar = r(mean)
 display y_bar
 
-summarize Examination
+summarize weight
 scalar x_bar = r(mean)
 display x_bar
 
 * 偏差の計算
-gen x_dev = Examination - x_bar
-gen y_dev = Fertility - y_bar
+gen x_dev = weight - x_bar
+gen y_dev = price - y_bar
 
 * S_XX: 偏差二乗和
 gen x_dev_sq = x_dev^2
@@ -44,18 +70,18 @@ display s_xy
 
 * 回帰係数の計算
 display s_xy / s_xx  // beta hat 
-display y_bar - beta_hat * x_bar  // alpha hat 
+display y_bar - (s_xy / s_xx) * x_bar  // alpha hat 
 
-** 1.3 Estimation by numerical calculation / 数値計算による推定
+** 2.3 Estimation by numerical calculation / 数値計算による推定
 
 // 省略
 
-** 1.4 Coefficient of determination / 決定係数
+** 2.4 Coefficient of determination / 決定係数
 
 // Y の予測値
-regress Fertility Examination
+regress price weight
 predict y_hat, xb
-// generate y_hat = _b[_cons] + _b[Examination] * Examination  // same as above 
+// generate y_hat = _b[_cons] + _b[weight] * weight  // same as above 
 
 // S_YY: Y の全変動
 generate y_dev_sq = y_dev^2
@@ -72,13 +98,13 @@ display s_yhyh
 display s_yhyh / s_yy  // R^2 
 
 // 残差を使って計算する場合
-generate residual = Fertility - y_hat
+generate residual = price - y_hat
 generate resid_sq = residual^2
 summarize resid_sq
 scalar ssr = r(sum)  // sum of squared residuals 
 display 1 - ssr / s_yy  // R^2 
 
-** 1.5 Standard error and test / 標準誤差と検定
+** 2.5 Standard error and test / 標準誤差と検定
 
 scalar df = _N - 2  // degree of freedom 
 display df 
@@ -89,12 +115,12 @@ display sigma2
 scalar beta_se = sqrt(sigma2 / s_xx)  // standard error of beta 
 display beta_se 
 
-scalar t_value = beta_hat / beta_se  // t-value 
+scalar t_value = (s_xy / s_xx) / beta_se  // t-value 
 display t_value 
 
-display 2 * t(df, t_value)  // p-value 
+display 2 * (1 - t(df, t_value))  // p-value 
 
-** 1.5.1 cf. Critical value approach / 臨界値を用いて検定を行う場合
+** 2.5.1 cf. Critical value approach / 臨界値を用いて検定を行う場合
 
 display invt(df, 0.005)
 display invt(df, 0.025)
@@ -104,124 +130,177 @@ display invt(df, 0.995)
 display invt(10000, 0.975)
 display invnormal(0.975)  // as reference 
 
+** 2.5.2 MC Simulation
+
+// 省略
+
+** 2.5.3 Robust standard error / 頑健な標準誤差
+
+regress price weight, robust
+
+** 2.5.4 Cluster-robust standard error / クラスター頑健標準誤差
+
+regress price weight, vce(cluster maker)
+
 ***************************************************************************
-* 2 Multiple regression analysis / 重回帰分析
+* 3 Multiple regression analysis / 重回帰分析
 ***************************************************************************
 
-regress Fertility Examination Education
+regress price weight ps
+
+** 3.1 Multicollinearity / 多重共線性
+** 3.1.1 Example of perfect multico. / 完全な多重共線性の例
+
+generate weight2 = 2 * weight
+correlate weight weight2
+regress price weight weight2
+
+** 3.4.2 Example of imperfect multico. / 不完全な多重共線性の例
+
+correlate price weight length width
+
+regress price weight
+regress price length
+regress price width
+regress price weight length width
+
+** 3.4.3 Using VIF for diagnostics / VIF による診断
+
+regress length weight width 
+display 1 / (1 - e(r2))
+
+regress price weight length width
+vif
+
+** 3.2 Comparing the size of the coefficients / 回帰係数の大きさを比較する
+
+regress price weight ps
+
+** 3.5.1 Comparing the change per one SD / 1標準偏差当たりの変化量の比較
+
+summarize weight
+display .24 * r(sd)
+
+summarize ps
+display .78 * r(sd)
+
+** 3.5.2 Standardized partial regression coefficient / 標準偏回帰係数
+
+summarize price 
+generate z_price = (price - r(mean)) / r(sd)
+// egen std_price = std(price)  // same as above 
+summarize weight 
+generate z_weight = (weight  - r(mean)) / r(sd)
+summarize ps 
+generate z_ps = (ps - r(mean)) / r(sd)
+
+regress z_price z_weight z_ps
+
+// 一番簡単な方法 （右端の列を参照）
+regress price weight ps, beta 
 
 ***************************************************************************
-* 3 Advanced method / 応用
+* 4 Variable transformation / 変数変換
 ***************************************************************************
 
-** 3.1 Adding quardatic or interaction terms / 二次・交差項
+** 4.1 Dummy variables / ダミー変数
 
-generate Edu2 = Education^2
-regress Fertility Examination Edu2
+tabulate hybrid
 
-generate ExamEdu = Examination * Education
-regress Fertility ExamEdu
+regress price hybrid
 
-regress Fertility c.Examination##c.Education
+summarize price if hybrid == 0
+summarize price if hybrid == 1
+
+generate recent = (year >= 2022)
+regress price weight recent
+
+** 4.2 Adding quardatic or interaction terms / 二次・交差項
+
+generate ps2 = ps^2
+regress price ps ps2
+
+generate wh = weight * hybrid
+regress price weight hybrid wh
+
+regress price c.weight##i.hybrid
 
 // categorical 変数の場合は i.variable 
 // continuous 変数の場合は c.variable 
 
-generate log_Fertility = log(Fertility)
-regress log_Fertility Examination
+** 4.3 Log-linear model
 
-** 3.2 Dummy variables ダミー変数
+generate log_price = log(price)
+regress log_price weight
 
-summarize Examination
-scalar exam_mean = r(mean)
-generate byte exam_dummy = (Examination > exam_mean)
+** 4.4 Log-log model
 
-regress Fertility exam_dummy
+generate log_weight = log(weight)
+regress log_price log_weight
 
-** 3.3 Categorical variables
+** 4.5 Categorical variables
 
-gen region = ""
-replace region = "A" in 1/6
-replace region = "C" in 7/11
-replace region = "B" in 12/30
-replace region = "F" in 31/38
-replace region = "D" in 39/44
-replace region = "E" in 45/47
-tabulate region
+generate Honda  = (maker == "Honda")
+generate Mazda  = (maker == "Mazda")
+generate Nissan = (maker == "Nissan")
+generate Subaru = (maker == "Subaru")
+generate Suzuki = (maker == "Suzuki")
+generate Toyota = (maker == "Toyota")
 
-// 文字列を factor に変換
-encode region, gen(region_factor)
+list maker Honda Mazda Nissan Subaru Suzuki Toyota in 1/6
 
-regress Fertility Examination i.region_factor  // default: base category = A
+regress price weight Honda Mazda Nissan Subaru Suzuki Toyota
 
-** 3.3.1 Change the reference group
+encode maker, gen(maker_id)
+regress price weight i.maker_id
 
-// base category を B に変更
-regress Fertility Examination ib2.region_factor
-regress Fertility Examination ib(2).region_factor  // same as above 
+** 4.5.1 Change the reference group
 
-** 3.4 Multicollinearity / 多重共線性
-** 3.4.1 Example of perfect multico. / 完全な多重共線性の例
+// base category を Honda に変更
+regress price weight ib2.maker_id
+regress price weight ib(2).maker_id  // same as above 
 
-generate Exam2 = 2 * Examination
-correlate Examination Exam2
-regress Fertility Examination Exam2
+***************************************************************************
+* 5 Prediction / 予測
+***************************************************************************
 
-** 3.4.2 Example of imperfect multico. / 不完全な多重共線性の例
+regress price weight ps
+generate pred0 = _b[_cons] + _b[weight] * weight + _b[ps] * ps
+list model price pred0 in 1/3
 
-generate noise = rnormal(0, 1)
-generate Exam_with_noise = Examination + noise
-correlate Examination Exam_with_noise
-regress Fertility Examination Exam_with_noise
+** 5.1 predict function
 
-regress Fertility Examination  // as reference 
+predict pred1, xb
+list model price pred0 pred1 in 1/3
 
-** 3.4.3 Using VIF for diagnostics / VIF による診断
+** 5.2 Inverse transformation of log outcomes
 
-regress Examination Education Agriculture Catholic
-display 1 / (1 - e(r2))
+regress log_price weight ps
+predict yhat, xb
+predict res, resid
+gen sigma2 = res^2
+egen mean_sigma2 = mean(sigma2)  // 本当は残差二乗和を (n-k-1) で割るべきだが．．．
+gen pred_correct = exp(yhat + mean_sigma2/2)
+gen pred_incorrect = exp(yhat)
 
-regress Fertility Examination Education Agriculture Catholic
-vif
+list model price pred_correct pred_incorrect in 1/3
 
-** 3.5 Comparing the size of the coefficients / 回帰係数の大きさを比較する
 
-regress Fertility Examination Agriculture
+***************************************************************************
+* 6 Model selection / モデル選択
+***************************************************************************
 
-** 3.5.1 Comparing the change per one SD / 1標準偏差当たりの変化量の比較
+** 6.1 AIC
 
-summarize Examination
-display -1.195 * r(sd)
+drop if missing(wltc, ps, disp)
 
-summarize Agriculture
-display -0.094 * r(sd)
-
-** 3.5.2 Standardized partial regression coefficient / 標準偏回帰係数
-
-summarize Fertility 
-generate z_Fertility    = (Fertility    - r(mean)) / r(sd)
-// egen std_Fertility = std(Fertility)  // same as above 
-summarize Examination 
-generate z_Examination  = (Examination  - r(mean)) / r(sd)
-summarize Agriculture 
-generate z_Agriculture  = (Agriculture  - r(mean)) / r(sd)
-
-regress z_Fertility z_Examination z_Agriculture
-
-// 一番簡単な方法 （右端の列を参照）
-regress Fertility Examination Agriculture, beta 
-
-** 3.6 Model selection / モデル選択
-
-** 3.6.1 Find AIC
-
-regress Fertility Examination
+regress price weight
 estat ic
 
-regress Fertility Examination Education
+regress price weight ps
 estat ic
 
-regress Fertility Examination Education Agriculture Catholic
+regress price weight ps length width
 estat ic
 
 // 注: 
@@ -233,12 +312,8 @@ estat ic
 
 // 省略
 
+** 6.3 Cross validation / 交差検証
 
-** 
-** 補足：誤差項の不均一分散に頑健な標準誤差を使った回帰係数の検定
-** 
-
-regress Fertility Examination, vce(robust)
-regress Fertility Examination, robust  // same as above 
+// 省略
 
 // EOS 
