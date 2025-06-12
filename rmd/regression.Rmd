@@ -27,7 +27,7 @@ knitr::opts_chunk$set(echo = TRUE)
     - このページでは，車種とは「プリウス」（トヨタのハイブリッド車）とか「N-BOX」（ホンダのトールワゴン型軽自動車）のようなカテゴリーを指す語として用いる．
 - 一般的に一つの車種には様々なバリエーションがあるが，そのうち一つを選択しその車種を代表する属性とした．
     - たとえば，トヨタのプリウスを例にとると，まず世代と呼ばれる区分けがあり（初代 1997～，2代目 2003～，3代目 2009～，4代目 2015～），さらに「Z」・「G」・「X」・「U」など幾つかのグレードに分かれ，そこからさらにハイブリッドかプラグインハイブリッドか，駆動方式が前輪駆動（FF）か四輪駆動（4WD）か，などの基準で枝分かれする．
-    - 幾つかあるバリエーションのうちデータ作成者（黒田）がいずれを選択したか（の規則性）は分析結果に影響を及ぼすが，この演習ではそれは気にしないことにしよう．
+    - 幾つかあるバリエーションのうちデータ入力者（黒田）がいずれを選択したか（の規則性）は分析結果に影響を及ぼすが，この演習ではそれは気にしないことにしよう．
 - 2025年6月のランキングに基づいてデータを作成した．データセットにランクを表す列はないが，ランキングのとおり昇順で並んでいる（列名を表す行を除いて1行目が1位で，80行目が80位）．
 - 変数
     - `model`: 車種
@@ -50,19 +50,27 @@ car <- read.csv("https://raw.githubusercontent.com/kurodaecon/dasp/refs/heads/ma
 str(car)
 ```
 
-## Summary stat 
+このページ全体を通した分析の目的は「車両の価格と属性の関係を定量的に記述すること」としよう．
+因果推論は目的ではない．
+
+## Summary stats 
 
 長くなるのでこのページには結果を出力しない設定にしているが，実際にはこれを見ながらデータの分布と特徴を理解するのもデータ分析の重要な工程．
 
 ```{r summary_stat, eval = FALSE}
 summary(car[, c(-1, -2)])
 table(car$maker)
+car[car$maker == "Nissan", ]
+car[car$maker %in% c("BMW", "Jeep", "Mercedes-Benz", "Porsche"), ]
 hist(car$price)
 hist(car$price[car$price <= 1000])
+car[car$price > 1000, ]
 table(car$seat)
 table(car$hybrid)
 table(car$electric)
-round(cor(car[, c(-1, -2, -14)], use = "complete.obs"), 2)
+car[car$electric == 1, ]
+car[, c(-1, -2, -14)] |> cor(use = "complete.obs") |> round(2)  # "|>" = pipe in base R 
+# round(cor(car[, c(-1, -2, -14)], use = "complete.obs"), 2)  # same as above 
 plot(car[, c("price", "weight", "height", "WLTC", "ps", "year")])
 ```
 
@@ -75,14 +83,15 @@ car$kei <- 1*(car$disp <= 660)  # 軽自動車ダミー
 
 ## Trim dataset 
 
-次の車両は除外する：乗車定員が3以下（スポーツカー・軽トラック等）または6以上（ミニバン・ワゴン車），海外メーカー，1,000万円を超える自動車，電気自動車，
+次の車両は除外する：乗車定員が3以下（スポーツカー・軽トラック等）または6以上（ミニバン・ワゴン車），海外メーカー，1,000万円を超える自動車，電気自動車．
 
 ```{r trim_data}
 car <- car[car$seat %in% 4:5, ]
 car <- car[!(car$maker %in% c("BMW", "Jeep", "Mercedes-Benz", "Porsche")), ]
 car <- car[car$price <= 1000, ]
 car <- car[car$electric == 0, ]
-car <- car[, -14]  # remove "electric" variable 
+# which(colnames(car) == "electric")  # 14
+car <- car[, -14]  # remove "electric" variable (column) 
 nrow(car)  # sample size
 ```
 
@@ -121,12 +130,18 @@ $$ \mbox{Price} = -170 + 0.37 \ \mbox{Weight} + u $$
 
 - ある特定の車種について「設計を変更して `Weight` を1単位引き上げると `Price` を 0.37 単位引き上げることができる（市場適正価格が3,700円上昇する）」あるいは「政策的介入によって重量が1kg増加したら均衡価格が3,700円上昇する」などのように解釈することはできない．この回帰係数はあくまで両変数の相関的な関係を記述しているだけであり（注：相関係数とは異なる），因果関係を示すものではない．
 
+次のように考えてもよい．
+
+- `weight` = 1,000kg の平均価格は $-170 + 0.37 \cdot 1000 = 200$ 万円
+- `weight` = 1,100kg の平均価格は $-170 + 0.37 \cdot 1100 = 237$ 万円
+    - 100kg で37万円差が付くので，1kg 当たり3,700円違う
+
 説明変数が1つの場合，回帰式は下図のように散布図に書き足すことができる．
 大雑把に言えば，回帰式の推定（＝回帰係数パラメタを計算すること）とはデータに当てはまる直線の切片 $\alpha$ と傾き $\beta$ を決める手続きである．
 
 ```{r reg_lm_scatter}
 plot(price ~ weight, car, xlim = c(-100, 2100), ylim = c(-200, 800))
-abline(v = 0, col = "grey")
+abline(v = 0, col = "grey")  # Y-axis
 abline(lm(price ~ weight, car), col = "red")
 points(0, -169.66, pch = 15, col = "red")
 text(250, -170, expression(alpha == -170), cex = 1.5)
@@ -139,6 +154,8 @@ text(600, -70, expression(beta == 0.37), cex = 1.5)
 summary(lm(price ~ weight, car))
 ```
 
+`Multiple R-squared` が決定係数，`Adjusted R-squared` が自由度調整済み決定係数を表す．
+
 ## Estimation by hand
 
 回帰モデル
@@ -147,7 +164,7 @@ $$ Y_i = \alpha + \beta X_i + u_i $$
 
 の係数パラメタ（$\alpha, \beta$）を最小二乗法（OLS）によって求めよう．
 
-最小二乗法とは，誤差 $u$ （残差 $\hat{u}_i = Y_i - \hat{Y}_i = Y_i - (\hat{\alpha}+\hat{\beta}X_i)$ で読み替えてもよい）の二乗和を最小化するように係数パラメタを求める方法である．
+最小二乗法とは，誤差 $u = Y - (\alpha + \beta X_i)$ （残差 $\hat{u}_i = Y_i - \hat{Y}_i = Y_i - (\hat{\alpha}+\hat{\beta}X_i)$ で読み替えてもよい）の二乗和を最小化するように係数パラメタを求める方法である．
 
 ```{r error_in_scatter, echo = FALSE}
 x <- c(1, 2, 3)
@@ -175,7 +192,6 @@ $$ Q = \sum_{i} u_i^2 = \sum_{i} (Y_i - \alpha - \beta X_i)^2 $$
 <!--
 以下のインタラクティブなアプレットで確認してみよう．
 
-```{r shiny, echo = FALSE}
 library(shiny) # すべてChatGPT 4oで作成
 x_vals <- c(1, 2, 3)
 y_vals <- c(1.2, 3.5, 2.0)
@@ -211,7 +227,6 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
-```
 -->
 
 $Q$ は $\hat \alpha, \hat \beta$ のいずれについても下に凸の関数であるので，$Q$ をそれぞれで微分して 0 とおく．
@@ -225,7 +240,7 @@ $$ \frac{\partial Q}{\partial \beta} = -2 \sum_i X_i (Y_i - \alpha - \beta X_i) 
 $$ \hat{\alpha} = \bar{Y} - \hat{\beta} \bar{X}, \quad \hat{\beta} = \frac{S_{XY}}{S_{XX}} $$
 $$ S_{XX} = \sum_i (X_i - \bar{X})^2, \quad S_{XY} = \sum_i (X_i - \bar{X}) (Y_i - \bar{Y}) $$
 
-まず $\bar{Y}, \bar{X}, S_{XX}, S_{XY}$ という4つの統計量を計算する．
+$\bar{Y}, \bar{X}, S_{XX}, S_{XY}$ という4つの統計量は次のように計算できる．
 
 ```{r reg_mean_s}
 x <- car$weight
@@ -275,6 +290,29 @@ obj_function <- function (x) x^2 - 4*x + 7
 optim(par = 0, fn = obj_function, method = "BFGS")  # ニュートン法の亜種を利用
 ```
 
+なお，ニュートン法は次の更新式を用いて実装できる．
+
+$$ x_{\mbox{new}} = x - \frac{f'(x)}{f''(x)} = x - \frac{2x-4}{2} = 2 $$
+
+- 今扱っている目的関数は単純な二次式なので初期値によらず1回の更新で収束するが，通常は何度も更新を繰り返す．
+
+```{r newton_method}
+grad_f <- function (x) 2 * x - 4  # 目的関数の1階微分（勾配）
+newton_method <- function (initial) {
+  x <- initial
+  for (i in 1:10) {  # 10 = max iteration 
+    step <- grad_f(x) / 2  # 分母の2 = 目的関数の2階微分（Hessian）
+    x_new <- x - step
+    cat("i=", i, ", f'=", grad_f(x), ", f'/f''=", step, ", x=", x, 
+        ", x_new=", x_new, ", Δx=", x_new - x, "\n", sep = "")
+    if (abs(x_new - x) < 0.01) return(x_new)  # 0.01 = tolerance 
+    x <- x_new
+  }
+  cat("Not converged")
+}
+newton_method(initial = 10)
+```
+
 
 ### In the case of regression 
 
@@ -321,6 +359,7 @@ $$ S_{YY} = \sum_i (Y_i - \bar{Y})^2, \quad S_{\hat{Y} \hat{Y}} = \sum_i (\hat{Y
 s_yy <- sum((y - y_bar)^2)
 y_pred <- alpha_hat + beta_hat * x  # y hat
 s_yhyh <- sum((y_pred - y_bar)^2)
+c(s_yhyh, s_yy)
 s_yhyh / s_yy  # R^2
 res <- y - y_pred  # residuals
 1 - sum(res^2) / s_yy  # R^2 ... should be the same as above
@@ -365,20 +404,22 @@ $$ p = 2 \times [ 1 - \Pr(T \le |t|) ] $$
 ```{r pvalue_in_dist}
 curve(dt(x, df = n - 2), from = -20, to = 20, main = "Density of t-distribution")
 abline(v = beta_hat / beta_se * c(-1, 1), col = "red")
-text(c(-15.1, 15.1), 0.02, labels = c("Pr(T < -15.1)", "Pr(T > 15.1)"))
+text(c(-17, 17), 0.02, labels = c("Pr(T < -15.1)", "Pr(T > 15.1)"))
 2 * (1 - pt(q = beta_hat / beta_se, df = n - 2))
 ```
 
-注：あまりにも小さいので 0 と表示されているが，厳密には 0 ではない．このような場合，論文・レポート等では「$<0.001$」のように書くことで，厳密には0ではないものの 0.1% 水準で有意であることが報告できる．
+注：あまりにも小さいので 0 と表示されているが，厳密には 0 ではない．このような場合，論文・レポート等では「$p < 0.001$」（表中では「$< 0.001$」）のように書くことで，厳密には0ではないものの 0.1% 水準で有意であることが報告できる．
 
 
 ### Critical value approach / 臨界値を用いて検定を行う場合
 
-t分布の2.5%臨界値（両側5%に対応）は？
+例として，有意水準 $\alpha = 0.05$ と設定した場合を考えよう．
+
+t分布の97.5%分位点（両側5%に対応する臨界値）は `qt` 関数で計算できる．
 
 ```{r reg_t}
-qt(p = 0.025, df = n - 2)  # df: degree of freedom (自由度)
-qt(p = c(0.005, 0.025, 0.975, 0.995), df = n - 2)  # 1% and 5%
+qt(p = 0.975, df = n - 2)  # df: degree of freedom (自由度)
+qt(p = c(0.975, 0.995, 0.9995), df = n - 2)  # 5%, 1%, and 0.1%
 ```
 
 ```{r pvalue_in_dist_cv}
@@ -387,7 +428,10 @@ abline(v = c(-2.01, 2.01), col = "red")
 text(c(-3, 3), 0.04, labels = "2.5%"); text(0, 0.15, labels = "95%")
 ```
 
-よって，$t = 15.1$ は有意水準1%に対応する臨界値 (2.7) よりも大きいので，1%水準で有意である．
+よって，$t = 15.1$ は有意水準5%に対応する臨界値 (2.01) よりも大きいので，5%水準で有意と言える．
+
+* 同様に考えて $t = 15.1$ であれば1%でも0.1%でも有意なので，論文・レポートでは「変数 $X_j$ の回帰係数は0.1%水準で有意（に0と異なる）」と書く場合もある．これは，単に帰無仮説（$\beta_j = 0$）を棄却するかどうかの二値的な情報だけでなく，その結論の確実性がどの程度高いか（← 非常にラフな表現）という情報を報告する意図があるものと思われる．ただし，このことは「有意になるように（あるいは有意にならないように），$p$ 値を計算した後に有意水準を設定してよい」ことを意味しない．
+* Rでは非常に小さい $p$ 値が `2e-16` のように表示される場合があるが，これをそのまま「$p = 2\times10^{-16}$」のようにレポートするのはNG．`2e-16` という厳密な数値が計算されているわけではなくて，数値計算上の精度の限界によりこれより小さい値である（$p < 2\times10^{-16}$）ことしか分からないという意味である．そして，この場合の $2$ あるいは $10^{-16}$ という数値の厳密な値は実務上ほとんど意味をなさない．たとえば，これが $2.5 \times 10^{-15}$ であったとしても仮説検定の結論は何も変わらない．よって，このような場合は「$p < 0.001$」と書けば十分である．
 
 自由度が大きければ標準正規分布の場合とほとんど同じ臨界値になる．
 
@@ -395,23 +439,81 @@ text(c(-3, 3), 0.04, labels = "2.5%"); text(0, 0.15, labels = "95%")
 c(qt(p = 0.975, df = 10000), qnorm(p = 0.975))
 ```
 
+### MC Simulation 
+
+$\beta = 0$ の設定でデータを生成し，その回帰係数の $t$ 値の分布と第一種の過誤を確認してみよう．
+
+```{r mcsim_beta}
+t_list <- NULL
+for (i in 1:1000) {
+  set.seed(100*i)  # ちょっとごまかす
+  x_i <- 1:1000
+  y_i <- 1 + 0 * x_i + rnorm(1000)  # x_i の係数を 0 に設定
+  t_i <- summary(lm(y_i ~ x_i))$coef["x_i", "t value"]
+  t_list <- c(t_list, t_i)
+}
+# qt(p = 0.975, df = 1000-1)  # 1.962341
+hist(t_list, breaks = 100)
+abline(v = qt(p = c(0.025, 0.975), df = 1000-1), col = "red")
+table(t_list <= -1.962 | t_list >= 1.962)  # TRUE = 第一種の過誤
+```
+
+
 ### Robust standard error / 頑健な標準誤差
 
 詳しい議論はこの授業では行わないが，標準誤差は誤差項の不均一分散を前提として計算した方がよい．
 
 `fixest` パッケージの `feols` 関数が便利．
+下のように`vcov` オプションを指定する．
 
 ```{r robust_se}
 # install.packages("fixest")
 library(fixest)
-fixest::feols(price ~ weight + ps, car, vcov = "hetero")
-summary(lm(price ~ weight + ps, car))$coef  # cf
+fixest::feols(price ~ weight, car, vcov = "hetero")  # HC1
 ```
 
-同様にクラスター頑健標準誤差は次のように計算できる．
+$\beta = 0$ かつ不均一な誤差分散をもつモデルに基づいてデータを生成し，第一種の過誤を通常のSE vs. 頑健なSEで比較してみよう．
+
+```{r mcsim_beta_heteroerror}
+plot(x = 1:100, y = 1 + rnorm(100, sd = 1:100), xlab = "x", ylab = "y")
+t_list <- t_r_list <- NULL
+for (i in 1:1000) {
+  set.seed(i)
+  data_i <- data.frame(
+    x_i = 1:1000,
+    y_i = 1 + 0 * (1:1000) + rnorm(1000, sd = 1:1000)
+  )
+  t_i <- fixest::feols(y_i ~ x_i, data_i)$coeftable["x_i", "t value"]
+  t_r_i <- fixest::feols(y_i ~ x_i, data_i, vcov = "hetero")$coeftable["x_i", "t value"]
+  t_list <- c(t_list, t_i)
+  t_r_list <- c(t_r_list, t_r_i)
+}
+qt(p = 0.975, df = 1000-1)
+table(t_list <= -1.962 | t_list >= 1.962)  # 第一種の過誤が5%を超える
+table(t_r_list <= -1.962 | t_r_list >= 1.962)  # 5%がTRUEになるはず -> 概ねOK
+```
+
+
+### Cluster-robust standard error / クラスター頑健標準誤差
+
+`vcov = ~ cluster` の形式でオプションを指定する．
 
 ```{r cluster_robust_se}
-fixest::feols(price ~ weight + ps, car, vcov = ~ maker)
+fixest::feols(price ~ weight, car, vcov = ~ maker)
+```
+
+上記を regression table の形式で比較するには `huxtable` パッケージを使うと便利．
+
+- 推定値の下段の丸カッコが標準誤差を示す．
+- `modelsummary` パッケージが使えればそちらでもよい．黒田の環境ではうまくいかなかったのでこのページでは `huxtable` で代用．
+
+```{r robust_se_comparison}
+# install.packages("huxtable")
+library(huxtable)
+lm0 <- fixest::feols(price ~ weight, car)
+lm1 <- fixest::feols(price ~ weight, car, vcov = "hetero")
+lm2 <- fixest::feols(price ~ weight, car, vcov = ~ maker)
+huxtable::huxreg("Classical SE" = lm0, "Robust SE" = lm1, "Clustered SE" = lm2)
 ```
 
 
@@ -432,185 +534,6 @@ summary(lm(price ~ weight + ps, car))
 - 重回帰分析によって因果効果を推定するためには，処置変数の条件付き独立（かなり大雑把に言うと，交絡変数がすべてコントロール変数として正確な関数形でモデルに含められていること）が成立していなければならず，この仮定を社会経済データを用いた実証分析において満たすことは容易ではない．
 
 
-# Advanced method / 応用
-
-## Dummy variables ダミー変数
-
-`hybrid` 変数は，ハイブリッド車のときに 1 をとるダミー変数である．
-ハイブリッド車以外であるガソリン車やディーゼル車で 0 をとる．
-
-$$ \mbox{Price} = \alpha + \beta \ \mbox{Hybrid} + u $$
-
-```{r reg_dummy_lm}
-table(car$hybrid)
-lm(price ~ hybrid, car)
-```
-
-この回帰係数 77 は「ハイブリッド車はハイブリッド車以外と比較して 77 万円高い」ことを意味している（ただし有意ではない）．
-
-```{r reg_dummy_diff}
-mean(car$price[car$hybrid == 0])
-mean(car$price[car$hybrid == 1])
-mean(car$price[car$hybrid == 1]) - mean(car$price[car$hybrid == 0])
-```
-
-下の図のように理解できるだろう．
-
-「□」は `hybrid` の値ごとの平均価格を表している．
-傾きは $\Delta y / \Delta x = (326 - 249) / 1 = 77$ である．
-
-```{r reg_dummy_diff_plot, echo = FALSE}
-plot(price ~ hybrid, car, cex = 1.5, xlim = c(-.2, 1.3), ylim = c(0, 800))
-abline(lm(price ~ hybrid, car), col = "red")
-abline(v = c(0, 1), col = "grey", lty = 2)
-points(x = 0, y = mean(car$price[car$hybrid == 0]), col = "red", cex = 3, pch = 22)
-points(x = 1, y = mean(car$price[car$hybrid == 1]), col = "red", cex = 3, pch = 22)
-text(x = 0.2, y = 200, labels = expression(bar(Y) == 249), cex = 1.5)
-text(x = 1.2, y = 270, labels = expression(bar(Y) == 326), cex = 1.5)
-```
-
-
-## Adding quardatic or interaction terms / 二次・交差項
-
-$$ \mbox{Price} = \alpha + \beta_1 \mbox{PS} + \beta_2 \mbox{PS}^2 + u $$
-
-<!--
-新しい変数を作成するなどのデータフレームの操作をするためには `tidyverse` に含まれる関数 (`mutate`, `rename`, `group_by`, etc.) を用いると簡単．
-
-# tidyverse パッケージを使用する場合
-# library(tidyverse)
-# swiss2 <- swiss %>%
-#   mutate(Edu2 = Education^2,
-#          ExamEdu = Examination * Education)
-
-# swiss2$exam_dummy <- 1 * (swiss$Examination > mean(swiss$Examination))  # same as above 
-# tidyverse パッケージを使用する場合
-# swiss2 <- swiss %>%
-#   mutate(exam_dummy = ifelse(Examination > mean(Examination), 1, 0))
-
-# tidyverse パッケージを使用する場合
-# swiss2 <- swiss %>% 
-#   mutate(Exam_with_noise = Examination + rnorm(nrow(swiss), sd = 1))
-
-# tidyverse パッケージを使用する場合
-# swiss_scaled <- swiss %>% 
-#   mutate(Fertility_scaled = (Fertility - mean(Fertility)) / sd(Fertility),
-#          Examination_scaled = (Examination - mean(Examination)) / sd(Examination),
-#          Agriculture_scaled = (Agriculture - mean(Agriculture)) / sd(Agriculture))
--->
-
-```{r reg_mod, message = F}
-car$ps2 <- car$ps^2
-lm(price ~ ps + ps2, car)$coef
-```
-
-上の回帰式は次のような非線形な関係を表す．
-
-```{r , echo = FALSE}
-plot(price ~ ps, car, cex = 1.5)
-xx <- seq(0, 500, by = 1)
-yy <- predict(lm(price ~ ps + ps2, car), newdata = data.frame(ps = xx, ps2 = xx^2))
-lines(xx, yy, col = "red")
-```
-
-データセットを直接操作せずに，回帰モデルを指定する際に `I` 関数を使って二乗項を表現することもできる．
-
-```{r reg_quadratic_i}
-lm(price ~ ps + I(ps^2), car)$coef
-```
-
-$$ \mbox{Price} = \alpha + \beta_1 \mbox{Weight} + \beta_2 \mbox{Hybrid} + \beta_3 \mbox{Weight} \times \mbox{Hybrid} + u $$
-
-```{r reg_interaction}
-car$wh <- car$weight * car$hybrid
-lm(price ~ weight + hybrid + wh, car)$coef
-```
-
-このように，交差項を用いることでカテゴリー（この場合はハイブリッド車とガソリン車（・ディーゼル車））による回帰係数の異質性を表現できる．
-
-$$ \mbox{Price} = -149 + 0.34 \mbox{Weight} - 168 \mbox{Hybrid} + 0.16 \mbox{Weight} \times \mbox{Hybrid} + u $$
-$$ = \left\{ \begin{array}{l} -317 + 0.50 \mbox{Weight} + u \quad \mbox{if} \quad \mbox{Hybrid} \\ -149 + 0.34 \mbox{Weight} + u \quad \mbox{if} \quad \mbox{Not Hybrid} \end{array} \right. $$
-
-
-「`var1 : var2`」は「`var1 × var2`」を表し，「`var1 * var2`」は「`var1 + var2 + (var1 × var2)`」を表す．
-
-```{r reg_interaction_2}
-lm(price ~ weight + hybrid + weight:hybrid, car)$coef
-lm(price ~ weight*hybrid, car)$coef
-```
-
-## Log-linear model 
-
-$$ \log(\mbox{Price}) = \alpha + \beta \ \mbox{Weight} + u $$
-
-説明変数や被説明変数に対数を取る場合は `I` なしで `log` を使ってよい．
-
-```{r reg_log}
-lm(log(price) ~ weight, car)$coef
-```
-
-アウトカムに自然対数を取る場合，「$x$ が1単位大きな値を取る時に $y$ が $100 \times \beta$ % 高い値を取る」と解釈される．
-
-$$ \beta = \frac{\partial \log(y)}{\partial x} = \frac{\partial \log(y)}{\partial y} \frac{\partial y}{\partial x} = \frac{1}{y} \frac{\partial y}{\partial x} = \frac{\partial y / y}{\partial x} $$
-
-よって，「1 kg重い自動車の価格は 0.13 %高い」と解釈できる．
-
-## Log-log model 
-
-$$ \log(\mbox{Price}) = \alpha + \beta \ \log(\mbox{Weight}) + u $$
-
-```{r reg_log_log}
-lm(log(price) ~ log(weight), car)$coef
-```
-
-両辺に対数を取る場合は「$x$ が1%大きな値を取る時に $y$ が $\beta$ % 高い値を取る」と解釈される．
-
-- $\beta$ は経済学では弾力性として知られる．
-
-$$ \beta = \frac{\partial \log(y)}{\partial \log(x)} = \frac{\partial \log(y)}{\partial y} \frac{\partial x}{\partial \log(x)} \frac{\partial y}{\partial x} = \frac{x}{y} \frac{\partial y}{\partial x} = \frac{\partial y / y}{\partial x / x} $$
-
-「1 %重い自動車の価格は 1.5 %高い」と解釈できる．
-
-
-## Categorical variables 
-
-複数の値を持つカテゴリー変数（質的変数）はダミー変数化する（すなわち量的変数に変換する）ことで回帰式に含めることができる．
-
-いずれか一つのカテゴリーをベースラインとする（すべてのカテゴリーをダミー変数として含めると多重共線性により推定できなくなるため，一つは除外しなければならない）．
-
-`maker` 変数はカテゴリー変数なので，これをダミー変数にしてみよう．
-
-```{r maker_dummy}
-table(car$maker)
-car$Honda <- 1 * (car$maker == "Honda")
-car$Mazda <- 1 * (car$maker == "Mazda")
-car$Nissan <- 1 * (car$maker == "Nissan")
-car$Subaru <- 1 * (car$maker == "Subaru")
-car$Suzuki <- 1 * (car$maker == "Suzuki")
-car$Toyota <- 1 * (car$maker == "Toyota")
-lm(price ~ weight + Honda + Mazda + Nissan + Subaru + Suzuki + Toyota, car)$coef
-```
-
-たとえば，`Honda` の回帰係数 -17 は，ホンダの車がベースラインであるダイハツの車と比較して 17 万円低いことを表している（ただし統計的に有意ではない）．
-
-`lm` 関数では，カテゴリー変数はそのまま回帰式に含めることで自動的にダミー変数として処理される．
-
-```{r maker_dummy_2}
-lm(price ~ weight + maker, car)$coef
-```
-
-### Change the reference group 
-
-ベースラインのカテゴリーを変更するには `relevel` 関数を使う．
-
-```{r category_dummy_base_honda}
-car$maker <- relevel(as.factor(car$maker), ref = "Honda")
-lm(price ~ weight + maker, car)$coef
-```
-
-今度は，ダイハツがベースラインのホンダと比較して 17 万円高いと解釈できる．
-
-
 ## Multicollinearity / 多重共線性
 
 ### Example of perfect multico. / 完全な多重共線性の例
@@ -628,22 +551,22 @@ R では，該当する変数（のうち一つ）が自動的に drop される
 互いに強い相関関係にある `weight`, `length`, `width` という3つの変数に着目しよう．
 いずれの変数も `price` と正の相関を持ち，単回帰分析では正の回帰係数を得る．
 
-```{r multico_imperfect}
-cor(car[, c("price", "weight", "length", "width")])
-summary(lm(price ~ weight, car))$coef
-summary(lm(price ~ length, car))$coef
-summary(lm(price ~ width, car))$coef
-```
-
 しかしながら，3つの変数を一つの回帰式に説明変数として同時に含めると，いずれの変数も標準誤差が大きくなる．
 ラフに言えば，これは推定が安定しなくなることを意味する．
 実際，`width` の回帰係数は有意に負の値をとっているが，これは解釈しにくい結果である．
 
-```{r multico_imperfect2}
-summary(lm(price ~ weight + length + width, car))$coef
+```{r multico_imperfect}
+car[, c("price", "weight", "length", "width")] |> cor() |> round(2)
+# round(cor(car[, c("price", "weight", "length", "width")]), 2)  # same as above 
+lm0 <- lm(price ~ weight, car)
+lm1 <- lm(price ~ length, car)
+lm2 <- lm(price ~ width, car)
+lm3 <- lm(price ~ weight + length + width, car)
+huxtable::huxreg(lm0, lm1, lm2, lm3)
 ```
 
-### Using VIF for diagnostics / VIF による診断 
+
+### VIF for diagnostics / VIF による診断 
 
 変数 $j$ の分散拡大係数（variance inflation factor, VIF）は，変数 $j$ をそれ以外の変数に回帰したときの決定係数 $R_j^2$ を使って以下のように計算される．
 
@@ -670,7 +593,7 @@ car::vif(lm(price ~ weight + length + width, car))
 
 多重共線性への対処：
 
-- 深刻な多重共線性が生じている場合は該当する変数のうち（少なくとも）一つをモデルから外すことがある．とりわけ予測モデルとして回帰モデルを推定する際は変数の除去は珍しくない．
+- 深刻な多重共線性が生じている場合は該当する変数のうち（少なくとも）一つをモデルから外すことがある．とりわけ予測モデルとして回帰モデルを推定する際は変数の除去は珍しくない．予測が目的の場合は，相関が高い変数を合成しそれを説明変数としてモデルに加える場合もあるだろう．
 - 一方で key variable $X_1$ がアウトカムに与える因果効果を測ろうとして回帰モデルを推定する場合に，$X_1$ と相関がある（かつアウトカムに影響を与える）変数 $X_2$ を除外すると除外変数バイアスが生じる可能性があるため，$X_2$ は除外するべきではないだろう．
     - ただし，$X_2$ が $X_1$ の影響を受ける変数でありかつアウトカムに影響を与える変数である場合に，$X_1$ がアウトカムに与える効果（$X_1$ から直接与える効果と $X_2$ を経由して間接的に与える効果の両方を合計したもの）を推定したい場合は，むしろ $X_2$ は除外するべきである．これは多重共線性とは別の理由による（いわゆる bad control の問題）．
 
@@ -723,21 +646,225 @@ lm(price ~ weight + ps, as.data.frame(scale(car[, c(-1, -2)])))
 （出力は省略）
 
 
-## Prediction / 予測
+# Variable transformation / 変数変換
+
+## Dummy variables / ダミー変数
+
+`hybrid` 変数は，ハイブリッド車のときに 1 をとるダミー変数である．
+ハイブリッド車以外であるガソリン車やディーゼル車で 0 をとる．
+
+$$ \mbox{Price} = \alpha + \beta \ \mbox{Hybrid} + u $$
+
+```{r reg_dummy_lm}
+table(car$hybrid)
+lm(price ~ hybrid, car)
+```
+
+この回帰係数 77 は「ハイブリッド車はハイブリッド車以外と比較して 77 万円高い」ことを意味している（ただし有意ではない）．
+
+```{r reg_dummy_diff}
+mean(car$price[car$hybrid == 0])
+mean(car$price[car$hybrid == 1])
+mean(car$price[car$hybrid == 1]) - mean(car$price[car$hybrid == 0])
+```
+
+下の図のように理解できるだろう．
+
+- 「□」は `hybrid` の値ごとの平均価格を表しており，これは回帰式に基づいて計算される価格の予測値（当てはめ値）に等しい．
+    - `hybrid = 0` のとき，価格の予測値は $249 + 77 \cdot 0 = 249$ 万円（すなわち，切片の推定値そのもの）
+    - `hybrid = 1` のとき，価格の予測値は $249 + 77 \cdot 1 = 326$ 万円
+- 傾きは $\Delta y / \Delta x = (326 - 249) / 1 = 77$ である．
+
+```{r reg_dummy_diff_plot, echo = FALSE}
+plot(price ~ hybrid, car, cex = 1.5, xlim = c(-.2, 1.3), ylim = c(0, 800))
+abline(lm(price ~ hybrid, car), col = "red")
+abline(v = c(0, 1), col = "grey", lty = 2)
+points(x = 0, y = mean(car$price[car$hybrid == 0]), col = "red", cex = 3, pch = 22)
+points(x = 1, y = mean(car$price[car$hybrid == 1]), col = "red", cex = 3, pch = 22)
+text(x = 0.2, y = 200, labels = expression(bar(Y) == 249), cex = 1.5)
+text(x = 1.2, y = 270, labels = expression(bar(Y) == 326), cex = 1.5)
+```
+
+条件分岐によってダミー変数を作ることもできる．
+
+- `ifelse(論理演算, TRUE の場合の値, FALSE の場合の値)` のように指定する．
+
+```{r reg_dummy_ifelse}
+car$recent <- ifelse(car$year >= 2022, 1, 0)  # = 1 if recent model 
+table(car$recent)
+summary(lm(price ~ weight + recent, car))
+lm(price ~ weight + recent, car)$coef
+```
+
+
+## Quardatic and interaction terms / 二次・交差項
+
+$$ \mbox{Price} = \alpha + \beta_1 \ \mbox{PS} + \beta_2 \ \mbox{PS}^2 + u $$
+
+<!--
+新しい変数を作成するなどのデータフレームの操作をするためには `tidyverse` に含まれる関数 (`mutate`, `rename`, `group_by`, etc.) を用いると簡単．
+
+# tidyverse パッケージを使用する場合
+# library(tidyverse)
+# swiss2 <- swiss %>%
+#   mutate(Edu2 = Education^2,
+#          ExamEdu = Examination * Education)
+
+# swiss2$exam_dummy <- 1 * (swiss$Examination > mean(swiss$Examination))  # same as above 
+# tidyverse パッケージを使用する場合
+# swiss2 <- swiss %>%
+#   mutate(exam_dummy = ifelse(Examination > mean(Examination), 1, 0))
+
+# tidyverse パッケージを使用する場合
+# swiss2 <- swiss %>% 
+#   mutate(Exam_with_noise = Examination + rnorm(nrow(swiss), sd = 1))
+
+# tidyverse パッケージを使用する場合
+# swiss_scaled <- swiss %>% 
+#   mutate(Fertility_scaled = (Fertility - mean(Fertility)) / sd(Fertility),
+#          Examination_scaled = (Examination - mean(Examination)) / sd(Examination),
+#          Agriculture_scaled = (Agriculture - mean(Agriculture)) / sd(Agriculture))
+-->
+
+```{r reg_mod, message = F}
+car$ps2 <- car$ps^2
+lm(price ~ ps + ps2, car)$coef
+```
+
+上の回帰式は次のような非線形な関係（二乗項の係数が負なので上に凸の二次関数）を表す．
+
+```{r , echo = FALSE}
+plot(price ~ ps, car, cex = 1.5)
+xx <- seq(0, 500, by = 1)
+yy <- predict(lm(price ~ ps + ps2, car), newdata = data.frame(ps = xx, ps2 = xx^2))
+lines(xx, yy, col = "red")
+```
+
+データセットを直接操作せずに，回帰モデルを指定する際に `I` 関数を使って二乗項を表現することもできる．
+
+```{r reg_quadratic_i}
+lm(price ~ ps + I(ps^2), car)$coef
+```
+
+$$ \mbox{Price} = \alpha + \beta_1 \ \mbox{Weight} + \beta_2 \ \mbox{Hybrid} + \beta_3 \ \mbox{Weight} \times \mbox{Hybrid} + u $$
+
+```{r reg_interaction}
+car$wh <- car$weight * car$hybrid
+lm(price ~ weight + hybrid + wh, car)$coef
+```
+
+このように，交差項を用いることでカテゴリー（この場合はハイブリッド車とガソリン車（・ディーゼル車））による回帰係数の異質性を表現できる．
+
+$$ \mbox{Price} = -149 + 0.34 \mbox{Weight} - 168 \mbox{Hybrid} + 0.16 \mbox{Weight} \times \mbox{Hybrid} + u $$
+$$ = \left\{ \begin{array}{l} -317 + 0.50 \mbox{Weight} + u \quad \mbox{if} \quad \mbox{Hybrid} \\ -149 + 0.34 \mbox{Weight} + u \quad \mbox{if} \quad \mbox{Not Hybrid} \end{array} \right. $$
+
+
+「`var1 : var2`」は「`var1 × var2`」を表し，「`var1 * var2`」は「`var1 + var2 + (var1 × var2)`」を表す．
+
+```{r reg_interaction_2}
+lm(price ~ weight + hybrid + weight:hybrid, car)$coef
+lm(price ~ weight*hybrid, car)$coef
+```
+
+## Log-linear model 
+
+$$ \log(\mbox{Price}) = \alpha + \beta \ \mbox{Weight} + u $$
+
+説明変数や被説明変数に対数を取る場合は `I` なしで `log` を使ってよい．
+
+```{r reg_log}
+lm(log(price) ~ weight, car)$coef
+```
+
+アウトカムに自然対数を取る場合，「$x$ が1単位大きな値を取る時に $y$ が $(100 \times \beta)$ % 高い値を取る」と解釈される．
+
+$$ \beta = \frac{\partial \log(y)}{\partial x} = \frac{\partial \log(y)}{\partial y} \frac{\partial y}{\partial x} = \frac{1}{y} \frac{\partial y}{\partial x} = \frac{\partial y / y}{\partial x} $$
+
+よって，「1 kg重い自動車の価格は 0.13 %高い」と解釈できる．
+
+- なお，上は $\beta$ が0に近い値（たとえば 0.01 や 0.001 くらいのオーダー）を取る場合にはよい近似となる．0から離れた値（たとえば 0.5 またはそれ以上）を取る場合は $\exp(\beta) - 1$ で厳密に計算するとよい．
+
+$$ \Delta \% := \frac{y_{x+1} - y_{x}}{y_{x}} = \frac{\exp(\alpha + \beta (x+1)) - y_{x}}{y_{x}} = \frac{y_{x} \cdot \exp(\beta) - y_{x}}{y_{x}} = \exp(\beta) - 1 $$
+
+## Log-log model 
+
+$$ \log(\mbox{Price}) = \alpha + \beta \ \log(\mbox{Weight}) + u $$
+
+```{r reg_log_log}
+lm(log(price) ~ log(weight), car)$coef
+```
+
+両辺に対数を取る場合は「$x$ が1%大きな値を取る時に $y$ が $\beta$ % 高い値を取る」と解釈される．
+
+- $\beta$ は経済学では弾力性として知られる．
+
+$$ \beta = \frac{\partial \log(y)}{\partial \log(x)} = \frac{\partial \log(y)}{\partial y} \frac{\partial x}{\partial \log(x)} \frac{\partial y}{\partial x} = \frac{x}{y} \frac{\partial y}{\partial x} = \frac{\partial y / y}{\partial x / x} $$
+
+「1 %重い自動車の価格は 1.5 %高い」と解釈できる．
+
+
+## Categorical variables 
+
+複数の値を持つカテゴリー変数（質的変数）はダミー変数化する（0-1 の量的変数に変換する）ことで回帰式に含めることができる．
+
+いずれか一つのカテゴリーをベースラインとする（すべてのカテゴリーをダミー変数として含めると多重共線性により推定できなくなるため，一つは除外しなければならない）．
+
+`maker` 変数はカテゴリー変数なので，これをダミー変数にしてみよう．
+ダイハツをベースライン（reference group）とする．
+
+```{r maker_dummy}
+table(car$maker)
+car$Honda <- 1 * (car$maker == "Honda")
+car$Mazda <- 1 * (car$maker == "Mazda")
+car$Nissan <- 1 * (car$maker == "Nissan")
+car$Subaru <- 1 * (car$maker == "Subaru")
+car$Suzuki <- 1 * (car$maker == "Suzuki")
+car$Toyota <- 1 * (car$maker == "Toyota")
+head(car[, c("maker", "Honda", "Mazda", "Nissan", "Subaru", "Suzuki", "Toyota")])
+lm(price ~ weight + Honda + Mazda + Nissan + Subaru + Suzuki + Toyota, car)$coef
+```
+
+たとえば，`Honda` の回帰係数 -17 は，ホンダの車がベースラインであるダイハツの車と比較して 17 万円低いことを表している（ただし統計的に有意ではない）．
+
+`lm` 関数にカテゴリー変数をそのまま含めると自動的に水準別ダミー変数が作成され推定される．
+
+```{r maker_dummy_2}
+lm(price ~ weight + maker, car)$coef
+```
+
+### Change the reference group 
+
+ベースラインのカテゴリーを変更するには `relevel` 関数を使う．
+
+```{r category_dummy_base_honda}
+car$maker <- relevel(as.factor(car$maker), ref = "Honda")
+lm(price ~ weight + maker, car)$coef
+```
+
+今度は，ダイハツがベースラインのホンダと比較して 17 万円高いと解釈できる．
+
+
+# Prediction / 予測
 
 当てはめ値は定義通り次のように計算できる．
+
+$$ \hat{Y}_i = \hat{\alpha} + \hat{\beta} X_i $$
 
 ```{r pred_hand}
 lm(price ~ weight + ps, car)$coef
 car$pred0 <- -103.71 + 0.2368 * car$weight + 0.7765 * car$ps
-head(car[, c("price", "pred0")])
+head(car[, c("model", "price", "pred0")], 3)
 ```
+
+- `lm(y ~ x, data)$fitted.value` はアウトカム変数 and/or 説明変数の欠損により除外された個体を含まないベクトルのため，元のデータセットと行数が合わないことがある．
 
 たとえば {1,000 kg, 100 ps} という仮想的な車種の価格を予測するには，上の計算式にこの属性値を代入すればよい．
 
 ```{r pred_hand2}
 -103.71 + 0.2368 * 1000 + 0.7765 * 100
 ```
+
+## `predict` function 
 
 推定に用いたサンプルの当てはめ値も，out-of-sample の予測も，`predict` 関数で計算できる．
 
@@ -746,30 +873,53 @@ head(car[, c("price", "pred0")])
 ```{r pred}
 lm1 <- lm(price ~ weight + ps, car, na.action = na.exclude)
 car$pred1 <- predict(lm1, newdata = car)
-head(car[, c("price", "pred0", "pred1")])
+head(car[, c("model", "price", "pred0", "pred1")], 3)
 predict(lm1, newdata = data.frame(weight = 1000, ps = 100))
 ```
+
+## Inverse transformation of log outcomes 
 
 Log-linear model の場合，予測値を元の変数のスケールに戻すには次のようにする．
 
 $$ \hat{y} = \exp \left( \hat{\log{y}} + \frac{\sigma^2}{2} \right) $$
 
-- 当てはめた値は $\hat{\log{y}}$ であって $\log{\hat{y}}$ ではないことに注意．
-- $\sigma^2$ は誤差分散．残差の分散で代用する．
+- Log-linear model の当てはめ値は $\hat{\log{y}}$ であって $\log{\hat{y}}$ ではないことに注意．
+- $\sigma^2$ は誤差分散．真の値は未知なので残差の分散（正確には，誤差分散の不偏推定量になるように調整したもの）で代用する．$K$ は定数項を除いた説明変数の数．
+
+$$ \hat{\sigma}^2 = \frac{1}{n - K - 1} \sum_{i = 1}^n \hat{u}_i^2 \quad \mbox{where} \quad \hat{u}_i = Y_i - \hat{Y}_i $$
 
 ```{r log_linear_exp}
-lm2 <- lm(log(price) ~ weight + ps, car, na.action = na.exclude)
-sigma2 <- summary(lm2)$sigma^2
-car$pred2 <- exp(predict(lm2, newdata = car) + sigma2/2)
-head(car[, c("price", "pred0", "pred1", "pred2")])
+## correct way 
+lm0 <- lm(log(price) ~ weight + ps, car, na.action = na.exclude)
+sigma2 <- sum(lm0$residuals^2) / (length(lm0$residuals) - 3)
+# sigma2 <- summary(lm2)$sigma^2  # same as above 
+car$pred_correct <- exp(predict(lm0, newdata = car) + sigma2/2)
+## incorrect way 
+car$pred_incorrect <- exp(predict(lm0, newdata = car))
+head(car[, c("model", "price", "pred_correct", "pred_incorrect")], 3)
 ```
 
+上のような補正を行わないと予測値が過小評価される．
+このことを次のように平均値で確認する．
 
-## Model selection / モデル選択
+```{r comparison_inversed_log_outcome}
+car2 <- car[!is.na(car$ps), ]  # 欠損のある車種は推定に使われていないので除外
+c(mean(car2$price), mean(car2$pred_correct), mean(car2$pred_incorrect))
+```
+<!--
+apply(car[!is.na(car$ps), c("price", "pred_correct", "pred_incorrect")], MARGIN = 2, FUN = mean)
+# same as above
+-->
+
+
+# Model selection / モデル選択
 
 被説明変数の予測を目的として回帰分析を行う場合，複数のモデル候補があった場合に，予測力が最も優れたモデルを一つ選択したい場合があるだろう．
 しかし，説明変数を追加すれば決定係数は必ず増加するが，それは標本に特有のデータの変動（あるいはノイズ）に過適合しているだけかもしれない．
 この過適合によって説明変数過剰のモデルが選択されることを防ぐために，モデルの説明力とモデルの簡潔さのトレードオフの間でバランスを取るための何らかの指標が必要となる．
+
+
+## AIC 
 
 実務的に広く利用されるのはAIC（赤池情報量規準）と呼ばれる規準．
 これはモデルを最尤推定することを前提として「最尤推定量の対数尤度」と「パラメタの数（＝定数項を含む説明変数の数＝K+1）」のトレードオフとして記述される．
@@ -792,8 +942,6 @@ MODEL SELECTION AND INFERENCE: FACTS AND FICTION
 https://www.cambridge.org/core/journals/econometric-theory/article/abs/model-selection-and-inference-facts-and-fiction/EF3C7D79D5AFC4C6325345A3C8E26296
 -->
 
-### Find AIC 
-
 データセットが欠損値を含むため `na.omit` 関数を使って欠損値を含む行を予めすべて削除する．
 
 ```{r aic}
@@ -803,9 +951,9 @@ lm3 <- lm(price ~ weight + ps + length + width, na.omit(car))
 AIC(lm1, lm2, lm3)
 ```
 
-2つ目のモデルの値が最も小さいが，2つ目と3つ目の差は十分に小さい（2を下回っている）ため，2つ目と3つ目のモデルはほとんど同じ予測力を持つと判断できる．
+2つ目のモデルの値が最も小さいが，2つ目と3つ目の差は十分に小さい（2を下回っている）ため，2つ目と3つ目のモデルはほとんど同程度と判断できる．
 
-### Stepwise model selection with AIC
+## Stepwise model selection with AIC
 
 考え得る説明変数をすべて含めたモデル (full model) からスタートして stepwise で最適なモデルを選択することもできる．
 
@@ -815,8 +963,8 @@ AIC(lm1, lm2, lm3)
 lm_full <- lm(price ~ weight + length + width + height + WLTC + 
                 ps + disp + hybrid + accel + kei + maker, na.omit(car))
 lm_step <- step(lm_full, trace = 0)  # trace = 1 にすると計算過程が出力される
+# AIC(lm_step)
 summary(lm_step)$coef
-AIC(lm_step)
 ```
 
 しかし符号が直感と反する変数が幾つかある．
@@ -826,21 +974,22 @@ VIFをチェックすると案の定多重共線性が生じている．
 car::vif(lm_step)
 ```
 
-### Cross validation / 交差検証
+## Cross validation / 交差検証
 
 回帰モデルの予測性能（汎化性能）を評価するための手法として交差検証はよく用いられる．
 交差検証ではデータを「推定用」と「評価用」に分割し，推定用のサブサンプルで推定されたモデルの性能を評価用のサブサンプル（out-of-sample）で評価する．
 
 - 機械学習の文脈では訓練データ・検証データ・テストデータと区別するが，ここでは検証データで最終評価を行う（テストデータのように扱う）場合を考える．
 
-評価指標には MSE (mean squared error) などが用いられる．
-MSE の標本対応は次の通り．
-$\hat{Y}_i$ は $i$ 以外のデータ（すなわち $1,2,\ldots,i-2,i-1,i+1,i+2,\ldots,n$）によって推定されたモデルのパラメタ（$\hat{\alpha}_{\ne i}, \hat{\beta}_{\ne i}$）に基づいて予測された $i$ の値である．
-
-$$ \mbox{MSE} = \frac{1}{n} \sum_{i = 1}^n (Y_i - \hat{Y}_i)^2 \quad \mbox{where} \quad \hat{Y}_i = \hat{\alpha}_{\ne i} + \hat{\beta}_{\ne i} \ X_i $$
-
 この演習で使っている `car` データはサンプルサイズが小さいため，評価用のサブサンプルはサイズ1としよう．
-つまり，以下のように Step 1, Step 2, ..., Step n を実行し，二乗誤差の平均値（あるいは中央値）を計算する．
+
+評価指標には MSE (mean squared error) を用いる．
+MSE の標本対応は次の通り．
+$\hat{Y}_i$ は $i$ 以外のデータ（すなわち $1,2,\ldots,i-2,i-1,i+1,i+2,\ldots,n$）によって推定されたモデルのパラメタ（$\hat{\alpha}_{-i}, \hat{\beta}_{-i}$）に基づいて予測された $i$ の値である．
+
+$$ \mbox{MSE} = \frac{1}{n} \sum_{i = 1}^n (Y_i - \hat{Y}_i)^2 \quad \mbox{where} \quad \hat{Y}_i = \hat{\alpha}_{-i} + \hat{\beta}_{-i} \ X_i $$
+
+つまり，以下のように Step 1, Step 2, ..., Step n を実行し，二乗誤差の平均値を計算する．
 
 - Step 1. $i=2,\ldots,n$ を推定用，$i=1$ を評価用として，二乗誤差を計算
 - Step 2. $i=1,3,\ldots,n$ を推定用，$i=2$ を評価用として，二乗誤差を計算
@@ -858,12 +1007,12 @@ $$ \mbox{MSE} = \frac{1}{n} \sum_{i = 1}^n (Y_i - \hat{Y}_i)^2 \quad \mbox{where
 car2 <- na.omit(car)
 se <- NULL
 for (i in 1:nrow(car2)) {
-  # full model 
+  # Full model 
   lm_full_i <- lm(price ~ weight + length + width + height + WLTC + 
                     ps + disp + hybrid + accel + kei + year, car2[-i,])
   pred_full_i <- as.numeric(predict(lm_full_i, newdata = car2[i, ]))  # hat{y}_i
   se_full_i <- (car2$price[i] - pred_full_i)^2  # (squared error)_i
-  # alternative model 
+  # Alternative model 
   lm_alt_i <- lm(price ~ weight + height + ps + hybrid + kei + year, car2[-i,])
   pred_alt_i <- as.numeric(predict(lm_alt_i, newdata = car2[i, ]))
   se_alt_i <- (car2$price[i] - pred_alt_i)^2
@@ -877,7 +1026,13 @@ summary(se[, c(4, 6)])
 # plot(pred_alt ~ price, se, cex = 1.5); abline(a = 0, b = 1, col = "red")
 ```
 
-MSE が小さい方のモデルは以下のように推定されている．
+単位を万円に戻すためにMSEの平方根をとると，Full model では 58 万円，Alternative model では 54 万円となる．
+
+```{r rmse}
+c(sqrt(3356.59), sqrt(2916.42))  # RMSE (Root MSE) 
+```
+
+Alternative model は以下のように推定される．
 
 ```{r min_mse}
 lm_alt <- lm(price ~ weight + height + ps + hybrid + kei + year, car2)
@@ -894,4 +1049,8 @@ car::vif(lm_alt)
 * 説明変数の二乗は `I(X1^2)` 
 * 2つの説明変数の掛け算（交差項）は `X1:X2`
 
+<!--
+cf. 
+https://rpubs.com/kuroda/report_sample1
+-->
 .
