@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Basics of Inferential Statistics"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年5月'
+date: '最終更新：2025年6月'
 output:
   html_document:
     toc: yes
@@ -691,6 +691,12 @@ In fact, these figures differ from those reported in the paper. Because a cluste
 
 $$ H_0: \mu = \mu_0 $$
 
+たとえば，標本平均 $\bar{x} = 1230$ に対して帰無仮説が $H_0: \mu = 1100$ であった（$\bar{x} > \mu_0$）とすると，我々が計算したい $p$ 値は次のように定義できるはず（あくまでイメージ）．
+
+$$ p = \Pr(\bar{X} \ge 1230) \quad \mbox{or} \quad p = 2 \times \Pr(\bar{X} \ge 1230) $$
+
+つまり，この確率を計算するためには $\bar{X}$ すなわち標本平均という確率変数が従う分布を知る必要がある．
+
 - 母集団分布は未知だがサンプルサイズが十分に大きい → 中心極限定理より $\bar{X} \sim N$
     - 母分散が既知であれば $N$，未知であれば $t$ が検定統計量が従う分布
 
@@ -698,6 +704,57 @@ $$ Z = \frac{\bar{X} - \mu_0}{\sigma/\sqrt{n}} \sim N(0, 1), \quad T = \frac{\ba
 
 - 母集団が正規分布 → 正規分布の再生性より $\bar{X} \sim N$
     - 同上
+
+$N(0,1)$ や $t(n-1)$ は，帰無仮説が正しいもとで検定統計量が従う分布である．
+
+たとえば，帰無仮説 $H_0: \mu = 1100$ が実際に正しければ，標本平均は 1100 に近い値をとる可能性が高く，標本平均の期待値は 1100 になるはずである．
+そこで，$N(1100,1)$ から乱数を生成してサイズ 5 の標本を1万個作り，その標本から得られる検定統計量がどのような分布を形成するかを観察してみよう．
+母分散 $\sigma^2$ は未知であるとすると，理論上は $t$ 分布が出現する．
+
+```{r ref_dist}
+n <- 5
+t_value <- NULL
+for (i in 1:10000) {
+  rn <- rnorm(n = n, mean = 1100)
+  t_value <- c(t_value, (mean(rn)-1100) / (sd(rn)/sqrt(n)))
+}
+hist(t_value, breaks = 200, probability = TRUE, xlim = c(-6, 6), ylim = c(0, 0.4))
+# 理論上の分布 t(n-1) を重ね描き
+x_vals <- seq(-4, 4, length.out = 100)
+lines(x_vals, dt(x_vals, df = n-1), col = "blue", lwd = 2)  # t(n-1)
+lines(x_vals, dnorm(x_vals), col = "red", lwd = 1, lty = 2)  # N (for reference)
+legend(x = "topleft", legend = c("t(n-1)", "N(0,1)"), col = c("blue", "red"), lty = 1:2, cex = 1.5)
+```
+
+もし実際に観察された検定統計量の値がこの分布の端（たとえば $t=2.4$）に位置するのであれば，それは「帰無仮説が正しいときに得られるはずの値から大きく乖離した平均値が観察されていること」を意味する．
+このとき帰無仮説とデータは矛盾していると判断し，帰無仮説を棄却する．
+
+帰無仮説とデータの乖離を測る指標として次の $p$ 値が計算される．
+
+$$ p = \Pr(T \ge 2.4) \quad \mbox{or} \quad p = 2 \times \Pr(T \ge 2.4) $$
+
+累積分布関数を用いて汎用に書けば次のようになる．
+
+$$ p = 1 - \Pr(T \le |t|) \quad \mbox{or} \quad p = 2 \times (1 - \Pr(T \le |t|)) $$
+
+```{r t_hand_plot, echo = FALSE}
+x <- seq(-5, 5, length = 1000)
+y <- dt(x, df = 4)
+plot(x, y, type = "l", lwd = 2, col = "black", ylab = "Density",
+     main = "Density function of the t-distribution (df = 4)")
+x_right <- x[x > 2.4]
+y_right <- dt(x_right, df = 4)
+polygon(c(2.41, x_right, max(x_right)), c(0, y_right, 0),
+        col = "lightblue", border = NA)
+x_left <- x[x < -2.4]
+y_left <- dt(x_left, df = 4)
+polygon(c(min(x_left), x_left, -2.41), c(0, y_left, 0),
+        col = "lightblue", border = NA)
+abline(v = c(1,-1)*2.4, col = "blue")
+text(-4, .05, labels = "1 - Pr(T < 2.4)")
+text(4, .05, labels = "1 - Pr(T < 2.4)")
+```
+
 
 ### Calculation from the sample mean and sd of the data / データの標本平均・標準偏差から計算
 
@@ -711,29 +768,11 @@ $$ H_0: \mu = 1100, \quad H_1: \mu \ne 1100 $$
 
 $$ t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}} = \frac{1230 - 1100}{170.3 / \sqrt{10}} \approx 2.41 $$
 
+$$ \Pr (T \le 2.41) = 0.98 , \quad p = 2 \times (1 - \Pr (T \le 2.41)) \approx 0.039 $$
+
 ```{r t_hand}
 t_value <- (1230 - 1100) / (170.3 / sqrt(10))  # t value
 t_value
-```
-
-$$ \Pr (T \le 2.41) = 0.98 , \quad p = 2 \times (1 - \Pr (T \le 2.41)) \approx 0.039 $$
-
-```{r t_hand_plot, echo = FALSE}
-x <- seq(-5, 5, length = 1000)
-y <- dt(x, df = 9)
-plot(x, y, type = "l", lwd = 2, col = "black", ylab = "Density",
-     main = "Density function of the t-distribution (df = 9)")
-x_right <- x[x > 2.41]
-y_right <- dt(x_right, df = 9)
-polygon(c(2.41, x_right, max(x_right)), c(0, y_right, 0),
-        col = "lightblue", border = NA)
-x_left <- x[x < -2.41]
-y_left <- dt(x_left, df = 9)
-polygon(c(min(x_left), x_left, -2.41), c(0, y_left, 0),
-        col = "lightblue", border = NA)
-abline(v = c(1,-1)*2.41, col = "blue")
-text(-4, .05, labels = "1 - Pr(T < 2.41)")
-text(4, .05, labels = "1 - Pr(T < 2.41)")
 ```
 
 ```{r t_hand_p_value}
