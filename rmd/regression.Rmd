@@ -50,7 +50,7 @@ car <- read.csv("https://raw.githubusercontent.com/kurodaecon/dasp/refs/heads/ma
 str(car)
 ```
 
-このページ全体を通した分析の目的は「車両の価格と属性の関係を定量的に記述すること」としよう．
+このページ全体を通した分析の目的は「車両の価格と属性の関係を定量的に記述すること」（+α）としよう．
 因果推論は目的ではない．
 
 ## Summary stats 
@@ -229,7 +229,7 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 -->
 
-$Q$ は $\hat \alpha, \hat \beta$ のいずれについても下に凸の関数であるので，$Q$ をそれぞれで微分して 0 とおく．
+$Q$ は $\alpha, \beta$ のいずれについても下に凸の関数であるので，$Q$ をそれぞれで微分して 0 とおく．
 
 $$ \frac{\partial Q}{\partial \alpha} = -2 \sum_i (Y_i - \alpha - \beta X_i) = 0 $$
 
@@ -319,7 +319,7 @@ newton_method(initial = 10)
 回帰分析の場合，目的関数は残差二乗和 $Q$ であり，その引数は推定したい回帰係数パラメタ $(\alpha, \beta)$ となる．
 
 $$ (\hat{\alpha}, \hat{\beta}) = \arg \min_{\alpha, \beta} Q(\alpha, \beta) $$
-$$ Q (\alpha, \beta) := \sum_i \hat{u}_i^2 = \sum_i (Y_i - \alpha - \beta X_i)^2 $$
+$$ Q (\alpha, \beta) := \sum_i u_i^2 = \sum_i (Y_i - \alpha - \beta X_i)^2 $$
 
 ```{r reg_optim}
 sum_of_squared_residuals <- function (coef_vector) {
@@ -388,8 +388,9 @@ $$ \hat{\sigma}^2 = s^2 = \frac{1}{n - 2} \sum \hat{u}_i^2 $$
 
 ```{r reg_var}
 n <- nrow(car)  # sample size 
-sum(res^2) / (n - 2)  # estimated sigma^2
-beta_se <- sqrt(sum(res^2)/(n - 2) / s_xx)  # standard error
+s2 <- sum(res^2) / (n - 2)  # estimated sigma^2
+s2
+beta_se <- sqrt(s2 / s_xx)  # standard error
 beta_se
 ```
 
@@ -405,6 +406,22 @@ $$ p = 2 \times [ 1 - \Pr(T \le |t|) ] $$
 curve(dt(x, df = n - 2), from = -20, to = 20, main = "Density of t-distribution")
 abline(v = beta_hat / beta_se * c(-1, 1), col = "red")
 text(c(-17, 17), 0.02, labels = c("Pr(T < -15.1)", "Pr(T > 15.1)"))
+```
+
+$t$ 値が大きすぎるので上の図の中で $\Pr(T > 15.1)$ の領域が見えないが，拡大すると以下の青色の領域の面積が片側 $p$ 値となる．
+
+```{r pvalue_in_dist_zoomup, echo = FALSE}
+curve(dt(x, df = n - 2), from = 15, to = 18, main = "Density of t-distribution", lwd = 2)
+x_lower <- 15.1
+x_upper <- 18
+x_vals <- seq(x_lower, x_upper, length.out = 100)
+y_vals <- dt(x_vals, df = n - 2)
+polygon(c(x_lower, x_vals, x_upper), c(0, y_vals, 0), col = "skyblue", border = NA)
+```
+
+上の青の領域の面積を2倍したものが $p$ 値．
+
+```{r pvalue_in_dist_p_twosided}
 2 * (1 - pt(q = beta_hat / beta_se, df = n - 2))
 ```
 
@@ -440,6 +457,8 @@ c(qt(p = 0.975, df = 10000), qnorm(p = 0.975))
 ```
 
 ### MC Simulation 
+
+回帰係数パラメタについて帰無仮説を $\beta=0$ としたときの検定における第一種の過誤について，シミュレーションを通じて考えよう．
 
 $\beta = 0$ の設定でデータを生成し，その回帰係数の $t$ 値の分布と第一種の過誤を確認してみよう．
 
@@ -538,9 +557,14 @@ summary(lm(price ~ weight + ps, car))
 
 ### Example of perfect multico. / 完全な多重共線性の例
 
+$$ \mbox{Price} = \alpha + \beta_1 \ \mbox{Weight} + \beta_2 \ (2 \times \mbox{Weight}) + u $$
+
 ```{r multico_perfect}
-lm(price ~ weight + I(2 * weight), car)$coef
-cor(car$weight, 2 * car$weight)
+car$w2 <- 2 * car$weight
+head(car$weight)
+head(car$w2)
+cor(car$weight, car$w2)
+lm(price ~ weight + w2, car)$coef
 ```
 
 R では，該当する変数（のうち一つ）が自動的に drop される．
@@ -606,7 +630,7 @@ car::vif(lm(price ~ weight + length + width, car))
 lm(price ~ weight + ps, car)$coef
 ```
 
-上の結果から「$|0.24| < |0.78|$ なので `ps` の方が `weight` の分散をより説明する」と結論付けることはできない．
+上の結果から「$|0.24| < |0.78|$ なので `ps` の方が `price` の分散をより説明する」と結論付けることはできない．
 
 なぜなら，係数の大きさは変数のスケール（ばらつき）に依存するから．
 
@@ -630,6 +654,8 @@ c(0.24 * sd(car$weight), 0.78 * sd(car$ps, na.rm = TRUE))
 car$price_s <- (car$price - mean(car$price)) / sd(car$price)
 car$weight_s <- (car$weight - mean(car$weight)) / sd(car$weight)
 car$ps_s <- (car$ps - mean(car$ps, na.rm = TRUE)) / sd(car$ps, na.rm = TRUE)
+c(mean(car$price_s), mean(car$weight_s), mean(car$ps_s, na.rm = TRUE))
+c(sd(car$price_s), sd(car$weight_s), sd(car$ps_s, na.rm = TRUE))
 lm(price_s ~ weight_s + ps_s, car)$coef
 ```
 
@@ -692,7 +718,6 @@ text(x = 1.2, y = 270, labels = expression(bar(Y) == 326), cex = 1.5)
 ```{r reg_dummy_ifelse}
 car$recent <- ifelse(car$year >= 2022, 1, 0)  # = 1 if recent model 
 table(car$recent)
-summary(lm(price ~ weight + recent, car))
 lm(price ~ weight + recent, car)$coef
 ```
 
@@ -783,8 +808,9 @@ $$ \beta = \frac{\partial \log(y)}{\partial x} = \frac{\partial \log(y)}{\partia
 よって，「1 kg重い自動車の価格は 0.13 %高い」と解釈できる．
 
 - なお，上は $\beta$ が0に近い値（たとえば 0.01 や 0.001 くらいのオーダー）を取る場合にはよい近似となる．0から離れた値（たとえば 0.5 またはそれ以上）を取る場合は $\exp(\beta) - 1$ で厳密に計算するとよい．
+- $y = f(x) = \exp(\alpha + \beta x)$ とすると，下の式より「$x$ が1単位大きな値を取る時に $y$ が $(100 \times [\exp(\beta)-1])$ % 高い値を取る」と計算できる．
 
-$$ \Delta \% := \frac{y_{x+1} - y_{x}}{y_{x}} = \frac{\exp(\alpha + \beta (x+1)) - y_{x}}{y_{x}} = \frac{y_{x} \cdot \exp(\beta) - y_{x}}{y_{x}} = \exp(\beta) - 1 $$
+$$ \Delta \% := \frac{f(x+1) - f(x)}{f(x)} = \frac{\exp(\alpha + \beta (x+1)) - f(x)}{f(x)} = \frac{f(x) \cdot \exp(\beta) - f(x)}{f(x)} = \exp(\beta) - 1 $$
 
 ## Log-log model 
 
@@ -881,11 +907,15 @@ predict(lm1, newdata = data.frame(weight = 1000, ps = 100))
 
 Log-linear model の場合，予測値を元の変数のスケールに戻すには次のようにする．
 
+- Step 1. $y \to \log y$ 
+- Step 2. $\log y = \alpha + \beta x + u$ 
+    - 仮定：（$y$ ではなく）$\log y$ は（$x$ で条件付けたもとで）正規分布に従う．
+- Step 3. $\hat{\log y} = \hat{\alpha} + \hat{\beta} x$
+    - 当てはめ値は $\hat{\log{y}}$ であって $\log{\hat{y}}$ ではないことに注意．
+- Step 4. 
 $$ \hat{y} = \exp \left( \hat{\log{y}} + \frac{\sigma^2}{2} \right) $$
-
-- Log-linear model の当てはめ値は $\hat{\log{y}}$ であって $\log{\hat{y}}$ ではないことに注意．
-- $\sigma^2$ は誤差分散．真の値は未知なので残差の分散（正確には，誤差分散の不偏推定量になるように調整したもの）で代用する．$K$ は定数項を除いた説明変数の数．
-
+    - この式は $z \sim N(\mu, \sigma^2)$ のとき $E(\exp z) = \exp(\mu + \sigma^2/2)$ となることから導出される．
+    - $\sigma^2$ は誤差分散．真の値は未知なので残差の分散（正確には，誤差分散の不偏推定量になるように調整したもの）で代用する．$K$ は定数項を除いた説明変数の数．
 $$ \hat{\sigma}^2 = \frac{1}{n - K - 1} \sum_{i = 1}^n \hat{u}_i^2 \quad \mbox{where} \quad \hat{u}_i = Y_i - \hat{Y}_i $$
 
 ```{r log_linear_exp}
