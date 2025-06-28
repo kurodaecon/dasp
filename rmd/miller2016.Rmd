@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Miller et al. (AJPS 2016)"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年5月'
+date: '最終更新：2025年6月'
 output:
   html_document:
     toc: yes
@@ -158,13 +158,20 @@ lm_lib <- lm(con_index_dem4 ~ Conservative + polknow_alt + trust_comb + extraver
 推定結果（一部の変数のみ）をまとめて表示する．
 
 ```{r h1_modelsum, warning = FALSE, message = FALSE}
+# install.packages("huxtable")
+library(huxtable)
+huxtable::huxreg("Crv. Conspiracy" = lm_cons, "Lib. Conspiracy" = lm_lib,
+                 coefs = c("Conservative", "female", "age_alt", "educ_alt", "income"),
+                 statistics = c("N" = "nobs", "Adj. R2" = "adj.r.squared"))
+```
+<!--
 # install.packages("modelsummary")  # run only the first time 
 library(modelsummary)
 msummary(list(lm_cons, lm_lib), gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", 
          stars = TRUE, coef_omit = c(5:16, 21:22))
-```
+-->
 
-`Conservative` ダミーの回帰係数は，「保守派が好む陰謀論」をアウトカムとした場合の方が大きい．
+`Conservative` ダミーの回帰係数の絶対値は，「保守派が好む陰謀論」をアウトカムとした場合の方が大きい．
 
 注：論文では Seemingly Unrelated Regression と呼ばれる分析手法を用いて `Conservative` ダミーの回帰係数の大きさを統計的に比較している．
 <!--
@@ -212,13 +219,18 @@ lm_lib_h2 <- lm(con_index_dem4 ~ Conservative + polknow_alt + Conservative:polkn
 推定結果（一部の変数のみ）をまとめて表示する．
 
 ```{r h2_modelsum, warning = FALSE}
+huxtable::huxreg("Crv. Conspiracy" = lm_cons_h2, "Lib. Conspiracy" = lm_lib_h2,
+                 coefs = c("Conservative", "polknow_alt", "Conservative:polknow_alt"),
+                 statistics = c("N" = "nobs", "Adj. R2" = "adj.r.squared"))
+```
+<!--
 msummary(list(lm_cons_h2, lm_lib_h2), gof_omit = "AIC|BIC|Log.Lik.|F|RMSE", 
          stars = TRUE, coef_omit = c(5:16, 21:22))
-```
+-->
 
 この分析において重要な部分は次の箇所：
 
-$$ \mbox{Cons. conspiracy} = - 0.030 (\mbox{Self-id Cons.}) - 0.296 (\mbox{knowledge}) + \\ 0.362 (\mbox{Self-id Cons.} \times \mbox{knowledge}) + \cdots $$
+$$ \mbox{Conservative conspiracy} = - 0.030 (\mbox{Self-id Cons.}) - 0.296 (\mbox{knowledge}) + \\ 0.362 (\mbox{Self-id Cons.} \times \mbox{knowledge}) + \cdots $$
 
 上の部分（$\cdots$ より前の部分）に限定すれば，アウトカム変数は次のように予測される．
 
@@ -240,7 +252,7 @@ $$ \mbox{Cons. conspiracy} = - 0.030 (\mbox{Self-id Cons.}) - 0.296 (\mbox{knowl
 
 Stata: `marginsplot` ect. 
 
-```{r h2_marginplot}
+```{r h2_marginplot, message = FALSE}
 # install.packages("sjPlot")
 library(sjPlot)
 plot_model(model = lm_cons_h2, type = "pred", terms = c("polknow_alt", "Conservative"), ci.lvl = 0.95)
@@ -251,6 +263,10 @@ plot_model(model = lm_lib_h2, type = "pred", terms = c("polknow_alt", "Conservat
 
 注：論文のFigure 1とは信頼区間が僅かに異なる．
 
+注意事項
+
+- このような分析は「どのような人が陰謀論を信じているか」（相関的な関係）を記述するものである．「何らかの介入によって人の属性を変化させたときに，陰謀論を信じる確率や度合いがどの程度変わるか」（因果効果）を推定しているものではない．たとえば，知識水準の係数は「他の要因をコントロールしたもとで，知識水準が高い人は低い人と比べてどの程度陰謀論を信じる（または信じない）傾向にあるか」を表しており，「調査対象者に政治に関する教育を行ったときに陰謀論を信じる確率・度合いがどの程度変化するか」は表さない．
+- [Feigenberg, Ost, and Qureshi (REStat 2023)](https://doi.org/10.1162/rest_a_01361) によれば，上の定式化は適切でない可能性がある．
 
 
 # Hypothesis 3 / 仮説3：イデオロギーに一貫した知識の交互作用効果が信頼によって消える

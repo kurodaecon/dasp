@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Organizing and Visualizing Data"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年5月'
+date: '最終更新：2025年6月'
 output:
   html_document:
     toc: yes
@@ -70,6 +70,9 @@ Important function in `dplyr` (pronounced "dee-ply-er") package:
 * `group_by` ... 行をグルーピング
    * Note: `group_by` はそれ単体で使われるわけではなく，通常は `summarise` 関数と併用される
 
+これらの関数は `%>%` で表される「パイプ」と呼ばれる演算子と組み合わせて利用されることが多い．
+このパイプは `tidyverse` パッケージ群を構成するパッケージの一つ `magrittr` によって提供されているが，この授業では細かいことを理解する必要はない．
+
 <!--
 * `filter` ... fetch only the subset (rows) we're interested in
 * `select` ... select one or multiple columns (variables)
@@ -115,12 +118,57 @@ beatles <- tibble::tibble(
 beatles
 ```
 
+## Pipe `%>%` 
+
+`tidyverse` スタイルのデータハンドリングでは「パイプ（演算子）」と呼ばれるものが用いられる．
+
+`%>%` （大なり記号をパーセント記号で挟んだもの）がパイプと呼ばれる．
+
+「`data %>% function`」の形で使用し，パイプの前にある `data` をパイプの後の関数に渡す機能を持つ．
+
+- `x %>% f()` は `f(x)` と（概ね）同じ．デフォルトでは関数の第一引数に渡す．
+- `x %>% f(z)` は `f(x, z)` と（概ね）同じ．
+- `z %>% f(x, .)` は `f(x, z)` と（概ね）同じ．第一引数以外の引数に渡す際は `.` を使う．
+
+```{r pipe}
+mean(x = 1:2)  # これまでの書き方．mean(c(1, 2)) と同じ
+1:2 %>% mean(x = .)  # "." でデータを受ける
+1:2 %>% mean()  # . が1つ目の引数なら省略可
+1:2 %>% mean  # () も省略可
+c(1, 2, NA) %>% mean(na.rm = TRUE)  # option も指定可
+```
+
+逐次的な処理をパイプを用いて表現することができる．
+
+```{r pipe_sd}
+sd(1:2)
+round(sd(1:2), 2)
+1:2 %>% sd %>% round(2)
+```
+
+以下のようにネストが深い場合はパイプを使うことで処理の順序が理解しやすくなる．
+
+$$ \frac{1}{n} \sum_i \log_{10} \sqrt{ |x_i| } \quad \mbox{を小数第2位まで表示} $$
+
+```{r pipe_nest}
+round(mean(log(sqrt(abs(rnorm(n = 1000, mean = 1))), base = 10), na.rm = TRUE), 2)
+rnorm(n = 1000, mean = 1) %>% abs %>% sqrt %>% log(base = 10) %>% mean(na.rm = TRUE) %>% round(2)
+```
+
+要するに，パイプを使う目的は，全く新しい種類の計算をすることではなく，既存の計算処理を順序通りに記述する（パイプライン処理する）ことにある．
+
+- コードの可読性が高まることで保守・デバッグが容易になるのに加え，計算内容を第三者が検証するうえでも役立つ．
+- このアイデアはR特有ではなく，UNIXのパイプなど先行する機能に着想を得て実装されたものと思われる．
+- パイプは `tidyverse` で提供される関数と組み合わせて以下のサブセクションのように使われることが一般的．
+
 ## `filter` 
 
 残す行（observation）の条件を指定する．
 
 ```{r beatles_filter}
-beatles %>% filter(born >= 1941)
+beatles %>% filter(born >= 1941)  # 一般的な書き方
+filter(beatles, born >= 1941)  # 計算結果は同じ
+beatles[beatles$born >= 1941, ]  # もちろんこれも同じ
 ```
 
 `filter` を適用した後のデータセットを新しいオブジェクトに割り当てるには `<-` を用いる（上書きも可；以下同様）．
@@ -269,177 +317,6 @@ ggplot(data = beatles, mapping = aes(x = born, y = height)) +
   geom_point() + 
   theme_classic()
 ```
-
-
-
-
-# Example of `swiss` data 
-
-R をインストールした際にビルトインされているデータセットは `data()` で確認できる．
-
-そのうちの一つ「`swiss`」データを用いて `tidyverse` と `ggplot2` の基本的な使い方を確認する．
-
-* 理解しやすいように，`swiss` データセットの最初の6行（provinces）と最初の4列（variables）だけを切り出して，「`swiss2`」という名前の新しいデータセットとして定義する．
-
-<!--
-Learn the basic usage of the tidyverse using the `swiss` data built-in to R.
-
-You can find the other built-in datasets using `data()`.
-
-For ease of understanding, we cut out only the first six rows (provinces) and the first four columns (variables) of the `swiss` dataset and define it as a new dataset named `swiss2`.
--->
-
-```{r create_swiss2}
-swiss2 <- swiss[1:6, 1:4]  # Extract a portion of `swiss` dataset
-swiss2
-```
-
-## `filter`, `select`, `mutate`, `rename`, and `summarise` 
-
-```{r swiss_filter_etc}
-swiss2 %>% filter(Fertility > 80)  # Keep only provinces with a "Fertility" greater than 80
-filter(swiss2, Fertility > 80)  # same as above
-swiss2 %>% filter(Fertility > 80, Examination > 10)  # multiple conditions
-swiss2 %>% select(Fertility, Examination)  # select specified variables
-swiss2 %>% mutate(Exam_Edu = (Examination + Education)/2)  # creates new variable as the mean
-swiss2 %>% rename(Exam = Examination)  # new name is `Exam`, old name is `Examination`
-swiss2 %>% summarise(mean_fert = mean(Fertility), sd_fert = sd(Fertility), 
-                     median_fert = median(Fertility), mean_educ = mean(Education))
-```
-
-`summarise` を使わないで計算する場合は以下のようになる．
-
-```{r swiss_sum_primitive_function}
-mean(swiss2$Fertility); sd(swiss2$Fertility); median(swiss2$Fertility); mean(swiss2$Education)
-```
-
-
-
-## `group_by` and `summarise` 
-
-出生率が高いか低いかでグループを分けて，そのグループごとに平均値や分散などを計算することもできる．
-
-* 出生率が高いかどうかを示す `high_fertility_province` という変数を作成し，それを `group_by` 関数に使用する．
-
-<!--
-We can also compare states with high fertility rates with provinces with low fertility rates. To do so, add a variable called `high_fertility_province` that indicates whether the province has a high fertility rate or not, and use the `group_by` function with this variable. 
--->
-
-```{r swiss_group_by}
-swiss2 %>%
-  mutate(high_fertility_province = Fertility > mean(Fertility)) %>%
-  group_by(high_fertility_province) %>%
-  summarise(mean_fert = mean(Fertility), mean_exam = mean(Examination))
-```
-
-先ほどと同様に `group_by` や `summarise` 関数を使わずに同じものを計算しようとすると以下のようになる．
-`group_by` 関数の便利さと可読性がおわかりいただけるだろう．
-
-```{r swiss_sum_without_group_by}
-mean(swiss2$Fertility[swiss2$Fertility > mean(swiss2$Fertility)])
-mean(swiss2$Fertility[swiss2$Fertility <= mean(swiss2$Fertility)])
-mean(swiss2$Examination[swiss2$Fertility > mean(swiss2$Fertility)])
-mean(swiss2$Examination[swiss2$Fertility <= mean(swiss2$Fertility)])
-```
-
-上記の操作を行ったデータセットを今後の分析に使用する場合，元のデータセットを上書きしてもよいし，新しいデータセットを作成してもよいが，上書きすると元のデータはR上から消えるので注意．
-
-<!--
-If the dataset organized as described above is to be used for future analysis, the original dataset may be overwritten or a new dataset may be created (create a new object called `swiss2_new`).
-
-Overwriting the original dataset (`swiss2`) will cause the original dataset to disappear from R, so I recommend assigning it to a new object (`swiss2_new`).
--->
-
-```{r swiss_override}
-swiss2_new <- swiss2 %>% filter(Fertility > 90)  # create new
-swiss2 <- swiss2 %>% filter(Fertility > 90)  # overwrite
-```
-
-
-## `left_join` 
-
-2つのデータセットがある場合，`left_join` 関数を使って統合することができる．
-
-例：`swiss` データに人口の変数を統合する．
-
-<!--
-Two datasets can be merged using the `left_join` function. For example, the dataset swiss2_pop contains two variables: province name and population. 
--->
-
-* マージする key として province の名前を用いる
-* `swiss` データセットには province の名前が列としてではなく rownames として記録されているので，統合される側のデータに province の名前を表す `prov` 変数を作成
-
-```{r merge_create_swiss2}
-swiss2 <- swiss[1:6, 1:4]
-swiss2b <- swiss2 %>% mutate(prov = rownames(swiss2))  # add province names as a column "prov"
-swiss2b
-```
-
-（仮想の）人口変数を含む `swiss2_pop` というデータセットを作成する．
-
-```{r merge_create_pop_data}
-swiss2_pop <- data.frame(prov = c("Courtelary", "Delemont", "Franches-Mnt", 
-                                  "Moutier", "Neuveville", "Porrentruy"),
-                         pop = c(100, 200, 300, 400, 500, 600))
-swiss2_pop
-```
-
-統合．
-
-```{r merge_left_join}
-swiss2b %>% left_join(swiss2_pop, by = "prov")
-```
-
-上記の例では，`swiss2b` というデータセットの州の並びと `swiss2_pop` というデータセットの州の並びが同じだったが，異なっている場合でもマージ可能．
-また，`swiss2_pop` にデータが欠損している州があったとしてもマージ可能．
-
-<!--
-In the above example, the state order in the dataset named `swiss2b` and the state order in the dataset named `swiss2_pop` are the same, but they can be merged even if they are different. It is also possible to merge even if there is not all the data in `swiss2_pop`. 
--->
-
-```{r merge_left_join2}
-swiss2_pop <- data.frame(prov = c("Porrentruy", "Courtelary", "Delemont", 
-                                  "Franches-Mnt", "Neuveville"),
-                         pop = c(600, 100, 200, 300, 500))
-swiss2_pop
-swiss2b %>% left_join(swiss2_pop, by = "prov")
-```
-
-## Scatter plot using `ggplot2` 
-
-ビートルズのデータと同様に散布図を描いてみる．
-
-```{r swiss_point}
-ggplot(data = swiss, mapping = aes(x = Education, y = Fertility)) + 
-  geom_point()
-```
-
-マーカーの色をカトリック教徒の割合（%）で指定するには `aes` 内で指定する．
-
-```{r swiss_point_maker}
-ggplot(data = swiss, mapping = aes(x = Education, y = Fertility, color = Catholic)) + 
-  geom_point()
-```
-
-`swiss` データを加工して描画に使用する場合は下のようにコーディングしてもよい．
-このとき，`ggplot` 関数の一つ目の引数 `data` として `ggplot` 関数の直前のデータが指定される．
-
-```{r swiss_point_filter}
-swiss %>% 
-  filter(Education <= 20) %>% 
-  ggplot(mapping = aes(x = Education, y = Fertility)) + 
-  geom_point()
-```
-
-データポイントにフィットする曲線のレイヤーを追加する．
-
-```{r swiss_point_smooth, message = FALSE}
-ggplot(data = swiss, mapping = aes(x = Education, y = Fertility)) + 
-  geom_point() + 
-  geom_smooth()
-```
-
-
 
 
 # Example of Titanic data 
@@ -668,6 +545,7 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclas
   theme_classic()
 ```
 
+<!--
 性別ごとに独立した散布図を作成してそれぞれのパネルを並べた図を作ることもできる．
 
 * `facet_wrap(~ グループ変数)` を利用
@@ -682,7 +560,205 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclas
   scale_color_brewer(palette = "Dark2") +
   theme_classic()
 ```
+-->
 
 
+# Pipe in base R 
 
-.
+Base R （Rインストール時にbuilt-inされている標準パッケージのみを使用し，追加のパッケージを手動でインストールしない状態）でも pipe が使える．
+
+- これは比較的新しい機能．`tidyverse` スタイルの `%>%` を用いたデータハンドリングが普及したことを受けて2021年頃に実装された．
+- Base R の pipe は `|>` と書く．
+
+## Pipe `|>` 
+
+`|>` は `%>%` と同様に直前の値を関数の第一引数に渡す．
+
+```{r baser_pipe}
+1:2 |> mean(x = _)  # "_" でデータを受ける
+1:2 |> mean()  # _ が1つ目の引数なら省略可（注：カッコは省略不可）
+c(1, 2, NA) |> mean(na.rm = TRUE)  # option も指定可
+titanic |> head(2)
+titanic[, c("survived", "age")] |> cor(use = "complete.obs") |> round(2)
+```
+
+## `subset` corresponding to `filter` 
+
+```{r baser_pipe_filter}
+titanic %>% filter(age >= 75)
+titanic |> subset(age >= 75)
+```
+
+## `transform` corresponding to `mutate` 
+
+```{r baser_pipe_mutate}
+titanic %>% mutate(family = sibsp + parch) %>% head(2)
+titanic |> transform(family = sibsp + parch) |> head(2)
+```
+
+## `aggregate` corresponding to `group_by` + `summarise` 
+
+```{r baser_pipe_groupby}
+titanic %>% group_by(pclass) %>% summarise(survived_rate = mean(survived))
+titanic |> aggregate(survived ~ pclass, data = _, FUN = mean)
+```
+
+注：上記の対比だけを見ると `tidyverse` スタイルのデータ処理が不要であるかのように見えるかもしれないが，実際にはそんなことはない．
+上記のような単純な処理であれば Base R の標準的な関数だけでも事足りる場合もあるが，複雑な処理をする上では `tidyverse` を使った方がよい．
+
+
+<!--
+# Example of `swiss` data 
+
+R をインストールした際にビルトインされているデータセットは `data()` で確認できる．
+
+そのうちの一つ「`swiss`」データを用いて `tidyverse` と `ggplot2` の基本的な使い方を確認する．
+
+* 理解しやすいように，`swiss` データセットの最初の6行（provinces）と最初の4列（variables）だけを切り出して，「`swiss2`」という名前の新しいデータセットとして定義する．
+
+Learn the basic usage of the tidyverse using the `swiss` data built-in to R.
+
+You can find the other built-in datasets using `data()`.
+
+For ease of understanding, we cut out only the first six rows (provinces) and the first four columns (variables) of the `swiss` dataset and define it as a new dataset named `swiss2`.
+
+```{r create_swiss2}
+swiss2 <- swiss[1:6, 1:4]  # Extract a portion of `swiss` dataset
+swiss2
+```
+
+## `filter`, `select`, `mutate`, `rename`, and `summarise` 
+
+```{r swiss_filter_etc}
+swiss2 %>% filter(Fertility > 80)  # Keep only provinces with a "Fertility" greater than 80
+filter(swiss2, Fertility > 80)  # same as above
+swiss2 %>% filter(Fertility > 80, Examination > 10)  # multiple conditions
+swiss2 %>% select(Fertility, Examination)  # select specified variables
+swiss2 %>% mutate(Exam_Edu = (Examination + Education)/2)  # creates new variable as the mean
+swiss2 %>% rename(Exam = Examination)  # new name is `Exam`, old name is `Examination`
+swiss2 %>% summarise(mean_fert = mean(Fertility), sd_fert = sd(Fertility), 
+                     median_fert = median(Fertility), mean_educ = mean(Education))
+```
+
+`summarise` を使わないで計算する場合は以下のようになる．
+
+```{r swiss_sum_primitive_function}
+mean(swiss2$Fertility); sd(swiss2$Fertility); median(swiss2$Fertility); mean(swiss2$Education)
+```
+
+## `group_by` and `summarise` 
+
+出生率が高いか低いかでグループを分けて，そのグループごとに平均値や分散などを計算することもできる．
+
+* 出生率が高いかどうかを示す `high_fertility_province` という変数を作成し，それを `group_by` 関数に使用する．
+
+We can also compare states with high fertility rates with provinces with low fertility rates. To do so, add a variable called `high_fertility_province` that indicates whether the province has a high fertility rate or not, and use the `group_by` function with this variable. 
+
+```{r swiss_group_by}
+swiss2 %>%
+  mutate(high_fertility_province = Fertility > mean(Fertility)) %>%
+  group_by(high_fertility_province) %>%
+  summarise(mean_fert = mean(Fertility), mean_exam = mean(Examination))
+```
+
+先ほどと同様に `group_by` や `summarise` 関数を使わずに同じものを計算しようとすると以下のようになる．
+`group_by` 関数の便利さと可読性がおわかりいただけるだろう．
+
+```{r swiss_sum_without_group_by}
+mean(swiss2$Fertility[swiss2$Fertility > mean(swiss2$Fertility)])
+mean(swiss2$Fertility[swiss2$Fertility <= mean(swiss2$Fertility)])
+mean(swiss2$Examination[swiss2$Fertility > mean(swiss2$Fertility)])
+mean(swiss2$Examination[swiss2$Fertility <= mean(swiss2$Fertility)])
+```
+
+上記の操作を行ったデータセットを今後の分析に使用する場合，元のデータセットを上書きしてもよいし，新しいデータセットを作成してもよいが，上書きすると元のデータはR上から消えるので注意．
+
+If the dataset organized as described above is to be used for future analysis, the original dataset may be overwritten or a new dataset may be created (create a new object called `swiss2_new`).
+
+Overwriting the original dataset (`swiss2`) will cause the original dataset to disappear from R, so I recommend assigning it to a new object (`swiss2_new`).
+
+```{r swiss_override}
+swiss2_new <- swiss2 %>% filter(Fertility > 90)  # create new
+swiss2 <- swiss2 %>% filter(Fertility > 90)  # overwrite
+```
+
+
+## `left_join` 
+
+2つのデータセットがある場合，`left_join` 関数を使って統合することができる．
+
+例：`swiss` データに人口の変数を統合する．
+
+Two datasets can be merged using the `left_join` function. For example, the dataset swiss2_pop contains two variables: province name and population. 
+
+* マージする key として province の名前を用いる
+* `swiss` データセットには province の名前が列としてではなく rownames として記録されているので，統合される側のデータに province の名前を表す `prov` 変数を作成
+
+```{r merge_create_swiss2}
+swiss2 <- swiss[1:6, 1:4]
+swiss2b <- swiss2 %>% mutate(prov = rownames(swiss2))  # add province names as a column "prov"
+swiss2b
+```
+
+（仮想の）人口変数を含む `swiss2_pop` というデータセットを作成する．
+
+```{r merge_create_pop_data}
+swiss2_pop <- data.frame(prov = c("Courtelary", "Delemont", "Franches-Mnt", 
+                                  "Moutier", "Neuveville", "Porrentruy"),
+                         pop = c(100, 200, 300, 400, 500, 600))
+swiss2_pop
+```
+
+統合．
+
+```{r merge_left_join}
+swiss2b %>% left_join(swiss2_pop, by = "prov")
+```
+
+上記の例では，`swiss2b` というデータセットの州の並びと `swiss2_pop` というデータセットの州の並びが同じだったが，異なっている場合でもマージ可能．
+また，`swiss2_pop` にデータが欠損している州があったとしてもマージ可能．
+
+In the above example, the state order in the dataset named `swiss2b` and the state order in the dataset named `swiss2_pop` are the same, but they can be merged even if they are different. It is also possible to merge even if there is not all the data in `swiss2_pop`. 
+
+```{r merge_left_join2}
+swiss2_pop <- data.frame(prov = c("Porrentruy", "Courtelary", "Delemont", 
+                                  "Franches-Mnt", "Neuveville"),
+                         pop = c(600, 100, 200, 300, 500))
+swiss2_pop
+swiss2b %>% left_join(swiss2_pop, by = "prov")
+```
+
+## Scatter plot using `ggplot2` 
+
+ビートルズのデータと同様に散布図を描いてみる．
+
+```{r swiss_point}
+ggplot(data = swiss, mapping = aes(x = Education, y = Fertility)) + 
+  geom_point()
+```
+
+マーカーの色をカトリック教徒の割合（%）で指定するには `aes` 内で指定する．
+
+```{r swiss_point_maker}
+ggplot(data = swiss, mapping = aes(x = Education, y = Fertility, color = Catholic)) + 
+  geom_point()
+```
+
+`swiss` データを加工して描画に使用する場合は下のようにコーディングしてもよい．
+このとき，`ggplot` 関数の一つ目の引数 `data` として `ggplot` 関数の直前のデータが指定される．
+
+```{r swiss_point_filter}
+swiss %>% 
+  filter(Education <= 20) %>% 
+  ggplot(mapping = aes(x = Education, y = Fertility)) + 
+  geom_point()
+```
+
+データポイントにフィットする曲線のレイヤーを追加する．
+
+```{r swiss_point_smooth, message = FALSE}
+ggplot(data = swiss, mapping = aes(x = Education, y = Fertility)) + 
+  geom_point() + 
+  geom_smooth()
+```
+-->
