@@ -1,13 +1,14 @@
 ---
 title: "Data Analysis Using Statistical Packages: Regression Analysis"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年6月'
+date: '最終更新：2025年7月'
 output:
   html_document:
     toc: yes
     toc_float: yes
     number_sections: yes
     self_contained: true
+    css: "diagrammer-fix.css"
   pdf_document:
     toc: yes
 # runtime: shiny
@@ -408,7 +409,8 @@ abline(v = beta_hat / beta_se * c(-1, 1), col = "red")
 text(c(-17, 17), 0.02, labels = c("Pr(T < -15.1)", "Pr(T > 15.1)"))
 ```
 
-$t$ 値が大きすぎるので上の図の中で $\Pr(T > 15.1)$ の領域が見えないが，拡大すると以下の青色の領域の面積が片側 $p$ 値となる．
+$t$ 値が大きすぎるので上の図の中で $\Pr(T > 15.1)$ の領域が見えないが，拡大すると以下のようになる．
+青色の領域の面積が片側 $p$ 値となる．
 
 ```{r pvalue_in_dist_zoomup, echo = FALSE}
 curve(dt(x, df = n - 2), from = 15, to = 18, main = "Density of t-distribution", lwd = 2)
@@ -553,6 +555,102 @@ summary(lm(price ~ weight + ps, car))
 - 重回帰分析によって因果効果を推定するためには，処置変数の条件付き独立（かなり大雑把に言うと，交絡変数がすべてコントロール変数として正確な関数形でモデルに含められていること）が成立していなければならず，この仮定を社会経済データを用いた実証分析において満たすことは容易ではない．
 
 
+## $X \to Y$ の効果（のようなもの）を推定したい場合
+
+観察データに基づく回帰分析で $X \to Y$ の因果効果を推定するという目標を達成することは通常困難ではあるが，適切なコントロール変数を加えることで少しでも目標に近づこうとする試みは社会科学一般で広くみられる．
+
+自動車価格の分析においては因果推論を目的としないので，このサブセクションでは仮想データでのシミュレーションのみ行う．
+
+### Confounder / 交絡変数
+
+「$X \leftarrow W \to Y$」のような変数 $W$ を交絡変数（または交絡因子）と呼ぶ．
+このような変数はコントロールしなければならない．
+
+例：
+
+```{r example_for_confounder, echo = FALSE, out.width = "60%"}
+knitr::include_graphics("regression_confounder.png")
+```
+
+```{r confounder}
+set.seed(0)
+w <- rnorm(n = 100)
+x <- 5 * w + rnorm(n = 100)
+y <- 10 * w + 2 * x + rnorm(n = 100, sd = 5)
+# pairs(data.frame(x, y, w))
+summary(lm(y ~ x))$coef
+summary(lm(y ~ x + w))$coef
+```
+
+- $W$ をコントロールしない場合：$X$ の係数の推定値にバイアスが生じる（$X$ と $Y$ が共有する $W$ の変分も含めた値が推定されるため）
+- $W$ をコントロールする場合：$X$ の係数の推定値にバイアスは見られない
+
+<!--
+```{r example_for_confounder_old, echo = FALSE, eval = FALSE}
+# install.packages("DiagrammeR")
+library(DiagrammeR)
+grViz("digraph G {
+  graph [layout=neato, splines=true, overlap=false]
+  W [pos = '1,0!', shape = circle, style = filled]
+  X [pos = '0,1!', shape = circle, style = filled]
+  Y [pos = '2,1!', shape = circle, style = filled]
+  W -> X [label = '5']
+  W -> Y [label = '10']
+  X -> Y [label = '2']
+}")
+```
+-->
+
+### Mediator / 媒介変数
+
+「$X \to W \to Y$」のような変数 $W$ を媒介変数と呼ぶ．
+
+- $X$ から $Y$ への全体効果（直接効果 $\beta_{X \to Y}$ と間接効果 $\beta_{X \to W} \times \beta_{W \to Y}$ を合わせた効果）を推定したい場合：$W$ はコントロールしない
+- $X$ から $Y$ への直接効果 $\beta_{X \to Y}$ のみを推定したい場合：$W$ をコントロールする
+
+例：
+
+```{r example_for_mediator, echo = FALSE, out.width = "60%"}
+knitr::include_graphics("regression_mediator.png")
+```
+
+```{r mediator}
+set.seed(0)
+x <- rnorm(n = 100)
+w <- 5 * x + rnorm(n = 100)
+y <- 2 * x + 10 * w + rnorm(n = 100)
+# pairs(data.frame(x, y, w))
+summary(lm(y ~ x))$coef
+summary(lm(y ~ x + w))$coef
+```
+
+- $W$ をコントロールしない場合：の直接効果 $\beta_{X \to Y} = 2$ と間接効果 $\beta_{X \to W} \times \beta_{W \to Y} = 5 \times 10 = 50$ を合わせたものが推定される
+- $W$ をコントロールする場合：$X \to Y$ の直接効果 $\beta_{X \to Y} = 2$ のみ推定される
+
+### Collider 
+
+「$X \to W \leftarrow Y$」のような変数 $W$ を collider と呼ぶ．
+このような変数はコントロールしてはならない．
+
+例：
+
+```{r example_for_collider, echo = FALSE, out.width = "60%"}
+knitr::include_graphics("regression_collider.png")
+```
+
+```{r collider}
+set.seed(0)
+x <- rnorm(n = 100)
+y <- 2 * x + rnorm(n = 100)
+w <- 5 * x + 10 * y + rnorm(n = 100, sd = 5)
+# pairs(data.frame(x, y, w))
+summary(lm(y ~ x))$coef
+summary(lm(y ~ x + w))$coef
+```
+
+- $W$ をコントロールしない場合：$X$ の係数の推定値にバイアスは見られない
+- $W$ をコントロールする場合：$X$ の係数の推定値にバイアスが生じる
+
 ## Multicollinearity / 多重共線性
 
 ### Example of perfect multico. / 完全な多重共線性の例
@@ -560,8 +658,8 @@ summary(lm(price ~ weight + ps, car))
 $$ \mbox{Price} = \alpha + \beta_1 \ \mbox{Weight} + \beta_2 \ (2 \times \mbox{Weight}) + u $$
 
 ```{r multico_perfect}
-car$w2 <- 2 * car$weight
 head(car$weight)
+car$w2 <- 2 * car$weight
 head(car$w2)
 cor(car$weight, car$w2)
 lm(price ~ weight + w2, car)$coef
@@ -804,6 +902,17 @@ lm(log(price) ~ weight, car)$coef
 アウトカムに自然対数を取る場合，「$x$ が1単位大きな値を取る時に $y$ が $(100 \times \beta)$ % 高い値を取る」と解釈される．
 
 $$ \beta = \frac{\partial \log(y)}{\partial x} = \frac{\partial \log(y)}{\partial y} \frac{\partial y}{\partial x} = \frac{1}{y} \frac{\partial y}{\partial x} = \frac{\partial y / y}{\partial x} $$
+
+<!--
+以下のように計算すれば，Xの1単位の増加がYの0.13%の増加をもたらすことが分かる．
+後述するように log を外すには sigma^2/2 を足してから exp で戻す必要があるが，ここで書くと混乱のもとなのでコメントアウト．
+```{r reg_log_check}
+sigma2 <- summary(lm(log(price) ~ weight, car))$sigma^2
+price_x <- exp(3.9417 + 0.0012585 * car$weight + sigma2/2)
+price_xplus1 <- exp(3.9417 + 0.0012585 * (car$weight + 1) + sigma2/2)
+summary((price_xplus1 - price_x) / price_x)
+```
+-->
 
 よって，「1 kg重い自動車の価格は 0.13 %高い」と解釈できる．
 
@@ -1083,4 +1192,4 @@ car::vif(lm_alt)
 cf. 
 https://rpubs.com/kuroda/report_sample1
 -->
-.
+
