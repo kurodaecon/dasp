@@ -90,6 +90,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 
 ## Python 
 
+* Dotson (2025) [An introduction to Python for R users](https://occasionaldivergences.com/posts/python-intro/)
 * Py4DS Community (Turrell et al.) (2022) [Python for Data Science](https://aeturrell.github.io/python4DS/welcome.html)
 * Turrell (2022) [Coding for Economists](https://aeturrell.github.io/coding-for-economists/intro.html)
 * 東京大学 (2023) [Pythonプログラミング入門](https://utokyo-ipp.github.io/)
