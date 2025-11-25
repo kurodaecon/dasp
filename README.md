@@ -70,7 +70,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Nguyen (2020) [A Guide on Data Analysis](https://bookdown.org/mike/data_analysis/)
 * Hanck, Arnold, Gerber, and Schmelzer (2024) [Introduction to Econometrics with R](https://www.econometrics-with-r.org/)  ... 時系列もカバー
 * Chabé-Ferret (2024) [Statistical Tools for Causal Inference](https://chabefer.github.io/STCI/) ... 2024年8月時点で中身が空のセクションがある
-* Gow and Ding (2024) [Empirical Research in Accounting: Tools and Methods](http://iangow.me/far_2021/) --> DEAD 
+* Gow and Ding (2024) [Empirical Research in Accounting: Tools and Methods](http://iangow.me/far_2021/) - DEAD 
 * Gerstenberg (2024) [Psych 252: Statistical Methods for Behavioral and Social Sciences](https://psych252.github.io/psych252book/)
 * 川田 (2022) [Rによる比較・予測・因果推論入門 ver0.2](https://tetokawata.github.io/R_JPN/)
 * 安藤・三田 (2024) [Rで学ぶ計量経済学と機械学習](https://michihito-ando.github.io/econome_ml_with_R/)
@@ -83,7 +83,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * McNulty (2024) [Handbook of Regression Modeling in People Analytics: With Examples in R, Python and Julia](https://peopleanalytics-regression-book.org/) ... 多項選択・生存分析までカバー
 * McNulty (2024) [Handbook of Graphs and Networks in People Analytics: With Examples in R and Python](https://ona-book.org/)
 * Brughmans and Peeples (2023) [Network Science in Archaeology](https://book.archnetworks.net/) ... 考古学関係なくネットワーク分析の入門用教材として有用
-* Dauber (2024) [R for Non-Programmers: A Guide for Social Scientists](https://bookdown.org/daniel_dauber_io/r4np_book/) --> https://r4np.com/
+* Dauber (2024) [R for Non-Programmers: A Guide for Social Scientists](https://bookdown.org/daniel_dauber_io/r4np_book/) → https://r4np.com/
 * McDermott (2021) [Data science for economists](https://github.com/uo-ec607/lectures) (graduate course at the University of Oregon) ... Git, Data wrangling & tidying, Webscraping, Parallel programming, Docker, etc. 
 * 田頭 (2024) [マーケティングリサーチ講義ノート：Rを使ったリサーチ基礎固め](https://tak-tag.github.io/MktRes_Lecture/) ... 因子分析・価格感度分析までカバー　2025/11 （一時公開停止中）
 * 土井 (2024) [R/Pythonで計量政治学入門](https://shohei-doi.github.io/quant_polisci/)
