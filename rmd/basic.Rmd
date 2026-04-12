@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Basic Operation of R"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年6月'
+date: '最終更新：2026年4月'
 output:
   html_document:
     toc: yes
@@ -27,7 +27,7 @@ R の基本的な使用方法の詳細は [An Introduction to R](https://intro2r
 1 + 1
 ```
 
-　↑ Rコードを実行した結果
+　↑ Rコードを実行した結果（「## [1]」の部分は無視する）
 
 このページのRコードをどのように実行すればよいか？
 
