@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Descriptive Statistics"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年5月'
+date: '最終更新：2026年4月'
 output:
   html_document:
     toc: yes
@@ -566,7 +566,7 @@ xx <- seq(0, 6, length.out = 100)
 yy <- seq(0, 6, length.out = 100)
 zz <- outer(xx, yy, function(x, y) (x - 3) * (y - 2.67))
 contour(xx, yy, zz, xlab = "x", ylab = "y", 
-        main = expression("Contour of " (x-bar(x))(y-bar(y))))
+        main = expression("Contour of " (x-bar(x))(y-bar(y))), labcex = 1.5)
 abline(v = mean(x), h = mean(y), col = "red")
 text(x = c(3.5, 2.5, 2.5, 3.5), y = c(3.5, 3.5, 1.5, 1.5), labels = c("+", "-", "+", "-"), cex = 4)
 ```
@@ -596,9 +596,9 @@ x2 <- rnorm(10)
 y2a <- x2 + rnorm(10, sd = 1); cor(x2, y2a)
 y2b <- x2 + rnorm(10, sd = 2); cor(x2, y2b)
 par(mfrow = c(1, 2))
-plot(x2, y2a, ylim = c(-3, 3), main = paste("r =", round(cor(x2, y2a), 2)))
+plot(x2, y2a, ylim = c(-3, 3), main = paste("r =", round(cor(x2, y2a), 2)), ylab = "x2 + small noise")
 abline(lm(y2a ~ x2), col = "red")  # Add fitted (regression) line 
-plot(x2, y2b, ylim = c(-3, 3), main = paste("r =", round(cor(x2, y2b), 2)))
+plot(x2, y2b, ylim = c(-3, 3), main = paste("r =", round(cor(x2, y2b), 2)), ylab = "x2 + large noise")
 abline(lm(y2b ~ x2), col = "red")
 ```
 
@@ -614,9 +614,9 @@ x3 <- rnorm(10)
 y3a <- x3 + rnorm(10, sd = 1); cor(x3, y3a)
 y3b <- y3a / 2; cor(x3, y3b)
 par(mfrow = c(1, 2))
-plot(x3, y3a, ylim = c(-2, 2), main = paste("r =", round(cor(x3, y3a), 2)))
+plot(x3, y3a, ylim = c(-2, 2), main = paste("r =", round(cor(x3, y3a), 2)), ylab = "x3 + noise")
 abline(lm(y3a ~ x3), col = "red")
-plot(x3, y3b, ylim = c(-2, 2), main = paste("r =", round(cor(x3, y3b), 2)))
+plot(x3, y3b, ylim = c(-2, 2), main = paste("r =", round(cor(x3, y3b), 2)), ylab = "(x3 + noise) / 2")
 abline(lm(y3b ~ x3), col = "red")
 lm(y3a ~ x3)$coef; lm(y3b ~ x3)$coef  # slope of fitted line 
 ```
@@ -634,8 +634,8 @@ cor(x, x4a)
 x4b <- x * (-0.5) + 3
 cor(x, x4b)
 par(mfrow = c(1, 2))
-plot(x, x4a, cex = 2); abline(lm(x4a ~ x), col = "red")
-plot(x, x4b, cex = 2); abline(lm(x4b ~ x), col = "red")
+plot(x, x4a, cex = 2, ylab = "2x + 3"); abline(lm(x4a ~ x), col = "red")
+plot(x, x4b, cex = 2, ylab = "-0.5x + 3"); abline(lm(x4b ~ x), col = "red")
 ```
 
 一見して異なるものを表す変数間で相関係数が -1 になる場合がある．
