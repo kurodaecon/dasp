@@ -1481,7 +1481,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">Data Analysis Using Statistical Packages:
 Basic Operation of R</h1>
 <h4 class="author">Sho Kuroda / 黒田翔</h4>
-<h4 class="date">最終更新：2026年4月</h4>
+<h4 class="date">最終更新：2026年5月</h4>
 
 </div>
 
@@ -1513,7 +1513,7 @@ Rプログラム，薄い灰色で塗りつぶされた箇所）の例</p>
 </ul></li>
 <li>「ファイル」→「新しいスクリプト」に「写経」（コピーアンドペーストしないで一字一句書き写すこと）して実行．一番面倒だが，一番勉強になる</li>
 </ul></li>
-<li>RStudioを利用：Rをダウンロードしてから <a href="https://posit.co/download/rstudio-desktop/">RStudioをダウンロード</a>
+<li>RStudioを利用：Rをインストールしてから <a href="https://posit.co/download/rstudio-desktop/">RStudioをインストール</a>
 <ul>
 <li>コンソールに直接コピーアンドペーストして「Enter」</li>
 <li>作成したスクリプトページにコピーアンドペーストして，実行する箇所を選択
@@ -1562,7 +1562,7 @@ log, exponent / べき乗，平方根，対数，指数</h2>
 <pre><code>## [1] 2.718282</code></pre>
 <p><code>sqrt</code>, <code>log</code> などは関数．
 「<code>関数名(引数)</code>」の形で使う．
-「<code>引数</code>」が関数の入力．</p>
+「<code>引数</code>」は関数に与える入力．</p>
 <p>以下の例では関数 <span class="math inline">\(f\)</span>
 (<code>sqrt</code>) に対して <span class="math inline">\(x = 16\)</span>
 が引数（関数の入力）で，<span class="math inline">\(4\)</span>
@@ -1596,19 +1596,20 @@ x</code></pre>
 <p>このオブジェクトを使って何らかの計算をすることができる．</p>
 <pre class="r"><code>x + 2</code></pre>
 <pre><code>## [1] 3</code></pre>
-<pre class="r"><code>x &lt;- 10  # overwrite (override) 
+<pre class="r"><code>x &lt;- 10  # overwrite 
 x + 5</code></pre>
 <pre><code>## [1] 15</code></pre>
 <p>オブジェクト名はアルファベットではじめる．
 2文字目以降は数字やアンダーバーを使ってよい．
 演算記号など（<code>+ - * / ( ) [ ] ! ? &lt; &gt; = | ^ # $ % &amp;</code>
-etc.）は使用不可．</p>
+etc.）は使用不可．
+<!-- backtick を使えば演算子を使えないことはないが． --></p>
 <pre class="r"><code>x_3digit &lt;- 500</code></pre>
 <p>オブジェクトには数字だけではなく文字列を代入することもできる．
 ただし，文字列をダブルクオーテーション <code>&quot;&quot;</code>
 で囲まなければならない．</p>
 <pre class="r"><code>univ_name &lt;- &quot;Waseda&quot;
-paste(univ_name, &quot;University&quot;)  # &quot;paste&quot; function concatenate strings</code></pre>
+paste(univ_name, &quot;University&quot;)  # &quot;paste&quot; concatenates strings</code></pre>
 <pre><code>## [1] &quot;Waseda University&quot;</code></pre>
 </div>
 <div id="vectors-ベクトル" class="section level2" number="1.6">
@@ -1617,7 +1618,7 @@ paste(univ_name, &quot;University&quot;)  # &quot;paste&quot; function concatena
 <p>上ではスカラーの数字を考えていたが，数ベクトル（すうベクトル）を扱うこともできる．
 ベクトルを作成するには <code>c</code>
 関数を使い，ベクトルの要素を引数として指定する．</p>
-<pre class="r"><code>c(1, 2, 6)  # combine values into vector</code></pre>
+<pre class="r"><code>c(1, 2, 6)  # combine values into a vector</code></pre>
 <pre><code>## [1] 1 2 6</code></pre>
 <p>欠損値 (missing value) は <code>NA</code> で表す．</p>
 <pre class="r"><code>c(1, NA, 6)</code></pre>
@@ -1671,7 +1672,7 @@ of the vector / ベクトルの一部を取り出す</h3>
 と同様に）代入を表す演算記号なので要注意．</p>
 <pre class="r"><code>x[x &gt; 1]</code></pre>
 <pre><code>## [1] 2 6</code></pre>
-<pre class="r"><code>x &gt; 1  # logical index </code></pre>
+<pre class="r"><code>x &gt; 1  # logical index (logical vector) </code></pre>
 <pre><code>## [1] FALSE  TRUE  TRUE</code></pre>
 <pre class="r"><code>x[x == 2]  # &quot;==&quot; means `equal to`</code></pre>
 <pre><code>## [1] 2</code></pre>
@@ -1703,13 +1704,15 @@ x</code></pre>
 <h3><span class="header-section-number">1.6.3</span> Multiple vectors /
 複数のベクトル</h3>
 <p>複数のベクトルに対して演算することもできる．</p>
-<pre class="r"><code>sum(c(1, 2, 6) - 4:6)  # sum of 1-4, 2-5, 6-6 </code></pre>
+<pre class="r"><code>sum(c(1, 2, 6) - 4:6)  # sum of (1-4), (2-5), and (6-6) = sum of -3, -3, and 0 </code></pre>
 <pre><code>## [1] -6</code></pre>
 <pre class="r"><code>x &lt;- c(1, 2, 6)
 x2 &lt;- c(1, 3, 4)
 x + x2</code></pre>
 <pre><code>## [1]  2  5 10</code></pre>
-<p>ベクトルの内積（スカラー積）は <code>%*%</code> で計算される（<span class="math inline">\(\mathbf{x}&#39;\)</span> は <span class="math inline">\(\mathbf{x}\)</span> の転置）．</p>
+<p>同じ長さの数値ベクトルの内積（スカラー積）は <code>%*%</code>
+で計算される（<span class="math inline">\(\mathbf{x}&#39;\)</span> は
+<span class="math inline">\(\mathbf{x}\)</span> の転置）．</p>
 <p><span class="math display">\[ (\mathbf{x}, \mathbf{x_2}) =
 \mathbf{x}&#39; \mathbf{x_2} = \left[ \matrix{1 &amp; 2 &amp; 6} \right]
 \left[ \matrix{1 \\ 3 \\ 4} \right] = 1 \times 1 + 2 \times 3 + 6 \times
@@ -1733,7 +1736,7 @@ x + x2</code></pre>
 </div>
 <div id="other-tips-semicolon" class="section level2" number="1.7">
 <h2><span class="header-section-number">1.7</span> Other tips:
-semicolon</h2>
+Semicolon</h2>
 <p>1行に複数のコマンドを書く場合は「<code>;</code>」で繋ぐ． <!--
 To write multiple commands on a single line, join them with semicolon ";". 
 --></p>
@@ -1742,8 +1745,8 @@ To write multiple commands on a single line, join them with semicolon ";".
 <pre><code>## [1]  3  6 11</code></pre>
 </div>
 </div>
-<div id="dataframe-データフレーム" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> Dataframe /
+<div id="data-frame-データフレーム" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Data frame /
 データフレーム</h1>
 <p>ベクトルを束ねて行と列からなるデータフレームを作成できる．
 ただし，ベクトルの各要素は互いに対応していなければならない（例：1つ目のベクトルのn番目の要素と，2つ目のベクトルのn番目の要素は，同じ人や同じ企業のデータが割り当てられている）．</p>
@@ -1950,7 +1953,7 @@ CSVファイルを読み込む</h1>
 <li><code>sex</code>: female or male</li>
 <li><code>age</code>: 年齢</li>
 <li><code>sibsp</code>：
-同船する兄弟（siblings）と配偶者（spouses）の数</li>
+同船するきょうだい（siblings）と配偶者（spouses）の数</li>
 <li><code>parch</code>：
 同船する親（parents）と子供（children）の数</li>
 <li><code>embarked</code>： 出港地（C＝Cherbourg（仏・シェルブール）,
@@ -1968,16 +1971,15 @@ Q＝Queenstown, S＝Southampton）</li>
 <code>getwd</code>
 関数で指定された作業ディレクトリを確認できる（カッコの中には何も書かない）．</p>
 <ul>
-<li>ディレクトリの指定が <code>c://dir</code> でうまくいかない場合は
-<code>c:/dir</code> に変更を．</li>
+<li>ディレクトリの指定は <code>c:/dir</code></li>
 </ul>
 <p>Step 3. <code>read.csv</code>
 関数でファイル名を引数として指定して読み込む．</p>
-<pre class="r"><code>setwd(&quot;c://ws_stat&quot;)  # set working directory
+<pre class="r"><code>setwd(&quot;c:/ws_stat&quot;)  # set working directory
 getwd()  # get working directory</code></pre>
 <pre><code>## [1] &quot;c:/ws_stat&quot;</code></pre>
 <pre class="r"><code>titanic &lt;- read.csv(&quot;titanic3_csv.csv&quot;)</code></pre>
-<p>注：.rmd
+<p>注：R Markdownの実行環境や各種設定にも依存すると思われるが，.rmd
 ファイルを開いてチャンクごとに実行する場合，チャンクの実行が終わると作業ディレクトリがリセットされる．</p>
 <p>ファイルに日本語が含まれるとエラーが出る場合があるので，初心者のうちは日本語を含めずにファイルを作成・使用するのがおすすめ．</p>
 </div>
@@ -2052,7 +2054,7 @@ write.csv(titanic_head, &quot;titanic_first_6_rows.csv&quot;)</code></pre>
 <p>先に保存先フォルダを作成する（例：ws_stat 直下の new_dir
 フォルダ）．</p>
 <pre class="r"><code>titanic_head &lt;- head(titanic)
-write.csv(titanic_head, &quot;c://ws_stat/new_dir/titanic_first_6_rows.csv&quot;)</code></pre>
+write.csv(titanic_head, &quot;c:/ws_stat/new_dir/titanic_first_6_rows.csv&quot;)</code></pre>
 </div>
 </div>
 </div>
@@ -2062,7 +2064,7 @@ write.csv(titanic_head, &quot;c://ws_stat/new_dir/titanic_first_6_rows.csv&quot;
 <p><code>log</code> や <code>exp</code>
 のような既に定義されている関数の他に，自作の関数を定義して使用することができる．</p>
 <p>例：引数の二乗を返す関数</p>
-<pre class="r"><code>return_squared &lt;- function (x) {
+<pre class="r"><code>return_squared &lt;- function(x) {
   x^2
 }
 return_squared(x = 5)</code></pre>
@@ -2071,7 +2073,7 @@ return_squared(x = 5)</code></pre>
 <h2><span class="header-section-number">5.1</span> Example: Examine
 whether it is a leap year or not / 閏年の判定</h2>
 <p>西暦が4で割り切れる年は原則として閏年だが，「100で割り切れて，かつ，400で割り切れない」場合は例外的に閏年ではない．</p>
-<p>「割り切れる」とは「割り算のあまりが0」ということ．割り算のあまりは
+<p>「割り切れる」とは「割り算のあまり（余り）が0」ということ．割り算のあまりは
 <code>割られる数 %% 割る数</code> で求められる．</p>
 <pre class="r"><code>2024 %% 4</code></pre>
 <pre><code>## [1] 0</code></pre>
@@ -2080,7 +2082,7 @@ whether it is a leap year or not / 閏年の判定</h2>
 <pre class="r"><code>2024 %% 400</code></pre>
 <pre><code>## [1] 24</code></pre>
 <p>また，ある条件を満たすかどうかによって異なる処理を行うには
-<code>if, elase</code> を使う．</p>
+<code>if, else</code> を使う．</p>
 <p><code>if</code>
 関数の引数（条件分岐の条件）には論理値（<code>TRUE</code> または
 <code>FALSE</code>）が与えられる．</p>
@@ -2100,7 +2102,7 @@ whether it is a leap year or not / 閏年の判定</h2>
 <pre><code>## [1] &quot;A&quot;</code></pre>
 <p>よって，以下のように関数を作成すればよい．</p>
 <p>Tips. <code>if</code> 文は入れ子にすることができる．</p>
-<pre class="r"><code>examine_leap &lt;- function (year) {
+<pre class="r"><code>examine_leap &lt;- function(year) {
   if (year %% 4 == 0) {
     if (year %% 100 == 0 &amp; year %% 400 != 0) {
       print(&quot;Not leap year&quot;)
@@ -2117,6 +2119,7 @@ examine_leap(year = 2024)</code></pre>
 <pre><code>## [1] &quot;Not leap year&quot;</code></pre>
 <pre class="r"><code>examine_leap(year = 2400)</code></pre>
 <pre><code>## [1] &quot;Leap year&quot;</code></pre>
+<!-- 上記のように single logical value を返す場合は && を使うことができる． -->
 </div>
 </div>
 <div id="iterative-calculations-繰り返し計算" class="section level1" number="6">
@@ -2158,7 +2161,7 @@ for (i in 1:3) {
 function</h2>
 <p>自作の関数と組み合わせて使ってもよい．</p>
 <p>まずは，閏年のときに <code>TRUE</code> を返す関数を定義．</p>
-<pre class="r"><code>is_leap &lt;- function (year) {
+<pre class="r"><code>is_leap &lt;- function(year) {
   if (year %% 4 == 0 &amp; !(year %% 100 == 0 &amp; year %% 400 != 0)) {
     TRUE
   } else {
@@ -2168,7 +2171,7 @@ function</h2>
 <p>そもそも，<code>if</code> 文の条件の TRUE/FALSE と返り値の TRUE/FALSE
 は対応しているので，<code>if</code>
 文を使わずに以下のように書けばよい．</p>
-<pre class="r"><code>is_leap &lt;- function (year) {
+<pre class="r"><code>is_leap &lt;- function(year) {
   year %% 4 == 0 &amp; !(year %% 100 == 0 &amp; year %% 400 != 0)
 }</code></pre>
 <p>この関数を <code>for</code> 文の中で使う．</p>
@@ -2194,9 +2197,10 @@ function</h2>
 <div id="matrix-行列" class="section level1" number="7">
 <h1><span class="header-section-number">7</span> Matrix / 行列</h1>
 <p>ベクトルを束ねて行列を作成できる．</p>
-<p><span class="math display">\[ \left[ \left[ \matrix{1 \\ 2 \\ 3}
-\right] , \left[ \matrix{5 \\ 6 \\ 7} \right] \right] = \left[ \matrix{1
-&amp; 5 \\ 2 &amp; 6 \\ 3 &amp; 7} \right] \]</span></p>
+<p><span class="math display">\[ \left[ \left[ \begin{matrix}1 \\ 2 \\ 3
+\end{matrix} \right] , \left[ \begin{matrix}5 \\ 6 \\ 7 \end{matrix}
+\right] \right] = \left[ \begin{matrix}1 &amp; 5 \\ 2 &amp; 6 \\ 3 &amp;
+7 \end{matrix} \right] \]</span></p>
 <pre class="r"><code>cbind(c(1, 2, 3), c(5, 6, 7))  # bind by columns </code></pre>
 <pre><code>##      [,1] [,2]
 ## [1,]    1    5
@@ -2232,9 +2236,9 @@ mat</code></pre>
 <h2><span class="header-section-number">7.1</span> Transposed matrix /
 転置行列</h2>
 <p>(i, j) 要素と (j, i) 要素を入れ替える．</p>
-<p><span class="math display">\[ \left[ \matrix{1 &amp; 5 \\ 2 &amp; 6
-\\ 3 &amp; 7} \right]&#39; = \left[ \matrix{1 &amp; 2 &amp; 3 \\ 5 &amp;
-6 &amp; 7} \right] \]</span></p>
+<p><span class="math display">\[ \left[ \begin{matrix} 1 &amp; 5 \\ 2
+&amp; 6 \\ 3 &amp; 7 \end{matrix} \right]&#39; = \left[ \begin{matrix} 1
+&amp; 2 &amp; 3 \\ 5 &amp; 6 &amp; 7 \end{matrix} \right] \]</span></p>
 <pre class="r"><code>mat &lt;- matrix(c(1, 2, 3, 5, 6, 7), nrow = 3, ncol = 2)
 t(mat)</code></pre>
 <pre><code>##      [,1] [,2] [,3]
@@ -2245,15 +2249,16 @@ t(mat)</code></pre>
 <h2><span class="header-section-number">7.2</span> Matrix product /
 行列の積</h2>
 <p>行列の積は <code>%*%</code> で計算できる．</p>
-<p><span class="math display">\[ \left[ \matrix{1 &amp; 5 \\ 2 &amp; 6
-\\ 3 &amp; 7} \right] \left[ \matrix{0.1 &amp; 0.2 &amp; 0.3 \\ 0.5
-&amp; 0.6 &amp; 0.7} \right] \\ = \left[ \matrix{1 \times 0.1 + 5 \times
-0.5 &amp; 1 \times 0.2 + 5 \times 0.6 &amp; 1 \times 0.3 + 5 \times 0.7
-\\ 2 \times 0.1 + 6 \times 0.5 &amp; 2 \times 0.2 + 6 \times 0.6 &amp; 2
-\times 0.3 + 6 \times 0.7 \\ 3 \times 0.1 + 7 \times 0.5 &amp; 3 \times
-0.2 + 7 \times 0.6 &amp; 3 \times 0.3 + 7 \times 0.7 } \right] = \left[
-\matrix{2.6 &amp; 3.2 &amp; 3.8 \\ 3.2 &amp; 4 &amp; 4.8 \\ 3.8 &amp;
-4.8 &amp; 5.8 } \right] \]</span></p>
+<p><span class="math display">\[ \left[ \begin{matrix} 1 &amp; 5 \\ 2
+&amp; 6 \\ 3 &amp; 7 \end{matrix} \right] \left[ \begin{matrix} 0.1
+&amp; 0.2 &amp; 0.3 \\ 0.5 &amp; 0.6 &amp; 0.7 \end{matrix} \right] \\ =
+\left[ \begin{matrix} 1 \times 0.1 + 5 \times 0.5 &amp; 1 \times 0.2 + 5
+\times 0.6 &amp; 1 \times 0.3 + 5 \times 0.7 \\ 2 \times 0.1 + 6 \times
+0.5 &amp; 2 \times 0.2 + 6 \times 0.6 &amp; 2 \times 0.3 + 6 \times 0.7
+\\ 3 \times 0.1 + 7 \times 0.5 &amp; 3 \times 0.2 + 7 \times 0.6 &amp; 3
+\times 0.3 + 7 \times 0.7 \end{matrix} \right] = \left[ \begin{matrix}
+2.6 &amp; 3.2 &amp; 3.8 \\ 3.2 &amp; 4 &amp; 4.8 \\ 3.8 &amp; 4.8 &amp;
+5.8 \end{matrix} \right] \]</span></p>
 <pre class="r"><code>mat &lt;- matrix(c(1, 2, 3, 5, 6, 7), nrow = 3, ncol = 2)
 mat</code></pre>
 <pre><code>##      [,1] [,2]
@@ -2276,22 +2281,24 @@ mat2</code></pre>
 逆行列</h2>
 <p>以下を満たすような行列 <span class="math inline">\(\mathbf{A}^{-1}\)</span> を <span class="math inline">\(\mathbf{A}\)</span> の逆行列と呼ぶ．</p>
 <p><span class="math display">\[ \mathbf{A} \mathbf{A}^{-1} =
-\mathbf{A}^{-1} \mathbf{A} = \mathbf{E} = \left[ \matrix{1 &amp; 0 &amp;
-0 &amp; \cdots \\ 0 &amp; 1 &amp; 0 &amp; \cdots \\ 0 &amp; 0 &amp; 1
-&amp; \cdots \\ \vdots &amp; \vdots &amp; \vdots &amp; \ddots } \right]
-\]</span></p>
+\mathbf{A}^{-1} \mathbf{A} = \mathbf{E} = \left[ \begin{matrix} 1 &amp;
+0 &amp; 0 &amp; \cdots \\ 0 &amp; 1 &amp; 0 &amp; \cdots \\ 0 &amp; 0
+&amp; 1 &amp; \cdots \\ \vdots &amp; \vdots &amp; \vdots &amp; \ddots
+\end{matrix} \right] \]</span></p>
 <ul>
-<li>スカラーであれば <span class="math inline">\(A A^{-1} = A^{-1} A =
-1, A^{-1} = 1/A\)</span>
+<li>スカラー（<span class="math inline">\(A \neq 0\)</span>）であれば
+<span class="math inline">\(A A^{-1} = A^{-1} A = 1, A^{-1} =
+1/A\)</span>
 すなわち逆数．逆行列は，これの行列バージョンのようなもの．</li>
 <li><span class="math inline">\(\mathbf{E}\)</span>
 は単位行列（対角成分だけが1でそれ以外のすべての要素が0）</li>
 </ul>
 <p>2×2 の行列については次のように計算できる．</p>
-<p><span class="math display">\[ \left[ \matrix{1 &amp; 3 \\ 2 &amp; 4 }
-\right]^{-1} = \frac{1}{1 \times 4 - 3 \times 2} \left[ \matrix{4 &amp;
--3 \\ -2 &amp; 1} \right] = \left[ \matrix{-2 &amp; 1.5 \\ 1 &amp; -0.5}
-\right] \]</span></p>
+<p><span class="math display">\[ \left[ \begin{matrix} 1 &amp; 3 \\ 2
+&amp; 4 \end{matrix} \right]^{-1} = \frac{1}{1 \times 4 - 3 \times 2}
+\left[ \begin{matrix} 4 &amp; -3 \\ -2 &amp; 1 \end{matrix} \right] =
+\left[ \begin{matrix} -2 &amp; 1.5 \\ 1 &amp; -0.5 \end{matrix} \right]
+\]</span></p>
 <p>逆行列は <code>solve</code> で計算できる．</p>
 <pre class="r"><code>mat3 &lt;- matrix(1:4, nrow = 2)
 solve(mat3)</code></pre>
@@ -2299,11 +2306,12 @@ solve(mat3)</code></pre>
 ## [1,]   -2  1.5
 ## [2,]    1 -0.5</code></pre>
 <p>元の行列との積を取れば単位行列になるはず．</p>
-<p><span class="math display">\[ \left[ \matrix{1 &amp; 3 \\ 2 &amp; 4 }
-\right] \left[ \matrix{-2 &amp; 1.5 \\ 1 &amp; -0.5} \right] = \left[
-\matrix{-2 &amp; 1.5 \\ 1 &amp; -0.5} \right] \left[ \matrix{1 &amp; 3
-\\ 2 &amp; 4 } \right] = \left[ \matrix{1 &amp; 0 \\ 0 &amp; 1} \right]
-\]</span></p>
+<p><span class="math display">\[ \left[ \begin{matrix} 1 &amp; 3 \\ 2
+&amp; 4 \end{matrix} \right] \left[ \begin{matrix} -2 &amp; 1.5 \\ 1
+&amp; -0.5 \end{matrix} \right] = \left[ \begin{matrix} -2 &amp; 1.5 \\
+1 &amp; -0.5 \end{matrix} \right] \left[ \begin{matrix} 1 &amp; 3 \\ 2
+&amp; 4 \end{matrix} \right] = \left[ \begin{matrix} 1 &amp; 0 \\ 0
+&amp; 1 \end{matrix} \right] \]</span></p>
 <pre class="r"><code>mat3 %*% solve(mat3)  # should be identity matrix </code></pre>
 <pre><code>##      [,1] [,2]
 ## [1,]    1    0
@@ -2313,14 +2321,15 @@ solve(mat3)</code></pre>
 ## [1,]    1    0
 ## [2,]    0    1</code></pre>
 <p>行列の determinant （行列式）が 0 の場合は逆行列を計算できない．</p>
-<p><span class="math display">\[ \det \left[ \matrix{1 &amp; 0 \\ 1
-&amp; 0 } \right] = 1 \times 0 + 0 \times 1 = 0 \]</span></p>
+<p><span class="math display">\[ \det \left[ \begin{matrix} 1 &amp; 0 \\
+1 &amp; 0 \end{matrix} \right] = 1 \times 0 - 0 \times 1 = 0
+\]</span></p>
 <pre class="r"><code>solve(matrix(c(1, 1, 0, 0), nrow = 2))</code></pre>
 <p>（エラーが出る）</p>
 </div>
 </div>
 <div id="take-home-messages" class="section level1" number="8">
-<h1><span class="header-section-number">8</span> Take home messages</h1>
+<h1><span class="header-section-number">8</span> Take-home messages</h1>
 <ul>
 <li>分からないことがあればヘルプを見る
 <ul>
@@ -2332,7 +2341,6 @@ solve(mat3)</code></pre>
 <code>オブジェクト名 &lt;- 中身（スカラー or ベクトル or データフレーム or 行列 etc.）</code></li>
 <li>CSV ファイルの読み込みは <code>read.csv(ファイル名)</code></li>
 </ul>
-<p>.</p>
 </div>
 
 
