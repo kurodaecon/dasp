@@ -1,18 +1,27 @@
 ---
 title: "Data Analysis Using Statistical Packages: Regression Analysis"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年7月'
+date: '最終更新：2026年5月'
 output:
   html_document:
     toc: yes
     toc_float: yes
     number_sections: yes
     self_contained: true
-    css: "diagrammer-fix.css"
   pdf_document:
     toc: yes
 # runtime: shiny
 ---
+
+<!--
+【 注意 】
+この .Rmd ファイルをローカルにDLして Knit する場合は
+GitHubにアップロードしている次の3つの画像ファイルも
+.Rmd ファイルと同じディレクトリに保存する必要があります
+  regression_confounder.png
+  regression_mediator.png
+  regression_collider.png
+-->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -22,7 +31,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Data 
 
-このページで使用するデータは，カーセンサーnetという中古車情報サイトに掲載されている [人気車種ランキング](https://www.carsensor.net/ranking/pop/) Top 80 の車両に関する車種レベルの属性．
+このページで使用するデータは，カーセンサーnetという中古車情報サイトに掲載されている [人気車種ランキング](https://www.carsensor.net/ranking/pop/) Top 80 の車種に関する車種レベルの属性．
 
 - ランキングはカーセンサーに掲載されている自動車への問い合わせデータに基づいて車種別に作成されている．
     - このページでは，車種とは「プリウス」（トヨタのハイブリッド車）とか「N-BOX」（ホンダのトールワゴン型軽自動車）のようなカテゴリーを指す語として用いる．
@@ -79,7 +88,7 @@ plot(car[, c("price", "weight", "height", "WLTC", "ps", "year")])
 
 ```{r create_vars}
 car$accel <- car$ps / car$weight  # 加速性能の大まかな指標 (power-to-weight ratio) 
-car$kei <- 1*(car$disp <= 660)  # 軽自動車ダミー
+car$kei <- 1 * (car$disp <= 660)  # 軽自動車ダミー
 ```
 
 ## Trim dataset 
@@ -127,13 +136,13 @@ lm(price ~ weight, car)
 
 $$ \mbox{Price} = -170 + 0.37 \ \mbox{Weight} + u $$
 
-`weight` の回帰係数は「`weight` が1単位高いと `price` は 0.37 単位高い傾向にある」＝「車両重量が 1kg 高い車の価格は3,700円高い」と解釈される．
+`weight` の回帰係数は「`weight` が1単位大きい車種では `price` は 0.37 単位高い傾向にある」＝「車両重量が 1kg 重い車種の価格は3,700円高い」と解釈される．
 
 - ある特定の車種について「設計を変更して `Weight` を1単位引き上げると `Price` を 0.37 単位引き上げることができる（市場適正価格が3,700円上昇する）」あるいは「政策的介入によって重量が1kg増加したら均衡価格が3,700円上昇する」などのように解釈することはできない．この回帰係数はあくまで両変数の相関的な関係を記述しているだけであり（注：相関係数とは異なる），因果関係を示すものではない．
 
 次のように考えてもよい．
 
-- `weight` = 1,000kg の平均価格は $-170 + 0.37 \cdot 1000 = 200$ 万円
+- `weight` = 1,000kg の平均価格（回帰直線上の予測価格）は $-170 + 0.37 \cdot 1000 = 200$ 万円
 - `weight` = 1,100kg の平均価格は $-170 + 0.37 \cdot 1100 = 237$ 万円
     - 100kg で37万円差が付くので，1kg 当たり3,700円違う
 
@@ -165,7 +174,7 @@ $$ Y_i = \alpha + \beta X_i + u_i $$
 
 の係数パラメタ（$\alpha, \beta$）を最小二乗法（OLS）によって求めよう．
 
-最小二乗法とは，誤差 $u = Y - (\alpha + \beta X_i)$ （残差 $\hat{u}_i = Y_i - \hat{Y}_i = Y_i - (\hat{\alpha}+\hat{\beta}X_i)$ で読み替えてもよい）の二乗和を最小化するように係数パラメタを求める方法である．
+最小二乗法とは，誤差 $u = Y - (\alpha + \beta X_i)$ （推定では観察可能な残差 $\hat{u}_i = Y_i - \hat{Y}_i = Y_i - (\hat{\alpha}+\hat{\beta}X_i)$ を用いる）の二乗和を最小化するように係数パラメタを求める方法である．
 
 ```{r error_in_scatter, echo = FALSE}
 x <- c(1, 2, 3)
@@ -288,7 +297,7 @@ text(2, 4, labels = "(2, 3)")
 
 ```{r optim_example}
 obj_function <- function (x) x^2 - 4*x + 7
-optim(par = 0, fn = obj_function, method = "BFGS")  # ニュートン法の亜種を利用
+optim(par = 0, fn = obj_function, method = "BFGS")  # 準ニュートン法を利用
 ```
 
 なお，ニュートン法は次の更新式を用いて実装できる．
@@ -323,13 +332,13 @@ $$ (\hat{\alpha}, \hat{\beta}) = \arg \min_{\alpha, \beta} Q(\alpha, \beta) $$
 $$ Q (\alpha, \beta) := \sum_i u_i^2 = \sum_i (Y_i - \alpha - \beta X_i)^2 $$
 
 ```{r reg_optim}
-sum_of_squared_residuals <- function (coef_vector) {
+sum_of_squared_residuals <- function(coef_vector) {
   # coef_vector[1]: alpha (intercept)
   # coef_vector[2]: beta (slope of X)
   sum((y - coef_vector[1] - coef_vector[2] * x)^2)
 }
-sum_of_squared_residuals(coef_vector = c(0, 1))  # alpha=1, beta=2
-sum_of_squared_residuals(coef_vector = c(0, 0.5))  # alpha=1, beta=3
+sum_of_squared_residuals(coef_vector = c(0, 1))  # alpha=0, beta=1
+sum_of_squared_residuals(coef_vector = c(0, 0.5))  # alpha=0, beta=0.5
 optim(par = c(0, 0), fn = sum_of_squared_residuals)
 ```
 
@@ -467,15 +476,15 @@ $\beta = 0$ の設定でデータを生成し，その回帰係数の $t$ 値の
 ```{r mcsim_beta}
 t_list <- NULL
 for (i in 1:1000) {
-  set.seed(100*i)  # ちょっとごまかす
+  set.seed(100*i)  # 弥縫策
   x_i <- 1:1000
   y_i <- 1 + 0 * x_i + rnorm(1000)  # x_i の係数を 0 に設定
   t_i <- summary(lm(y_i ~ x_i))$coef["x_i", "t value"]
   t_list <- c(t_list, t_i)
 }
-# qt(p = 0.975, df = 1000-1)  # 1.962341
+# qt(p = 0.975, df = 1000 - 2)  # 1.962344
 hist(t_list, breaks = 100)
-abline(v = qt(p = c(0.025, 0.975), df = 1000-1), col = "red")
+abline(v = qt(p = c(0.025, 0.975), df = 1000 - 2), col = "red")
 table(t_list <= -1.962 | t_list >= 1.962)  # TRUE = 第一種の過誤
 ```
 
@@ -552,7 +561,7 @@ summary(lm(price ~ weight + ps, car))
 
 なお，「単回帰分析では因果関係が推定できないが，重回帰分析では因果関係が推定できる」という主張は一般には誤り．
 
-- 重回帰分析によって因果効果を推定するためには，処置変数の条件付き独立（かなり大雑把に言うと，交絡変数がすべてコントロール変数として正確な関数形でモデルに含められていること）が成立していなければならず，この仮定を社会経済データを用いた実証分析において満たすことは容易ではない．
+- 重回帰分析によって因果効果を推定するためには，処置変数の条件付き独立性（かなり大雑把に言うと，交絡変数がすべてコントロール変数として正確な関数形でモデルに含められていること）が成立していなければならず，この仮定を社会経済データを用いた実証分析において満たすことは容易ではない．
 
 
 ## $X \to Y$ の効果（のようなもの）を推定したい場合
@@ -608,6 +617,8 @@ grViz("digraph G {
 - $X$ から $Y$ への全体効果（直接効果 $\beta_{X \to Y}$ と間接効果 $\beta_{X \to W} \times \beta_{W \to Y}$ を合わせた効果）を推定したい場合：$W$ はコントロールしない
 - $X$ から $Y$ への直接効果 $\beta_{X \to Y}$ のみを推定したい場合：$W$ をコントロールする
 
+詳しくは [VanderWeele (Annual Review of Public Health 2016)](https://doi.org/10.1146/annurev-publhealth-032315-021402) を参照．
+
 例：
 
 ```{r example_for_mediator, echo = FALSE, out.width = "60%"}
@@ -624,10 +635,10 @@ summary(lm(y ~ x))$coef
 summary(lm(y ~ x + w))$coef
 ```
 
-- $W$ をコントロールしない場合：の直接効果 $\beta_{X \to Y} = 2$ と間接効果 $\beta_{X \to W} \times \beta_{W \to Y} = 5 \times 10 = 50$ を合わせたものが推定される
+- $W$ をコントロールしない場合：直接効果 $\beta_{X \to Y} = 2$ と間接効果 $\beta_{X \to W} \times \beta_{W \to Y} = 5 \times 10 = 50$ を合わせたものが推定される
 - $W$ をコントロールする場合：$X \to Y$ の直接効果 $\beta_{X \to Y} = 2$ のみ推定される
 
-### Collider 
+### Collider / 合流点
 
 「$X \to W \leftarrow Y$」のような変数 $W$ を collider と呼ぶ．
 このような変数はコントロールしてはならない．
@@ -650,6 +661,30 @@ summary(lm(y ~ x + w))$coef
 
 - $W$ をコントロールしない場合：$X$ の係数の推定値にバイアスは見られない
 - $W$ をコントロールする場合：$X$ の係数の推定値にバイアスが生じる
+
+<!--
+### Collider (advanced) 
+
+「$X \to W \to Y$」のような媒介変数 $W$ について「$W \leftarrow U \to Y$」とする変数 $U$ があったとする．
+この変数 $U$ は観測できない要因（unobservables）としよう．
+
+例：
+
+```{r example_for_collider_with_mediator, echo = FALSE, out.width = "60%"}
+knitr::include_graphics("regression_collider.png")
+```
+
+```{r collider_with_mediator}
+set.seed(0)
+x <- rnorm(n = 100)
+u <- rnorm(n = 100)
+w <- 5 * x + 30 * u + rnorm(n = 100)
+y <- 2 * x + 10 * w + 50 * u + rnorm(n = 100)
+# pairs(data.frame(x, y, w, u))
+summary(lm(y ~ x))$coef
+summary(lm(y ~ x + w))$coef
+```
+-->
 
 ## Multicollinearity / 多重共線性
 
@@ -728,7 +763,7 @@ car::vif(lm(price ~ weight + length + width, car))
 lm(price ~ weight + ps, car)$coef
 ```
 
-上の結果から「$|0.24| < |0.78|$ なので `ps` の方が `price` の分散をより説明する」と結論付けることはできない．
+上の結果から「$|0.24| < |0.78|$ なので `ps` の方が `price` の変動をより説明する」と結論付けることはできない．
 
 なぜなら，係数の大きさは変数のスケール（ばらつき）に依存するから．
 
@@ -741,7 +776,7 @@ lm(price ~ weight + ps, car)$coef
 c(0.24 * sd(car$weight), 0.78 * sd(car$ps, na.rm = TRUE))
 ```
 
-「$|90.8| > |58.7|$ なので `weight` の方が `price` の分散に対する説明力がより高い」と言える．
+「$|90.8| > |58.7|$ なので `weight` の方が `price` の変動とより強く関連している」と言える．
 
 
 ### Standardized partial regression coefficient / 標準偏回帰係数
@@ -752,12 +787,14 @@ c(0.24 * sd(car$weight), 0.78 * sd(car$ps, na.rm = TRUE))
 car$price_s <- (car$price - mean(car$price)) / sd(car$price)
 car$weight_s <- (car$weight - mean(car$weight)) / sd(car$weight)
 car$ps_s <- (car$ps - mean(car$ps, na.rm = TRUE)) / sd(car$ps, na.rm = TRUE)
-c(mean(car$price_s), mean(car$weight_s), mean(car$ps_s, na.rm = TRUE))
-c(sd(car$price_s), sd(car$weight_s), sd(car$ps_s, na.rm = TRUE))
+c(mean(car$price_s), mean(car$weight_s), mean(car$ps_s, na.rm = TRUE))  # should be 0 
+c(sd(car$price_s), sd(car$weight_s), sd(car$ps_s, na.rm = TRUE))  # should be 1 
 lm(price_s ~ weight_s + ps_s, car)$coef
 ```
 
-「$|0.59| > |0.38|$ なので `weight` の方が `price` の分散をより説明する」と言える．
+「$|0.59| > |0.38|$ なので，相対的には `weight` の方が `price` の変動をよりよく説明している」くらいのことは言える．
+
+ただし，以上の説明は厳密でも明瞭でもないので，レポート・論文での利用は推奨できない．
 
 なお，t 値と p 値は標準化の前後で不変．
 
@@ -784,7 +821,7 @@ table(car$hybrid)
 lm(price ~ hybrid, car)
 ```
 
-この回帰係数 77 は「ハイブリッド車はハイブリッド車以外と比較して 77 万円高い」ことを意味している（ただし有意ではない）．
+この回帰係数 77 は「ハイブリッド車はハイブリッド車以外と比較して平均的に 77 万円高い」ことを意味している（ただし統計的に有意ではない）．
 
 ```{r reg_dummy_diff}
 mean(car$price[car$hybrid == 0])
@@ -820,7 +857,7 @@ lm(price ~ weight + recent, car)$coef
 ```
 
 
-## Quardatic and interaction terms / 二次・交差項
+## Quadratic and interaction terms / 二次・交差項
 
 $$ \mbox{Price} = \alpha + \beta_1 \ \mbox{PS} + \beta_2 \ \mbox{PS}^2 + u $$
 
@@ -914,12 +951,13 @@ summary((price_xplus1 - price_x) / price_x)
 ```
 -->
 
-よって，「1 kg重い自動車の価格は 0.13 %高い」と解釈できる．
+よって，「1 kg重い自動車の価格は約0.13%高い」と解釈できる．
 
 - なお，上は $\beta$ が0に近い値（たとえば 0.01 や 0.001 くらいのオーダー）を取る場合にはよい近似となる．0から離れた値（たとえば 0.5 またはそれ以上）を取る場合は $\exp(\beta) - 1$ で厳密に計算するとよい．
 - $y = f(x) = \exp(\alpha + \beta x)$ とすると，下の式より「$x$ が1単位大きな値を取る時に $y$ が $(100 \times [\exp(\beta)-1])$ % 高い値を取る」と計算できる．
 
-$$ \Delta \% := \frac{f(x+1) - f(x)}{f(x)} = \frac{\exp(\alpha + \beta (x+1)) - f(x)}{f(x)} = \frac{f(x) \cdot \exp(\beta) - f(x)}{f(x)} = \exp(\beta) - 1 $$
+$$ \Delta \% := 100 \times \frac{f(x+1) - f(x)}{f(x)} = 100 \times \frac{\exp(\alpha + \beta (x+1)) - f(x)}{f(x)} $$
+$$ = 100 \times \frac{f(x) \cdot \exp(\beta) - f(x)}{f(x)} = 100 \times [ \exp(\beta) - 1 ] $$
 
 ## Log-log model 
 
@@ -929,20 +967,20 @@ $$ \log(\mbox{Price}) = \alpha + \beta \ \log(\mbox{Weight}) + u $$
 lm(log(price) ~ log(weight), car)$coef
 ```
 
-両辺に対数を取る場合は「$x$ が1%大きな値を取る時に $y$ が $\beta$ % 高い値を取る」と解釈される．
+両辺に対数を取る場合は「$x$ が 1% 大きな値を取る時に $y$ が $\beta$ % 高い値を取る」と解釈される．
 
 - $\beta$ は経済学では弾力性として知られる．
 
 $$ \beta = \frac{\partial \log(y)}{\partial \log(x)} = \frac{\partial \log(y)}{\partial y} \frac{\partial x}{\partial \log(x)} \frac{\partial y}{\partial x} = \frac{x}{y} \frac{\partial y}{\partial x} = \frac{\partial y / y}{\partial x / x} $$
 
-「1 %重い自動車の価格は 1.5 %高い」と解釈できる．
+「1%重い自動車の価格は約1.5%高い」と解釈できる．
 
 
 ## Categorical variables 
 
 複数の値を持つカテゴリー変数（質的変数）はダミー変数化する（0-1 の量的変数に変換する）ことで回帰式に含めることができる．
 
-いずれか一つのカテゴリーをベースラインとする（すべてのカテゴリーをダミー変数として含めると多重共線性により推定できなくなるため，一つは除外しなければならない）．
+いずれか一つのカテゴリーをベースラインとする（定数項に加えてすべてのカテゴリーをダミー変数として含めると多重共線性により推定できなくなるため，一つは除外しなければならない）．
 
 `maker` 変数はカテゴリー変数なので，これをダミー変数にしてみよう．
 ダイハツをベースライン（reference group）とする．
@@ -978,6 +1016,42 @@ lm(price ~ weight + maker, car)$coef
 
 今度は，ダイハツがベースラインのホンダと比較して 17 万円高いと解釈できる．
 
+## Centering 
+
+$X^c = X - \bar{X}$ とするとき，モデルの決定係数と回帰直線そのものは変わらないが，一部の係数の推定値と統計的有意性は変わる．
+
+cf. 前掲「Standardized partial regression coefficient / 標準偏回帰係数」
+
+例１：
+
+$$ \mbox{Price} = \alpha + \beta \ \mbox{Width} + u, $$
+$$ \mbox{Price} = \alpha^c + \beta^c \ \mbox{Width}^c + u = (\alpha^c - \beta^c \ \bar{\mbox{Width}}) + \beta^c \ \mbox{Width} + u $$
+
+- $\hat{\alpha}$ は Width=0 における Price の平均であるが，$\hat{\alpha}^c$ は Width=mean(Width) における Price の平均を表す．係数はもちろん標準誤差も異なるので，統計的有意性も異なる．
+- $\hat{\beta}$ と $\hat{\beta}^c$ はどちらも Width が1単位大きい値を取る時に Price がどれだけ大きい／小さい値を取るかを表す．係数の推定値も標準誤差も同じなので，統計的有意性も当然同じ．
+
+```{r centering_base}
+lm1 <- lm(price ~ width, car)
+lm2 <- lm(price ~ I(width - mean(width)), car)
+huxtable::huxreg(lm1, lm2)
+lm2$coef[1] - lm2$coef[2] * mean(car$width)  # should be identical to alpha in model (1) 
+```
+
+例２：
+
+$$ \mbox{Price} = \alpha + \beta_1 \ \mbox{Width} + \beta_2 \ \mbox{Weight} + \beta_3 \ \mbox{Width} \times \mbox{Weight} + u \\ = \alpha + \beta_1 \ \mbox{Width} + (\beta_2 + \beta_3 \ \mbox{Width} ) \mbox{Weight} + u, $$
+$$ \mbox{Price} = \alpha^c + \beta_1^c \ \mbox{Width}^c + \beta_2^c \ \mbox{Weight} + \beta_3^c \ \mbox{Width}^c \times \mbox{Weight} + u \\ = \alpha^c + \beta_1^c \ \mbox{Width}^c + (\beta_2^c + \beta_3^c \ \mbox{Width}^c) \mbox{Weight} + u $$
+
+- Weight が1単位大きい値を取るときにどれだけ Price が異なる値を取るかが Width によって異なる（Weight の係数に異質性がある）ことを表現するために，交差項を用いる．
+- Centering しない場合，$\hat{\beta}_2$ は Width=0 における Weight の係数として解釈される．Width 変数は平均 1.7（最小 1.5，最大 1.9）であり，Width=0 における係数は解釈が難しい．下に示す通りこの係数は負に推定されており（重いほど安い），これは直感に反する．
+- Centering する場合，$\hat{\beta}_2^c$ は Width=mean(Width) における Weight の係数として解釈される．直感通り正に推定されている．
+- 交差項の係数（・標準誤差）は Centering の影響を受けない．
+
+```{r centering_interaction}
+lm2 <- lm(price ~ weight*width, car)
+lm3 <- lm(price ~ weight*I(width - mean(width)), car)
+huxtable::huxreg(lm2, lm3)
+```
 
 # Prediction / 予測
 
@@ -1019,13 +1093,14 @@ Log-linear model の場合，予測値を元の変数のスケールに戻すに
 - Step 1. $y \to \log y$ 
 - Step 2. $\log y = \alpha + \beta x + u$ 
     - 仮定：（$y$ ではなく）$\log y$ は（$x$ で条件付けたもとで）正規分布に従う．
-- Step 3. $\hat{\log y} = \hat{\alpha} + \hat{\beta} x$
-    - 当てはめ値は $\hat{\log{y}}$ であって $\log{\hat{y}}$ ではないことに注意．
+- Step 3. $\widehat{\log y} = \hat{\alpha} + \hat{\beta} x$
+    - 当てはめ値は $\widehat{\log{(y)}}$ （対数スケール上の当てはめ値）であって $\log{(\hat{y})}$ （元スケール上の予測値の対数）ではないことに注意．
 - Step 4. 
 $$ \hat{y} = \exp \left( \hat{\log{y}} + \frac{\sigma^2}{2} \right) $$
     - この式は $z \sim N(\mu, \sigma^2)$ のとき $E(\exp z) = \exp(\mu + \sigma^2/2)$ となることから導出される．
     - $\sigma^2$ は誤差分散．真の値は未知なので残差の分散（正確には，誤差分散の不偏推定量になるように調整したもの）で代用する．$K$ は定数項を除いた説明変数の数．
-$$ \hat{\sigma}^2 = \frac{1}{n - K - 1} \sum_{i = 1}^n \hat{u}_i^2 \quad \mbox{where} \quad \hat{u}_i = Y_i - \hat{Y}_i $$
+
+$$ \hat{\sigma}^2 = \frac{1}{n - K - 1} \sum_{i = 1}^n \hat{u}_i^2 \quad \mbox{where} \quad \hat{u}_i = \log(Y_i) - \widehat{\log(Y_i)} $$
 
 ```{r log_linear_exp}
 ## correct way 
@@ -1090,7 +1165,7 @@ lm3 <- lm(price ~ weight + ps + length + width, na.omit(car))
 AIC(lm1, lm2, lm3)
 ```
 
-2つ目のモデルの値が最も小さいが，2つ目と3つ目の差は十分に小さい（2を下回っている）ため，2つ目と3つ目のモデルはほとんど同程度と判断できる．
+2つ目のモデルの値が最も小さいが，2つ目と3つ目の差は十分に小さい（経験則として2を下回っている）ため，2つ目と3つ目のモデルはほとんど同程度と判断できる．
 
 ## Stepwise model selection with AIC
 
@@ -1182,7 +1257,7 @@ car::vif(lm_alt)
 これでもなお不安な符号が幾つか残っているが（全高 `height` が負，軽自動車ダミー `kei` が正），何らかの除外変数によるものなのか，あるいはこの符号で実際に正しいのかは不明．
 
 
-# Take home messages 
+# Take-home messages 
 
 * 回帰分析：`summary(lm(formula = Y ~ X1 + X2, data = dataset))` 
 * 説明変数の二乗は `I(X1^2)` 
@@ -1192,4 +1267,3 @@ car::vif(lm_alt)
 cf. 
 https://rpubs.com/kuroda/report_sample1
 -->
-

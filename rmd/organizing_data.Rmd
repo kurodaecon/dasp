@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Organizing and Visualizing Data"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年6月'
+date: '最終更新：2026年5月'
 output:
   html_document:
     toc: yes
@@ -26,13 +26,13 @@ knitr::opts_chunk$set(echo = TRUE)
    - `library(パッケージ名)` で読み込んで `関数名` で呼び出すか，パッケージを読み込まずに `パッケージ名::関数名` で呼び出す
 1. ユーザーが自分でインストールしなければ使えないもの（`tidyverse`, `data.table`, etc.）
    - `install.packages("パッケージ名")` でインストールし（最初の一度だけ実行），`library(パッケージ名)` で読み込む（Rを起動する度に実行）
-   - Rstudio で `install.packages` が使えない場合，PC がインターネットに接続されていることを確認したうえで，CRAN レポジトリを変更してリトライ：Tools > Global Options > Packages > Primary CRAN repository を 「Japan (Tokyo)」 などに変更（参考：[Setting CRAN repository options](https://blog.djnavarro.net/posts/2022-01-10_setting-cran-repositories/)）
+   - RStudio で `install.packages` が使えない場合，PC がインターネットに接続されていることを確認したうえで，CRAN レポジトリを変更してリトライ：Tools > Global Options > Packages > Primary CRAN repository を 「Japan (Tokyo)」 などに変更（参考：[Setting CRAN repository options](https://blog.djnavarro.net/posts/2022-01-10_setting-cran-repositories/)）
 
 補足：同じ名前の関数が複数のパッケージで使用されている場合があるので，常に `パッケージ名::関数名` の形式でパッケージを指定するのを好む人もいる．
 
 ## `tidyverse` package 
 
-データの整理・操作は `tidyverse` というパッケージに含まれる関数を使うのが一般的．
+データの整理・操作は `tidyverse` というパッケージに含まれる関数を使うことが多い．
 <!--
 Load the `tidyverse`, a package (or more precisely, a bundle of packages) for manipulating, extracting, and processing data.
 -->
@@ -102,7 +102,7 @@ https://rstudio-conf-2020.github.io/r-for-excel/ggplot2.html
 -->
 
 
-# Example of The Beatles data frame 
+# Example using The Beatles data frame 
 
 ## Create "tibble" object 
 
@@ -111,9 +111,9 @@ https://rstudio-conf-2020.github.io/r-for-excel/ggplot2.html
 ```{r beatles_create}
 beatles <- tibble::tibble(
   name = c("John", "Paul", "George", "Ringo"), 
-  born = c(1940, 1942, 1943, 1940),
+  born = c(1940, 1942, 1943, 1940), 
   decease = c(1980, NA, NA, NA), 
-  height = c(179, 180, 178, 170)
+  height = c(179, 180, 178, 170) 
   )
 beatles
 ```
@@ -143,7 +143,7 @@ c(1, 2, NA) %>% mean(na.rm = TRUE)  # option も指定可
 ```{r pipe_sd}
 sd(1:2)
 round(sd(1:2), 2)
-1:2 %>% sd %>% round(2)
+1:2 %>% sd() %>% round(2)
 ```
 
 以下のようにネストが深い場合はパイプを使うことで処理の順序が理解しやすくなる．
@@ -171,11 +171,18 @@ filter(beatles, born >= 1941)  # 計算結果は同じ
 beatles[beatles$born >= 1941, ]  # もちろんこれも同じ
 ```
 
-`filter` を適用した後のデータセットを新しいオブジェクトに割り当てるには `<-` を用いる（上書きも可；以下同様）．
+`filter` を適用した後のデータセットを新しいオブジェクトに割り当てるには `<-` を用いる．
 
 ```{r beatles_filter_assign}
 beatles_ver2 <- beatles %>% filter(born >= 1941)
 beatles_ver2
+```
+
+以下のようにすれば元のオブジェクトを上書きすることも可能（以下同様）．
+
+```{r beatles_filter_assign_2, eval = FALSE}
+# beatles <- beatles %>% filter(born >= 1941)
+# beatles %<>% filter(born >= 1941)  # same as above 
 ```
 
 複数の条件を指定することもできる．
@@ -232,13 +239,13 @@ beatles_primary_role
 beatles %>% left_join(beatles_primary_role, by = "name")
 ```
 
-### If either data frame contains NA / いずれかのデータフレームに欠損値がある場合 
+### If some key exists in only one of the data frames / 片方のデータフレームにしかないキーがある場合 
 
-一方のデータフレームにしかない行がある場合，主たるデータフレーム（マージされる側）の行はそのまま残る．
+一方のデータフレームにしかないキー（ID）がある場合，主たるデータフレーム（左側にある，マージされる側）の行はそのまま残る．
 
 補足：コードの文法上左側にあるデータセットに合わせてマージするので `left_join` という関数名が使われている．右側に合わせる場合は `right_join`，積集合でマージするのは `inner_join`，和集合でマージするのは `full_join`．
 
-Case 1. 担当楽器のデータセットに欠損がある場合．
+Case 1. 担当楽器のデータセット（右側）に対応する行がない場合．
 
 ```{r beatles_new_df_right_na}
 beatles_primary_role_wo_paul <- tibble::tibble(name = c("John", "George", "Ringo"), 
@@ -247,7 +254,7 @@ beatles_primary_role_wo_paul
 beatles %>% left_join(beatles_primary_role_wo_paul, by = "name")
 ```
 
-Case 2. 逆に，主なデータフレームの方に欠損がある場合．
+Case 2. 逆に，主なデータフレーム（左側）の方に一部の行が存在しない場合．
 
 ```{r beatles_new_df_left_na}
 beatles %>% 
@@ -264,6 +271,7 @@ beatles %>% summarise(mean_height = mean(height),
                       std_dev_height = sd(height),
                       sample_size = n())
 ```
+<!-- sd は観測数1の場合 NA になる；欠損値を除いた観測数を示す場合は n() ではなく sum(!is.na(var)) -->
 
 ## `group_by` 
 
@@ -273,7 +281,7 @@ beatles %>% summarise(mean_height = mean(height),
 beatles %>% 
   group_by(born) %>% 
   summarise(mean_height = mean(height), 
-            std_dev_height = sd(height),
+            std_dev_height = sd(height),  # n=1 なら sd=NA
             sample_size = n())
 ```
 
@@ -307,7 +315,7 @@ ggplot() +
 ```{r beatles_lab}
 ggplot(data = beatles, mapping = aes(x = born, y = height)) + 
   geom_point() + 
-  xlab("Year of birth")
+  xlab("Year of birth")  # または labs(x = "...", y = "...") 
 ```
 
 キャンバスのテーマを変える．
@@ -319,7 +327,7 @@ ggplot(data = beatles, mapping = aes(x = born, y = height)) +
 ```
 
 
-# Example of Titanic data 
+# Example using Titanic data 
 
 ```{r titanic_read}
 titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/titanic3_csv.csv")
@@ -328,7 +336,7 @@ titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/t
 ## `filter` 
 
 ```{r titanic_filter}
-titanic %>% filter(age > 75)
+titanic %>% filter(age > 75)  # NA は FALSE 扱い
 ```
 
 ## `group_by` and `summarise` 
@@ -434,9 +442,9 @@ ggplot(data = titanic, mapping = aes(x = age, fill = sex)) +
 titanic %>% 
   filter(embarked != "") %>% 
   group_by(embarked) %>% 
-  summarise(person = n()) %>% 
-  ggplot(mapping = aes(x = embarked, y = person)) + 
-  geom_bar(stat = "identity") + 
+  summarise(passengers = n()) %>% 
+  ggplot(mapping = aes(x = embarked, y = passengers)) + 
+  geom_bar(stat = "identity") +  # または geom_col() 
   theme_classic()
 ```
 
@@ -447,10 +455,10 @@ titanic %>%
 titanic %>% 
   filter(embarked != "") %>% 
   group_by(embarked, sex) %>% 
-  summarise(person = n()) %>% 
-  ggplot(mapping = aes(x = embarked, y = person, fill = sex)) + 
+  summarise(passengers = n()) %>% 
+  ggplot(mapping = aes(x = embarked, y = passengers, fill = sex)) + 
   geom_bar(stat = "identity", position = "dodge") + 
-  scale_x_discrete(labels = c("Cherbourg", "Queenstown", "Southampton")) + 
+  scale_x_discrete(labels = c(C = "Cherbourg", Q = "Queenstown", S = "Southampton")) + 
   scale_fill_grey() + 
   theme_classic()
 ```
@@ -463,8 +471,8 @@ titanic %>%
 titanic %>% 
   filter(embarked != "") %>% 
   group_by(embarked) %>% 
-  summarise(person = n()) %>% 
-  ggplot(mapping = aes(x = "x", y = person, fill = embarked)) + 
+  summarise(passengers = n()) %>% 
+  ggplot(mapping = aes(x = "x", y = passengers, fill = embarked)) + 
   geom_bar(stat = "identity", position = "stack") + 
   coord_polar(theta = "y") + 
   scale_fill_brewer(labels = c("Cherbourg", "Queenstown", "Southampton")) + 
@@ -502,10 +510,10 @@ ggplot(data = titanic, mapping = aes(x = sex, y = age)) +
 ビートルズやSwissデータと同様に散布図を描き，スムージング曲線を追加する．
 
 点同士が重なってしまうため `geom_jitter` 関数でY軸方向にばらつかせて描画．
+<!-- geom_point と重複して使わない -->
 
 ```{r titanic_point_smooth, message = FALSE, warning = FALSE}
 ggplot(data = titanic, mapping = aes(x = age, y = survived)) + 
-  geom_point() + 
   geom_jitter(height = .05, width = 0) + 
   geom_smooth() 
 ```
@@ -518,11 +526,10 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived)) +
   stat_summary_bin()
 ```
 
-性別による死亡率の違いを示す．
+性別による生存率の違いを示す．
 
 ```{r titanic_point_smooth_by_sex, message = FALSE, warning = FALSE}
 ggplot(data = titanic, mapping = aes(x = age, y = survived, color = sex, shape = sex, linetype = sex)) + 
-  geom_point(size = 0.5) + 
   geom_jitter(height = .05, width = 0) + 
   geom_smooth(se = FALSE) + 
   scale_color_brewer(palette = "Dark2") + # colorblind-friendly palette 
@@ -531,14 +538,13 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived, color = sex, shape =
 
 50歳代からサンプルサイズが大きく低下するため，フィッティングの曲線は参考にならない点に注意．
 
-客室等級による死亡率の違いを示す．
+客室等級による生存率の違いを示す．
 
-* `pclass` は連続変数なので `factor` 関数で因子型の変数に変換して使う．
+* `pclass` は数値として記録されている質的変数（順序尺度）なので `factor` 関数で因子型の変数に変換して使う．
 
 ```{r titanic_point_smooth_by_pclass, message = FALSE, warning = FALSE}
 ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), 
                                      shape = factor(pclass), linetype = factor(pclass))) + 
-  geom_point() + 
   geom_jitter(height = .05, width = 0) + 
   geom_smooth(se = FALSE) + 
   scale_color_brewer(palette = "Dark2") +
@@ -553,7 +559,6 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclas
 ```{r titanic_point_smooth_by_pclass_sep_by_sex, message = FALSE, warning = FALSE}
 ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclass), 
                                      shape = factor(pclass), linetype = factor(pclass))) + 
-  geom_point() + 
   geom_jitter(height = .05, width = 0) + 
   geom_smooth(se = FALSE) + 
   facet_wrap(~ sex) + 
@@ -565,10 +570,11 @@ ggplot(data = titanic, mapping = aes(x = age, y = survived, color = factor(pclas
 
 # Pipe in base R 
 
-Base R （Rインストール時にbuilt-inされている標準パッケージのみを使用し，追加のパッケージを手動でインストールしない状態）でも pipe が使える．
+Base R （Rインストール時にbuilt-inされている標準パッケージのみを使用し，追加のパッケージを手動でインストールしない状態）でもパイプ演算子が使える．
 
 - これは比較的新しい機能．`tidyverse` スタイルの `%>%` を用いたデータハンドリングが普及したことを受けて2021年頃に実装された．
-- Base R の pipe は `|>` と書く．
+- Base R のパイプは `|>` （縦棒と大なり記号を組み合わせたもの）と書く．
+- パイプ `|>` を `base::subset` や `base::transform` などの base R の関数と組み合わせて使えば，`tidyverse` パッケージなしで `tidyverse` に似た方法で処理を記述することができる．
 
 ## Pipe `|>` 
 
@@ -585,23 +591,31 @@ titanic[, c("survived", "age")] |> cor(use = "complete.obs") |> round(2)
 ## `subset` corresponding to `filter` 
 
 ```{r baser_pipe_filter}
-titanic %>% filter(age >= 75)
-titanic |> subset(age >= 75)
+titanic %>% dplyr::filter(age >= 75)
+titanic |> base::subset(age >= 75)
 ```
 
 ## `transform` corresponding to `mutate` 
 
 ```{r baser_pipe_mutate}
-titanic %>% mutate(family = sibsp + parch) %>% head(2)
-titanic |> transform(family = sibsp + parch) |> head(2)
+titanic %>% dplyr::mutate(family = sibsp + parch) %>% head(2)
+titanic |> base::transform(family = sibsp + parch) |> head(2)
 ```
 
 ## `aggregate` corresponding to `group_by` + `summarise` 
 
 ```{r baser_pipe_groupby}
-titanic %>% group_by(pclass) %>% summarise(survived_rate = mean(survived))
-titanic |> aggregate(survived ~ pclass, data = _, FUN = mean)
+titanic %>% dplyr::group_by(pclass) %>% dplyr::summarise(survived_rate = mean(survived))
+titanic |> stats::aggregate(survived ~ pclass, data = _, FUN = mean)
 ```
+
+複数の変数を基準として集計することも可能（出力は省略）．
+
+```{r baser_pipe_groupby_multi, eval = FALSE}
+titanic %>% dplyr::group_by(pclass, sex) %>% dplyr::summarise(survived_rate = mean(survived))
+titanic |> stats::aggregate(survived ~ pclass + sex, data = _, FUN = mean)
+```
+
 
 注：上記の対比だけを見ると `tidyverse` スタイルのデータ処理が不要であるかのように見えるかもしれないが，実際にはそんなことはない．
 上記のような単純な処理であれば Base R の標準的な関数だけでも事足りる場合もあるが，複雑な処理をする上では `tidyverse` を使った方がよい．
