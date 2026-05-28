@@ -1506,11 +1506,11 @@ To draw random numbers from a uniform distribution, use the `runif` function. Th
 <p><code>runif(n = サンプルサイズ, min = 下限, max = 上限)</code>
 で乱数を生成．</p>
 <pre class="r"><code>runif(n = 5, min = 0, max = 1)</code></pre>
-<pre><code>## [1] 0.07288461 0.89320510 0.66736975 0.06635785 0.07904250</code></pre>
+<pre><code>## [1] 0.39931040 0.08449545 0.28970107 0.13294273 0.89364110</code></pre>
 <pre class="r"><code>runif(5, 0, 1)  # 引数の順番を守れば「n=」などを省略可</code></pre>
-<pre><code>## [1] 0.4725061 0.3455866 0.7649686 0.5103395 0.6462940</code></pre>
+<pre><code>## [1] 0.6374001 0.9334026 0.9999210 0.4302742 0.1541062</code></pre>
 <pre class="r"><code>runif(5)  # min = 0 かつ max = 1 の場合は省略可（デフォルトの設定）</code></pre>
-<pre><code>## [1] 0.28803751 0.28176009 0.34366582 0.02445565 0.14987060</code></pre>
+<pre><code>## [1] 0.2985820 0.5381468 0.6767923 0.3518814 0.1843144</code></pre>
 <p>乱数をドローするたびに異なる値が出力される．</p>
 <!--
 正規乱数（正規分布からドローする乱数）は `rnorm` で生成できる．
@@ -1521,7 +1521,7 @@ rnorm(n = 5, mean = 0, sd = 10)
 ```
 
 ```
-## [1]  -9.588699 -10.425278   7.611557  18.524935  11.784520
+## [1]   9.774563  -3.987502   6.668464   2.062002 -15.341620
 ```
 -->
 <div id="set-a-seed" class="section level2" number="1.1">
@@ -2004,11 +2004,11 @@ N\)</span> である．</p>
 が既知のとき，これを用いて標準化した <span class="math inline">\(\bar{X}\)</span> は次のように分布する．</p>
 <p><span class="math display">\[ Z = \frac{\bar{X} - \mu}{\sigma /
 \sqrt{n}} \sim N(0,1) \]</span></p>
-<p>「正規分布 <span class="math inline">\(N(0,1)\)</span>
+<p>「正規分布 <span class="math inline">\(N(1,2^2)\)</span>
 から乱数をドローして標本平均を計算し標準化する」を繰り返し，その分布を調べる．</p>
 <pre class="r"><code>z_list &lt;- NULL
 for (i in 1:10000) {
-  z_i &lt;- (mean(rnorm(n = 5)) - 0) / (1/sqrt(5))
+  z_i &lt;- (mean(rnorm(n = 5, mean = 1, sd = 2)) - 1) / (2/sqrt(5))
   z_list &lt;- c(z_list, z_i)
 }
 hist(z_list, probability = TRUE, breaks = 100)
@@ -2033,8 +2033,8 @@ legend(x = &quot;topleft&quot;, legend = c(&quot;N(0,1)&quot;, &quot;t(n-1)&quot
 (X_i-\bar{X})^2 \]</span></p>
 <pre class="r"><code>t_list &lt;- NULL
 for (i in 1:10000) {
-  data_i &lt;- rnorm(n = 5)
-  t_i &lt;- (mean(data_i) - 0) / (sd(data_i)/sqrt(5))
+  data_i &lt;- rnorm(n = 5, mean = 1, sd = 2)
+  t_i &lt;- (mean(data_i) - 1) / (sd(data_i)/sqrt(5))
   t_list &lt;- c(t_list, t_i)
 }
 hist(t_list, probability = TRUE, breaks = 200, xlim = c(-6, 6), ylim = c(0, 0.4))

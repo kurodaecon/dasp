@@ -1486,6 +1486,12 @@ Regression Analysis</h1>
 </div>
 
 
+<style>
+table td, table th {
+padding: 4px 8px;
+}
+</style>
+<!-- 2026/5追加 -->
 <!--
 【 注意 】
 この .Rmd ファイルをローカルにDLして Knit する場合は
@@ -1912,6 +1918,7 @@ test / 標準誤差と検定</h2>
 <p><span class="math display">\[ \hat{\sigma}^2 = s^2 = \frac{1}{n - 2}
 \sum \hat{u}_i^2 \]</span></p>
 <pre class="r"><code>n &lt;- nrow(car)  # sample size 
+res &lt;- y - (alpha_hat + beta_hat * x)  # redefine: residuals 
 s2 &lt;- sum(res^2) / (n - 2)  # estimated sigma^2
 s2</code></pre>
 <pre><code>## [1] 4115.202</code></pre>
@@ -1920,7 +1927,7 @@ beta_se</code></pre>
 <pre><code>## [1] 0.02421882</code></pre>
 <p><span class="math display">\[ t =
 \frac{\hat{\beta}}{\sqrt{V(\hat{\beta})}} \]</span></p>
-<pre class="r"><code>beta_hat / beta_se</code></pre>
+<pre class="r"><code>beta_hat / beta_se  # t-value </code></pre>
 <pre><code>## [1] 15.0751</code></pre>
 <p><span class="math display">\[ p = 2 \times [ 1 - \Pr(T \le |t|) ]
 \]</span></p>
@@ -2704,6 +2711,9 @@ head(car[, c(&quot;maker&quot;, &quot;Honda&quot;, &quot;Mazda&quot;, &quot;Niss
 ## -192.7228606    0.4035732  -16.8371837 -147.6797964  -28.2007247  -87.1606913 
 ##       Suzuki       Toyota 
 ##    3.0663751  -26.1403619</code></pre>
+<!--
+knitr::kable(head(car[, c("maker", "Honda", "Mazda", "Nissan", "Subaru", "Suzuki", "Toyota")]))
+-->
 <p>たとえば，<code>Honda</code> の回帰係数 -17
 は，ホンダの車がベースラインであるダイハツの車と比較して 17
 万円低いことを表している（ただし統計的に有意ではない）．</p>
@@ -2899,25 +2909,48 @@ function</h2>
 </ul>
 <pre class="r"><code>lm1 &lt;- lm(price ~ weight + ps, car, na.action = na.exclude)
 car$pred1 &lt;- predict(lm1, newdata = car)
-head(car[, c(&quot;model&quot;, &quot;price&quot;, &quot;pred0&quot;, &quot;pred1&quot;)], 3)</code></pre>
-<table class="huxtable" data-quarto-disable-processing="true" style="margin-left: auto; margin-right: auto;" id="tab:pred">
-<col><col><col><col><thead>
-<tr>
-<th class="huxtable-cell huxtable-header" style="border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0.4pt;">model</th><th class="huxtable-cell huxtable-header" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;">price</th><th class="huxtable-cell huxtable-header" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;">pred0</th><th class="huxtable-cell huxtable-header" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0.4pt 0pt;">pred1</th></tr>
+# car[, c(&quot;model&quot;, &quot;price&quot;, &quot;pred0&quot;, &quot;pred1&quot;)] |&gt; head(3)
+knitr::kable(car[, c(&quot;model&quot;, &quot;price&quot;, &quot;pred0&quot;, &quot;pred1&quot;)] |&gt; head(3))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">model</th>
+<th align="right">price</th>
+<th align="right">pred0</th>
+<th align="right">pred1</th>
+</tr>
 </thead>
 <tbody>
-<tr>
-<td class="huxtable-cell" style="border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0.4pt;     background-color: rgb(242, 242, 242);">N-BOX</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;     background-color: rgb(242, 242, 242);">174</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;     background-color: rgb(242, 242, 242);">157</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0pt 0pt;     background-color: rgb(242, 242, 242);">157</td></tr>
-<tr>
-<td class="huxtable-cell" style="border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;">Prius</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0pt;">299</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0pt;">294</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;">294</td></tr>
-<tr>
-<td class="huxtable-cell" style="border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0.4pt;     background-color: rgb(242, 242, 242);">Tanto</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;     background-color: rgb(242, 242, 242);">148</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;     background-color: rgb(242, 242, 242);">145</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0.4pt 0.4pt 0pt;     background-color: rgb(242, 242, 242);">145</td></tr>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">N-BOX</td>
+<td align="right">173.9</td>
+<td align="right">156.815</td>
+<td align="right">156.8014</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="left">Prius</td>
+<td align="right">299.0</td>
+<td align="right">294.435</td>
+<td align="right">294.4147</td>
+</tr>
+<tr class="odd">
+<td align="left">4</td>
+<td align="left">Tanto</td>
+<td align="right">148.5</td>
+<td align="right">145.052</td>
+<td align="right">145.0388</td>
+</tr>
 </tbody>
 </table>
-
 <pre class="r"><code>predict(lm1, newdata = data.frame(weight = 1000, ps = 100))</code></pre>
 <pre><code>##        1 
 ## 210.7247</code></pre>
+<!--
+DT::datatable(car[, c("model", "price", "pred0", "pred1")])
+-->
 </div>
 <div id="inverse-transformation-of-log-outcomes" class="section level2" number="5.2">
 <h2><span class="header-section-number">5.2</span> Inverse
@@ -2959,22 +2992,42 @@ sigma2 &lt;- sum(lm0$residuals^2) / (length(lm0$residuals) - 3)
 car$pred_correct &lt;- exp(predict(lm0, newdata = car) + sigma2/2)
 ## incorrect way 
 car$pred_incorrect &lt;- exp(predict(lm0, newdata = car))
-head(car[, c(&quot;model&quot;, &quot;price&quot;, &quot;pred_correct&quot;, &quot;pred_incorrect&quot;)], 3)</code></pre>
-<table class="huxtable" data-quarto-disable-processing="true" style="margin-left: auto; margin-right: auto;" id="tab:log_linear_exp">
-<col><col><col><col><thead>
-<tr>
-<th class="huxtable-cell huxtable-header" style="border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0.4pt;">model</th><th class="huxtable-cell huxtable-header" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;">price</th><th class="huxtable-cell huxtable-header" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;">pred_correct</th><th class="huxtable-cell huxtable-header" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0.4pt 0pt;">pred_incorrect</th></tr>
+# head(car[, c(&quot;model&quot;, &quot;price&quot;, &quot;pred_correct&quot;, &quot;pred_incorrect&quot;)], 3)
+knitr::kable(head(car[, c(&quot;model&quot;, &quot;price&quot;, &quot;pred_correct&quot;, &quot;pred_incorrect&quot;)], 3))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">model</th>
+<th align="right">price</th>
+<th align="right">pred_correct</th>
+<th align="right">pred_incorrect</th>
+</tr>
 </thead>
 <tbody>
-<tr>
-<td class="huxtable-cell" style="border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0.4pt;     background-color: rgb(242, 242, 242);">N-BOX</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;     background-color: rgb(242, 242, 242);">174</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;     background-color: rgb(242, 242, 242);">162</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0pt 0pt;     background-color: rgb(242, 242, 242);">160</td></tr>
-<tr>
-<td class="huxtable-cell" style="border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;">Prius</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0pt;">299</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0pt;">266</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;">263</td></tr>
-<tr>
-<td class="huxtable-cell" style="border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0.4pt;     background-color: rgb(242, 242, 242);">Tanto</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;     background-color: rgb(242, 242, 242);">148</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;     background-color: rgb(242, 242, 242);">156</td><td class="huxtable-cell" style="text-align: right;  border-style: solid solid solid solid; border-width: 0pt 0.4pt 0.4pt 0pt;     background-color: rgb(242, 242, 242);">154</td></tr>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">N-BOX</td>
+<td align="right">173.9</td>
+<td align="right">162.3229</td>
+<td align="right">160.4902</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="left">Prius</td>
+<td align="right">299.0</td>
+<td align="right">266.4931</td>
+<td align="right">263.4843</td>
+</tr>
+<tr class="odd">
+<td align="left">4</td>
+<td align="left">Tanto</td>
+<td align="right">148.5</td>
+<td align="right">156.0345</td>
+<td align="right">154.2728</td>
+</tr>
 </tbody>
 </table>
-
 <p>上のような補正を行わないと予測値が過小評価される．
 このことを次のように平均値で確認する．</p>
 <pre class="r"><code>car2 &lt;- car[!is.na(car$ps), ]  # 欠損のある車種は推定に使われていないので除外
@@ -3166,10 +3219,14 @@ summary(lm_alt)$coef</code></pre>
 <h1><span class="header-section-number">7</span> Take-home messages</h1>
 <ul>
 <li>回帰分析：<code>summary(lm(formula = Y ~ X1 + X2, data = dataset))</code></li>
-<li>説明変数の二乗は <code>I(X1^2)</code></li>
-<li>2つの説明変数の掛け算（交差項）は <code>X1:X2</code></li>
+<li>最小二乗法とは誤差（残差）の二乗が小さくなるように係数パラメタを求める原理</li>
+<li>XがYに与える影響を推定しようとする場合，どのような変数をコントロールしなければならないか，逆にどのような変数はコントロールしてはならないか，を熟考する</li>
+<li>ダミー変数を用いることで，質的変数（カテゴリー変数として記述される情報）を回帰分析の枠組みに組み込むことができる</li>
 </ul>
 <!--
+* 説明変数の二乗は `I(X1^2)` 
+* 2つの説明変数の掛け算（交差項）は `X1:X2`
+
 cf. 
 https://rpubs.com/kuroda/report_sample1
 -->
