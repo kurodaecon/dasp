@@ -12,6 +12,11 @@ output:
     toc: yes
 # runtime: shiny
 ---
+<style>
+table td, table th {
+  padding: 4px 8px;
+}
+</style><!-- 2026/5追加 -->
 
 <!--
 【 注意 】
@@ -398,6 +403,7 @@ $$ \hat{\sigma}^2 = s^2 = \frac{1}{n - 2} \sum \hat{u}_i^2 $$
 
 ```{r reg_var}
 n <- nrow(car)  # sample size 
+res <- y - (alpha_hat + beta_hat * x)  # redefine: residuals 
 s2 <- sum(res^2) / (n - 2)  # estimated sigma^2
 s2
 beta_se <- sqrt(s2 / s_xx)  # standard error
@@ -407,7 +413,7 @@ beta_se
 $$ t = \frac{\hat{\beta}}{\sqrt{V(\hat{\beta})}} $$
 
 ```{r reg_tvalue}
-beta_hat / beta_se
+beta_hat / beta_se  # t-value 
 ```
 
 $$ p = 2 \times [ 1 - \Pr(T \le |t|) ] $$
@@ -996,6 +1002,9 @@ car$Toyota <- 1 * (car$maker == "Toyota")
 head(car[, c("maker", "Honda", "Mazda", "Nissan", "Subaru", "Suzuki", "Toyota")])
 lm(price ~ weight + Honda + Mazda + Nissan + Subaru + Suzuki + Toyota, car)$coef
 ```
+<!--
+knitr::kable(head(car[, c("maker", "Honda", "Mazda", "Nissan", "Subaru", "Suzuki", "Toyota")]))
+-->
 
 たとえば，`Honda` の回帰係数 -17 は，ホンダの車がベースラインであるダイハツの車と比較して 17 万円低いことを表している（ただし統計的に有意ではない）．
 
@@ -1082,9 +1091,13 @@ head(car[, c("model", "price", "pred0")], 3)
 ```{r pred}
 lm1 <- lm(price ~ weight + ps, car, na.action = na.exclude)
 car$pred1 <- predict(lm1, newdata = car)
-head(car[, c("model", "price", "pred0", "pred1")], 3)
+# car[, c("model", "price", "pred0", "pred1")] |> head(3)
+knitr::kable(car[, c("model", "price", "pred0", "pred1")] |> head(3))
 predict(lm1, newdata = data.frame(weight = 1000, ps = 100))
 ```
+<!--
+DT::datatable(car[, c("model", "price", "pred0", "pred1")])
+-->
 
 ## Inverse transformation of log outcomes 
 
@@ -1110,7 +1123,8 @@ sigma2 <- sum(lm0$residuals^2) / (length(lm0$residuals) - 3)
 car$pred_correct <- exp(predict(lm0, newdata = car) + sigma2/2)
 ## incorrect way 
 car$pred_incorrect <- exp(predict(lm0, newdata = car))
-head(car[, c("model", "price", "pred_correct", "pred_incorrect")], 3)
+# head(car[, c("model", "price", "pred_correct", "pred_incorrect")], 3)
+knitr::kable(head(car[, c("model", "price", "pred_correct", "pred_incorrect")], 3))
 ```
 
 上のような補正を行わないと予測値が過小評価される．
@@ -1260,10 +1274,14 @@ car::vif(lm_alt)
 # Take-home messages 
 
 * 回帰分析：`summary(lm(formula = Y ~ X1 + X2, data = dataset))` 
+* 最小二乗法とは誤差（残差）の二乗が小さくなるように係数パラメタを求める原理
+* XがYに与える影響を推定しようとする場合，どのような変数をコントロールしなければならないか，逆にどのような変数はコントロールしてはならないか，を熟考する
+* ダミー変数を用いることで，質的変数（カテゴリー変数として記述される情報）を回帰分析の枠組みに組み込むことができる
+
+<!--
 * 説明変数の二乗は `I(X1^2)` 
 * 2つの説明変数の掛け算（交差項）は `X1:X2`
 
-<!--
 cf. 
 https://rpubs.com/kuroda/report_sample1
 -->

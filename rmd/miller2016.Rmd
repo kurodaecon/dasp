@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Miller et al. (AJPS 2016)"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2025年6月'
+date: '最終更新：2026年5月'
 output:
   html_document:
     toc: yes
@@ -10,6 +10,11 @@ output:
   pdf_document:
     toc: yes
 ---
+<style>
+table td, table th {
+  padding: 2px 8px;
+}
+</style><!-- 2026/5追加 -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -41,13 +46,33 @@ Do those who self-identify as conservatives believe more in conspiracy theories 
 
 注：MTurk (Mechanical Turk) はAmazonが提供するクラウドソーシングサービスで，オンライン調査（アンケート）などが可能．
 
+<!--
 意欲のある履修者向けの宿題（提出不要）：論文で使用しているもう一方のデータセット (American National Election Study, ANES) で以下と同様の分析をする．
+-->
 
-```{r data_read, message = F}
-setwd("c://ws_stat")
+dta ファイルを読み込むために `haven` パッケージの `read_dta` 関数を使う．
+（パッケージについては [データのハンドリングと可視化](https://kurodaecon.github.io/dasp/html/organizing_data.html) を参照．）
+
+既に  `tidyverse` パッケージをインストールしている場合は `haven::read_dta` のみ行う．
+
+```{r install_haven_data_read, eval = F}
+install.packages("haven")  # install haven package 
+cons <- haven::read_dta(file.choose())  # select the .dta file to load in the GUI 
+```
+
+既に `haven` パッケージまたは `tidyverse` パッケージをインストール済みであれば，次のようにする．
+
+```{r data_read, message = F, eval = F}
+library(haven)
 library(tidyverse)
-cons <- haven::read_dta("Miller2016_MTurk.dta")
-# str(cons)
+cons <- haven::read_dta(file.choose())
+```
+
+Working directory を設定してそこに保存した .dta ファイルを読み込む場合は次のようにする．
+
+```{r setwd_data_read, message = F}
+setwd("c://ws_stat")
+cons <- haven::read_dta("Miller2016_MTurk.dta")  # load the .dta file from the working directory 
 ```
 
 主な変数：
@@ -101,18 +126,39 @@ attr(cons$con_index_dem4, "label") <- "Liberal Conspiracy Index"
 
 ### Descriptive statistics 
 
-`conservative_conspiracy`: 「保守層が好む陰謀論」の支持率の平均 ― 保守派 vs. リベラル派
+Table 1. の以下の部分を reproduce する．
 
-`liberal_conspiracy`: 「リベラル層が好む陰謀論」の支持率の平均 ― 保守派 vs. リベラル派
+| | Conservatives | Liberals | Difference | t-scores | 
+| --- | --- | --- | --- | --- | 
+| Conservative Items | | | | | 
+| Conservative Index (MTurk) | .45 | .19 | .26 | 29.46 | 
+| Liberal Items | | | | | 
+| Liberal Index (MTurk) | .33 | .50 | –.17 | 16.92 | 
 
-```{r mean_con_index_by_conlib}
+```{r mean_con_index_by_conlib_base}
+cons$con_index_rep2[cons$Conservative == 0] |> mean(na.rm = TRUE)  # リベラル派の「保守派が好む陰謀論」の支持
+cons$con_index_rep2[cons$Conservative == 1] |> mean(na.rm = TRUE)  # 保守派の「保守派が好む陰謀論」の支持
+cons$con_index_dem4[cons$Conservative == 0] |> mean(na.rm = TRUE)  # リベラル派の「リベラル派が好む陰謀論」の支持
+cons$con_index_dem4[cons$Conservative == 1] |> mean(na.rm = TRUE)  # 保守派の「リベラル派が好む陰謀論」の支持
+```
+
+合成されたインデックスの差は，「保守派が好む陰謀論」では 0.19 - 0.45 = -0.26，「リベラル派が好む陰謀論」では 0.50 - 0.33 = 0.17 なので，仮説1とは整合している．
+
+#### `tidyverse` を使う場合
+
+`tidyverse` パッケージをインストール済みの場合は次のようにできる．
+
+- `conservative_conspiracy`: 「保守層が好む陰謀論」の支持率の平均 ― 保守派 vs. リベラル派
+- `liberal_conspiracy`: 「リベラル層が好む陰謀論」の支持率の平均 ― 保守派 vs. リベラル派
+
+```{r mean_con_index_by_conlib, message = FALSE}
+library(tidyverse)
 cons %>%
   group_by(Conservative) %>%
   summarise(conservative_conspiracy = mean(con_index_rep2, na.rm = TRUE),
             liberal_conspiracy = mean(con_index_dem4, na.rm = TRUE))
 ```
 
-合成されたインデックスの差は，「保守派が好む陰謀論」では 0.19 - 0.45 = -0.26，「リベラル派が好む陰謀論」では 0.50 - 0.33 = 0.17 なので，仮説1とは整合している．
 
 ### Test 
 
@@ -121,16 +167,20 @@ Stata: `ttest conspiracy1, by(Conservative) level(95) unequal` etc.
 保守派とリベラル派の「保守派が好む陰謀論」の支持率の差の検定．
 
 ```{r ttest_conserv_consp}
-t.test(conspiracy1 ~ Conservative, data = cons)  # Obama 
 t.test(con_index_rep2 ~ Conservative, data = cons)  # index 
 ```
+<!--
+t.test(conspiracy1 ~ Conservative, data = cons)  # Obama 
+-->
 
 保守派とリベラル派の「リベラル派が好む陰謀論」の支持率の差の検定．
 
 ```{r ttest_liberal_consp}
-t.test(conspiracy3 ~ Conservative, data = cons)  # 9/11 
 t.test(con_index_dem4 ~ Conservative, data = cons)  # index 
 ```
+<!--
+t.test(conspiracy3 ~ Conservative, data = cons)  # 9/11 
+-->
 
 ## Formal test: Regression (Table 2) 
 

@@ -539,12 +539,12 @@ var(x_bar)  # シミュレーションによる分散
 
 $$ Z = \frac{\bar{X} - \mu}{\sigma / \sqrt{n}} \sim N(0,1) $$
 
-「正規分布 $N(0,1)$ から乱数をドローして標本平均を計算し標準化する」を繰り返し，その分布を調べる．
+「正規分布 $N(1,2^2)$ から乱数をドローして標本平均を計算し標準化する」を繰り返し，その分布を調べる．
 
 ```{r xbar_std_sigma}
 z_list <- NULL
 for (i in 1:10000) {
-  z_i <- (mean(rnorm(n = 5)) - 0) / (1/sqrt(5))
+  z_i <- (mean(rnorm(n = 5, mean = 1, sd = 2)) - 1) / (2/sqrt(5))
   z_list <- c(z_list, z_i)
 }
 hist(z_list, probability = TRUE, breaks = 100)
@@ -567,8 +567,8 @@ $$ T = \frac{\bar{X} - \mu}{s / \sqrt{n}} \sim t(n-1) \quad \mbox{where} \quad s
 ```{r xbar_std_s}
 t_list <- NULL
 for (i in 1:10000) {
-  data_i <- rnorm(n = 5)
-  t_i <- (mean(data_i) - 0) / (sd(data_i)/sqrt(5))
+  data_i <- rnorm(n = 5, mean = 1, sd = 2)
+  t_i <- (mean(data_i) - 1) / (sd(data_i)/sqrt(5))
   t_list <- c(t_list, t_i)
 }
 hist(t_list, probability = TRUE, breaks = 200, xlim = c(-6, 6), ylim = c(0, 0.4))
