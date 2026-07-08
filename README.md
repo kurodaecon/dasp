@@ -22,9 +22,12 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
    * 応用：ダミー変数，二次項・交差項，対数，カテゴリー変数，多重共線性，予測，モデル選択
 * [Regression Analysis in Econometrics / 回帰分析（計量経済学）](https://kurodaecon.github.io/dasp/html/regression_econom.html)
    * 計量経済学の論点にウェイトを置いた回帰分析 （結合有意性検定，頑健な標準誤差，加重最小二乗法，etc.）
-* [Discrete Regression Analysis / 離散回帰分析](https://kurodaecon.github.io/dasp/html/discrete_regression.html)
+* [Estimation Methods / 様々な推定方法](https://kurodaecon.github.io/dasp/html/estimation_methods.html)
    * 最尤法：ベルヌーイ分布，正規分布，線形回帰モデル
-   * 離散回帰モデル：二項プロビット・モデル（数値計算による最適化を含む），二項ロジット・モデル，限界効果
+   * ベイズ推定：Metropolis-Hastings 
+* [Discrete Regression Analysis / 離散回帰分析](https://kurodaecon.github.io/dasp/html/discrete_regression.html)
+   * 二値（二項）回帰モデル：二項プロビット・モデル（数値計算による最適化を含む），二項ロジット・モデル，限界効果
+   * ランダム効用モデル
 * [Time Series Analysis / 時系列分析](https://kurodaecon.github.io/dasp/html/time_series.html)
    * 自己相関，定常性の検定，自己回帰モデル（最小二乗法および最尤法による推定），移動平均モデル（最尤法による推定）
 * [Panel Data Analysis and DID / パネルデータ分析とDID](https://kurodaecon.github.io/dasp/html/did.html)
@@ -53,7 +56,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Kabacoff (2024) [Modern Data Visualization with R](https://rkabacoff.github.io/datavis/) ... ggplot2 を用いた可視化
 * Rosseel and Vidal (2025) [A tutorial for understanding SEM using R: Where do all the numbers come from?](https://doi.org/10.1111/bmsp.70003) ... SEM（構造方程式モデリング）
 * 分寺 [統計的方法論特殊研究（多変量解析）（神戸大学大学院経営学研究科）](https://www2.kobe-u.ac.jp/~bunji/resource.html)
-   * 心理尺度を用いたアンケート調査データに対して因子分析および構造方程式モデリングを適用．2024・25年度は本授業でこのトピックを扱わないため，R での実装に興味がある方はこの資料で勉強してください．R での実装ではなく手法そのものに興味がある方には，小杉『[言葉と数式で理解する多変量解析入門](https://www.kitaohji.com/book/b580216.html)』（北大路書房）がお薦めです．
+   * 心理尺度を用いたアンケート調査データに対して因子分析および構造方程式モデリングを適用．本授業ではこのトピックを扱わないため，R での実装に興味がある方はこの資料で勉強してください．R での実装ではなく手法そのものに興味がある方には，小杉『[言葉と数式で理解する多変量解析入門](https://www.kitaohji.com/book/b580216.html)』（北大路書房）がお薦めです．
 * 麦山 (2024) [Rによる社会調査データ分析の手引き](https://ryotamugiyama.github.io/seminar_sociology_r/)
 * 森 (2021) [卒業論文のためのR入門](https://tomoecon.github.io/R_for_graduate_thesis/)
 * 宋・矢内 (2024) [私たちのR―ベストプラクティスの探求](https://www.jaysong.net/RBook/)
@@ -97,7 +100,7 @@ Graduate School of Commerce and Graduate School of Accountancy, Waseda Universit
 * Turrell (2022) [Coding for Economists](https://aeturrell.github.io/coding-for-economists/intro.html)
 * 東京大学 (2023) [Pythonプログラミング入門](https://utokyo-ipp.github.io/)
 * 三谷 (2021) [Python ゼロからはじめるプログラミング](https://mitani.cs.tsukuba.ac.jp/book_support/python/) （翔泳社から出版された書籍の副教材）
-* 友原（2024）『[文系のためのPythonデータ分析](https://www.yuhikaku.co.jp/books/detail/9784641166363)』有斐閣．
+* 友原 (2024) 『[文系のためのPythonデータ分析](https://www.yuhikaku.co.jp/books/detail/9784641166363)』有斐閣．
 * 春山 (2020) [Pythonで学ぶ入門計量経済学](https://py4etrics.github.io/)
 
 ## Julia 
