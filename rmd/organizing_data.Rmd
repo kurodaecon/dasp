@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Organizing and Visualizing Data"
 author: "Sho Kuroda / 黒田翔"
-date: '最終更新：2026年5月'
+date: '最終更新：2026年6月'
 output:
   html_document:
     toc: yes
@@ -188,7 +188,8 @@ beatles_ver2
 複数の条件を指定することもできる．
 
 ```{r beatles_filter_multi}
-beatles %>% filter(born >= 1941 & height < 180)
+beatles %>% filter(born >= 1941, height < 180)
+beatles %>% filter(born >= 1941 & height < 180)  # same as above 
 ```
 
 ## `select` 

@@ -1,0 +1,775 @@
+---
+title: "Data Analysis Using Statistical Packages: Estimation methods"
+author: "Sho Kuroda / 黒田翔"
+date: '最終更新：2026年7月'
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+<!--
+【 注意 】
+この .Rmd ファイルをローカルにDLして Knit する場合は
+GitHubにアップロードしている次の画像ファイルも
+.Rmd ファイルと同じディレクトリに保存する必要があります
+  estimation_mh.gif
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+このページに対応するRmdファイル：[GitHub](https://github.com/kurodaecon/dasp/blob/main/rmd/estimation_methods.Rmd)
+
+```{r load_tidyverse, message = FALSE}
+library(tidyverse)
+```
+
+# Maximum likelihood estimation / 最尤推定
+
+## A Simple Coin Toss Example: Bernoulli distribution / ベルヌーイ分布
+
+### Setup 
+
+設定：歪んだコインを使って何回かコイントスを行い，表が出る（真の）確率 $p$ を推定する．
+
+確率変数 $X$ を，表が出た場合に $X=1$，裏が出た場合に $X=0$ と定義すれば，表が出る確率 $p$ は $X$ の期待値に等しい．
+
+$$ E(X) = \sum_i x_i \Pr(X = x_i) = \Pr(X = 1) = p $$
+
+最もシンプルな推定量は標本平均 $\hat{p} = (1/n) \sum_i x_i$ であるが，ここでは別の方法を考える．
+
+確率変数 $X$ は0または1のどちらかのみを取るので，ベルヌーイ分布に従う．
+
+$$ \Pr(X = x) = p^x (1-p)^{1-x} \quad (x = 0, 1) $$
+
+この確率分布は $p$ に依存して次のような形状を持つ．
+
+```{r bernoulli_dist_ex, echo = FALSE}
+p_vals <- seq(0, 1, by = 0.2)
+par(mfrow = c(2, 3), mar = c(3, 3, 2, 1))
+for (p in p_vals) {
+  barplot(c(1 - p, p),
+    names.arg = c("Y = 0", "Y = 1"), ylim = c(0, 1), main = paste0("p = ", p), ylab = "")
+}
+par(mfrow = c(1, 1))
+```
+
+### Key point 
+
+では，$p$ がどのような値を取れば実際に観察されたデータ $x$ を最も自然に説明できるだろうか？
+
+たとえば，コイントスを1000回して表が400回出たら，$p=0.4$ と考えるのが自然だろう．
+
+$p=0.4$ のときに「1000回中表が400回出る」というデータが観察されるのは自然であるが，$p=0.1$ のときに「1000回中表が400回出る」というデータが観察されるのはかなり不自然であるし，$p=0.9$ のときに「1000回中表が400回出る」というデータが観察されるのも相当不自然である．
+
+つまり，鍵となるのは「パラメタ $p$ を所与としてデータが観察される確率 $\Pr(X = x \mid p)$」である．
+
+
+### One observation: $x_1 = 1$
+
+1回だけコイントスを行い $x_1 = 1$ だったとしよう．
+
+- 仮に $p=0.1$ だったとき，この $p$ のもとで $x_1 = 1$ が観察される確率は次の通り：
+
+$$ \Pr(X=1) = p^1 (1-p)^{1-1} = p = 0.1$$
+
+- 同様に $p=0.9$ であれば，$\Pr(X=1) = 0.9$ である．
+- つまり，$\Pr(X = 1) = p$ が最大となる $p = 1$ が観察されたデータを最も自然に説明する．
+
+### Three observation: $x_1 = 1, x_2= 1, x_3 = 0$
+
+続いて $x_1 = 1, x_2 = 1, x_3 = 0$ だった場合について，上と同様に考えてみよう．
+
+- 仮に $p=0.1$ だったとき，この $p$ のもとで $x$ が観察される確率は次の通り：
+
+$$\Pr(X_1 = 1, X_2 = 1, X_3 = 0) $$
+$$ = p^1 (1-p)^{1-1} \times p^1 (1-p)^{1-1} \times p^0 (1-p)^{1-0} = 0.1 \times 0.1 \times 0.9 = 0.009$$
+
+- 同様に $p=0.9$ で次のようになる：
+
+$$ \Pr(X_1 = 1, X_2 = 1, X_3 = 0) = 0.9 \times 0.9 \times 0.1 = 0.081 $$
+
+<!--
+- 試行錯誤すれば，$p = 2/3$ のときにデータが観察される確率が最大となることが分かる：
+
+$$ \Pr(X_1 = 1, X_2 = 1, X_3 = 0) = \frac{2}{3} \times \frac{2}{3} \times \frac{1}{3} \approx 0.148 $$
+-->
+
+以上のように，データにもっとよく当てはまる $p$ の値は「$p$ を所与としてデータ $x$ が観察される確率（同時確率または同時確率密度）」を最大化するものとして求められる．
+
+我々はパラメタ $p$ を動かして同時確率を最大化しようとするため，この同時確率を「データ $x$ を所与としたパラメタ $p$ の関数」とみなす．これを尤度関数と呼ぶ．
+
+最尤法とはこの尤度関数（あるいはその対数）を最大化するようにパラメタを推定する方法である．
+
+#### Visualizing the likelihood function
+
+尤度関数を $L$，対数尤度関数を $\log L$ と表す．
+
+$$ L(p) = \Pr(\mbox{Heads})^2 \times \Pr(\mbox{Tails})^1 = p^2 (1-p)^1, $$
+$$ \log L(p) = 2 \log (p) + \log (1-p) $$
+
+一階の条件（$L(\hat{p})' = 0$ または $\log L(\hat{p})' = 0$）より $\hat{p} = 2/3$ が得られる．
+
+$$ \frac{d L(p)}{d p} = 2p (1-p) + p^2 (-1) = p(2-3p) = 0, $$
+$$ \frac{d \log L(p)}{d p} = \frac{2}{p} + \frac{-1}{1-p} = \frac{2(1-p) - p}{p(1-p)} = \frac{2-3p}{p(1-p)} = 0, $$
+
+```{r ml_b}
+l_func <- function (p) p^2 * (1-p)^1  # 尤度関数
+plot(l_func, xlim = c(0, 1), xlab = "p"); abline(v = 2/3, lty = 2, col = 2)
+ll_func <- function (p) 2 * log(p) + log(1-p)  # 対数尤度関数
+plot(ll_func, xlim = c(0, 1), xlab = "p"); abline(v = 2/3, lty = 2, col = 2)
+```
+
+
+## Normal distribution / 正規分布
+
+標本 $\{-3, -2, 0.5, 0.5, 1.5\}$ に基づいて母平均 $\mu$ と母分散 $\sigma^2$ を推定．
+
+この標本が正規母集団からサンプリングされていると仮定すると，対数尤度関数は次のように書ける．
+
+$$ f = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left[- \frac{(y_i - \mu)^2}{2 \sigma^2} \right] , \quad \log f = - \frac{1}{2} \log 2 \pi - \frac{1}{2} \log \sigma^2 - \frac{(y_i - \mu)^2}{2 \sigma^2} $$
+
+$$ \log L = - \frac{n}{2} \log 2 \pi - \frac{n}{2} \log \sigma^2 - \frac{1}{2 \sigma^2} \sum_i (y_i - \mu)^2 $$
+
+よって，最尤推定量は次のように解析的に求められる．
+
+$$ \hat{\mu} = \frac{1}{n} \sum_i y_i , \quad \hat{\sigma}^2 = \frac{1}{n} \sum_i (y_i - \bar{y})^2 $$
+
+```{r ml_n}
+y <- c(-3, -2, 0.5, 0.5, 1.5)  # 標本
+mean(y)  # 標本平均（mu の最尤推定量と同じ）
+var(y)  # 標本分散
+sum((y - mean(y))^2) / length(y)  # 分散（sigma^2 の最尤推定量と同じ）
+```
+
+対数尤度関数を定義する．
+最初の引数がパラメタベクトルになっている（後述の最適化のため）．
+
+```{r ml_norm_func}
+ll_func_n <- function (param, y, n) {  # 対数尤度関数
+  mu <- param[1]
+  sigma2 <- param[2]
+  -n/2*log(2*pi) - n/2*log(sigma2) - 1/(2*sigma2)*sum((y-mu)^2)
+}
+```
+
+$\sigma^2 = 1$ に固定した場合の $\mu$ と対数尤度の関係をプロットする．
+
+```{r ml_n_2d}
+mu_list <- seq(-2, 2, length = 100)
+ll_mu_list <- sapply(X = mu_list, 
+                     FUN = function(x) ll_func_n(param = c(x, 1), y = y, n = length(y)))
+plot(x = mu_list, y = ll_mu_list, xlim = c(-2, 2), type = "l")
+```
+
+3Dで描画する．（`outer` 関数を使って `z` を計算するつもりだったが，なぜか `outer` 関数にかませる尤度関数中で `sum((y-mu)^2)` が評価できないので `for` 文をネストして計算する．）
+
+```{r ml_n_3d}
+grid_mu <- seq(-2, 2, length = 20)  # 探索する範囲を grid で表す
+grid_sigma2 <- seq(1, 10, length = 20)
+z <- matrix(0, nrow = length(grid_mu), ncol = length(grid_sigma2))
+for (i in 1:length(grid_mu)) {  # 探索 grid に対応する対数尤度を計算
+  for (j in 1:length(grid_sigma2)) {
+    z[i, j] <- ll_func_n(param = c(grid_mu[i], grid_sigma2[j]), y = y, n = length(y))
+  }
+}
+which_max_ml <- which(z == max(z), arr.ind = T)  # 尤度を最大化する grid の index
+grid_mu[which_max_ml[1]]; grid_sigma2[which_max_ml[2]]  # ML推定量 （gridが粗いので精度は低い）
+persp(grid_mu, grid_sigma2, z, theta = 50, phi = 20) -> pmat_persp
+points(trans3d(x = grid_mu[which_max_ml[1]], y = grid_sigma2[which_max_ml[2]], 
+               z = z[which_max_ml], pmat = pmat_persp), col = 2, pch = 19)
+```
+
+<!--
+add point
+https://stat.ethz.ch/pipermail/r-help/2009-February/380847.html
+
+outer関数を使う場合：
+ll_func_n2 <- function (mu, sigma2, n = length(y)) {
+  sum_dev2 <- (y[1]-mu)^2 + (y[2]-mu)^2 + (y[3]-mu)^2 + (y[4]-mu)^2 + (y[5]-mu)^2
+  -n/2*log(2*pi) - n/2*log(sigma2) - 1/(2*sigma2)*sum_dev2
+}
+z <- outer(grid_mu, grid_sigma2, FUN = ll_func_n2)
+-->
+
+汎用の最適化関数 `optim` を使って最尤推定する．
+
+`$par` が最適化されたパラメタの値（最尤推定値）．
+`$value` は最大化された対数尤度．
+
+`$convergence` は 0 ならば収束したことを意味する．
+
+`optim` はデフォルトでは与えられた関数を最小化するため，最大化するためには目的関数を -1 倍した値を最小化するように設定する（引数 `control = list(fnscale = -1)`）．
+
+```{r ml_n_optim}
+optim(par = c(0, 1), fn = ll_func_n, y = y, n = length(y), control = list(fnscale = -1))
+```
+
+
+## Linear regression / 線形回帰モデル
+
+<!--
+See [Rで推定する回帰モデル入門](https://rpubs.com/kuroda/regression001) > MLE of linear model / 線形モデルの最尤推定
+-->
+
+誤差項が正規分布に従うと仮定した場合の回帰モデルの対数尤度関数．
+
+$$ y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + u_i, \quad u_i \sim N(0, \sigma^2) $$
+
+$$ \log L (\beta) = - \frac{n}{2} \log (2 \pi \sigma^2) - \frac{1}{2 \sigma^2} \sum_i (y_i - x_i' \beta)^2 $$
+
+ここで $x_{i}' \beta = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2}$ である．
+
+引数 `param` は k+1 個のパラメタベクトル．
+k は定数項を含めた説明変数の数．
+1 つ目から k 個目までが回帰係数で，k+1 個目は $\sigma^2$．
+
+```{r ml_linear_reg, message = FALSE, warning = FALSE}
+ml_gauss <- function (y_gauss, x_gauss) {
+  LL_gauss <- function (param) {  # 対数尤度関数
+    - (n / 2) * log(2 * pi * param[k+1]) -
+      sum((y_gauss - x_gauss %*% param[1:k])^2) / (2 * param[k+1])
+  }
+  n <- nrow(x_gauss)  # サンプルサイズ
+  k <- ncol(x_gauss)  # 説明変数の数（定数項を含む）
+  optim(par = rep(1, k+1), fn = LL_gauss, control = list(fnscale = -1))  # 尤度最大化
+}
+y_swiss <- swiss$Fertility  # y
+x_swiss <- cbind(1, swiss$Agriculture, swiss$Examination)  # X
+ml_gauss(y_gauss = y_swiss, x_gauss = x_swiss)
+```
+
+答え合わせ．
+
+```{r ml_linear_reg_check}
+lm(Fertility ~ Agriculture + Examination, swiss)
+```
+
+## Discrete regression: Probit and Logit models 
+
+See [Discrete Regression Analysis / 離散回帰分析](https://kurodaecon.github.io/dasp/html/discrete_regression.html)
+
+
+# Bayesian estimation / ベイズ推定
+
+推定の原理や方法は解説しないので，ベイズ統計学の知識がない方は信頼できる資料で勉強してほしい．
+
+入門レベルの和書で有名なもの：
+
+- （編著）豊田秀樹『[基礎からのベイズ統計学](https://www.asakura.co.jp/detail.php?book_code=12212)』朝倉書店，2015．
+
+Web上で公開されている日本語の資料：
+
+- 分寺杏介「[統計的方法論特殊研究（ベイズ統計）](https://www2.kobe-u.ac.jp/~bunji/resource.html)」（神戸大学の授業資料）
+- 古谷知之「[ベイズ統計](https://web.sfc.keio.ac.jp/~maunz/BS19/BS19.html)」（慶應の授業資料）
+
+## Introduction 
+
+モデルが複雑で尤度関数の最大化が安定しない場合はベイズ推定が役に立つ場合がある．
+
+ベイズ推定においてはパラメタ $\theta$ は確率変数であり分布すると仮定する．
+
+データを $Y$, パラメタを $\theta$ としたとき，ベイズの定理は次のように表される：
+
+$$ \Pr (\theta \mid Y) = \frac{\Pr (Y \mid \theta) \times \Pr (\theta)}{\Pr (Y)} $$
+
+$\Pr (Y) = \int \Pr (Y \mid \theta) \Pr (\theta) d \theta$ は $\theta$ に依存しない定数で，周辺尤度や正規化定数と呼ばれる．
+正規化定数そのものは推定結果には影響を与えず，一般に定数として無視される．
+そのため，ベイズ推定においては次の比例関係を用いる．
+
+$$ \underbrace{\Pr (\theta \mid Y)}_{\mbox{Posterior}} \propto \underbrace{\Pr (\theta)}_{\mbox{Prior}} \times \underbrace{\Pr (Y \mid \theta)}_{\mbox{Likelihood}}$$
+
+なお，通常は連続な確率変数を考えるため，事前分布は密度関数 $p$ を用いて $p(\theta)$ のように表し，尤度も $L(\theta)$ のように表す（尤度関数は $p(Y \mid \theta)$ を $\theta$ の関数とみなしたもの）．
+
+<!--
+マルコフ連鎖に基づいて次のように乱数を生成する：
+
+$$ \Pr (\theta^{t+1}) = \Pr (\theta^{t}) \times \Pr (\theta^{t+1} \mid \theta^{t}) $$
+-->
+
+## Metropolis-Hastings 
+
+計算手順の一例：
+
+- パラメタの初期値を設定し，これをパラメタの暫定値とする
+- 以下を繰り返す（例：$t = 1, \ldots, 10$万）
+    - 提案分布 $Q$ から「新パラメタ（候補） $\theta^*$」をサンプリング（たとえば，random walk でパラメタの暫定値を少しだけずらす） ... $Q(\theta^* \mid \theta^{(t)})$
+    - 新パラメタ（候補）を以下の確率で採択し，これを次のステップの暫定パラメタとする（$\theta^{(t+1)} \leftarrow \theta^*$）．
+        - 以下の計算式は，2つ目の引数の分数で分子の方が大きければ確率 1 で採択し，そうでなければこの分数の確率で採択することを意味する．
+
+$$ \mbox{Acceptance rate} = \min \left\{ 1, \frac{p (\theta^*) \cdot L(\theta^*) \cdot Q (\theta^{(t)} \mid \theta^*)}{p (\theta^{(t)}) \cdot L(\theta^{(t)}) \cdot Q (\theta^* \mid \theta^{(t)})} \right\} $$
+
+提案分布が正規分布や一様分布なら $Q(\theta^* \mid \theta^{(t)}) = Q(\theta^{(t)} \mid \theta^*)$ であり，さらに事前分布が一様であれば，次の確率で暫定パラメタを採択することとなる（これを Metropolis 法と呼ぶ）．
+
+$$ \mbox{Acceptance rate} = \min \left\{ 1, \frac{ L(\theta^*) }{ L(\theta^{(t)}) } \right\} $$
+
+### $\mu$ (Normal $\propto$ Normal $\times$ Normal) 
+
+正規分布 $N(\mu, \sigma^2)$ から得られた標本に基づいて母平均パラメタ $\mu$ を推定する．
+ただし $\sigma^2 = 3.6$ と分かっているものとしよう．
+
+提案分布：次のように $\mu^{(t)}$ から少しズラすように設定する．
+このような方法を random walk MH と呼ぶ．
+
+$$ \mu^* \sim N (\mu^{(t)}, \sigma^2) \quad \Leftrightarrow \quad \mu^{*} = \mu^{(t)} + \sigma v, \quad v \sim N (0, 1) $$
+
+事前分布：分散を大きく設定して弱情報にする．
+
+$$ \mu \sim N(0, 100) $$
+$$ p (\mu) = \frac{1}{\sqrt{2 \pi \cdot 100}} \exp \left( - \frac{(\mu - 0)^2}{2 \times 100} \right), \quad \ln p (\mu) = (\mbox{const.}) - \frac{1}{2} \left( \frac{(\mu - 0)^2}{100} \right) $$
+
+尤度：
+
+$$ L (\mu) = \prod_i \frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left( - \frac{(y_i - \mu)^2}{2 \times 3.6} \right), \quad \ln L (\mu) = (\mbox{const.}) - \frac{1}{2} \sum_i \left( \frac{(y_i - \mu)^2}{3.6} \right) $$
+
+採択確率：
+
+$$ \mbox{Acceptance rate} = \min \left\{ 1, \frac{\mbox{unnormalized posterior at } \mu^*}{\mbox{unnormalized posterior at } \mu^{(t)}} \right\} = \min \left\{ 1, \frac{p (\mu^*) \cdot L (\mu^*)}{p (\mu^{(t)}) \cdot L (\mu^{(t)})} \right\} $$
+
+- 乱数 $u \sim U(0, 1)$ が min より小さければ採択する．
+    - ⇔ $u \sim U(0, 1)$ が $pL/pL$ の部分より小さければ採択する
+        - ⇔ $u \sim \ln U(0, 1)$ が $\ln (pL/pL)$ より小さければ採択する
+
+$$ \ln \left( \frac{p (\mu^*) \cdot L (\mu^*)}{p (\mu^{(t)}) \cdot L (\mu^{(t)})} \right) = \ln p (\mu^*) + \ln L (\mu^*) - \left[ \ln p (\mu^{(t)}) + \ln L (\mu^{(t)}) \right] $$
+
+```{r mh_mu_normalprior}
+y <- c(-3, -2, 0.5, 0.5, 1.5)  # 標本
+n <- length(y)  # 後々使う
+mean(y)  # 標本平均 = -0.5
+sigma2 <- 3.6  # 母分散は既知とする
+# prior: N(0, 100)
+prior_mu <- 0
+prior_sigma2 <- 100
+# posterior ∝ prior * likelihood
+#  ⇔ log(posterior) ∝ log(prior) + log(likelihood) 
+log_posterior <- function (mu) {
+  log_prior <- -(1/2) * (mu - prior_mu)^2 / prior_sigma2
+  log_likelihood <- -(1/2) * sum((y - mu)^2 / sigma2)
+  return(log_prior + log_likelihood)
+}
+iter <- 1000  # 繰り返し回数（マルコフ連鎖の長さ）
+mu_history <- numeric(iter)  # 採択された mu を格納するベクトルの初期化
+accept <- numeric(iter)  # 採択されたら 1 を記録するベクトルの初期化
+for (t in 2:iter) {
+  set.seed(t)
+  mu_tmp <- rnorm(n = 1, mean = mu_history[t-1], sd = 2)  # candidate 
+  accept_prob <- log_posterior(mu_tmp) - log_posterior(mu_history[t-1])
+  if (log(runif(1)) < accept_prob) {
+    mu_history[t] <- mu_tmp
+    accept[t] <- 1
+  } else {
+    mu_history[t] <- mu_history[t-1]
+  }
+}
+mean(accept)  # acceptance rate 
+head(data.frame(accept, mu_history), 10)
+plot(mu_history, type = "l")  # trace line 
+abline(h = mean(y), col = 2)  # sample mean 
+```
+
+本来は `log_posterior(mu_history[mu_tmp])` をどこかに一時保存しておいて，採択された場合は次の for loop で保存された値を参照すれば計算量が少し減らせる．
+このページではコードの分かりやすさを優先して for loop ごとに posterior を計算しているが，大規模データ・多次元パラメタなど尤度関数の計算に時間がかかる場合はこの再利用方式を試すとよい．
+
+Burn-in 期間はほとんど不要だと思われるが，一応最初の10%とする．
+
+```{r mh_mu_normalprior_afterburnin}
+mu_after_burnin <- mu_history[round(iter/10, 0):iter]
+c(mean(mu_after_burnin), sd(mu_after_burnin))
+hist(mu_after_burnin, breaks = 30, main = "Posterior of mu")
+abline(v = mean(mu_after_burnin), col = "red")
+```
+
+【補足】事前分布 $N(\mu_0, \tau^2)$ と尤度 $N(\mu, \sigma^2)$ のどちらも正規分布で与えている場合，事後分布も正規分布となり，事後分布の分散と平均は解析的に解ける（このような事前分布を共役事前分布と呼ぶ．式の導出は省略）．
+そのため，実はMHによるMCMCはせずとも $\mu$ の事後分布は計算できる．
+
+$$ p (\mu \mid Y) \propto p (\mu) \cdot p (Y \mid \mu) \propto \exp \left[ - \frac{1}{2 \tau^2} (\mu - \mu_0)^2 - \frac{1}{2 \sigma^2} \sum_i (Y_i - \mu)^2 \right], $$
+$$ \sigma^2_{\mbox{post}} = \left( \frac{1}{\tau^2} + \frac{n}{\sigma^2} \right)^{-1}, \quad 
+\mu_{\mbox{post}} = \sigma^2_{\mbox{post}} \cdot \left( \frac{\mu_0}{\tau^2} + n \frac{\bar{y}}{\sigma^2} \right) $$
+
+### $\mu$ (Unknown $\propto$ Uniform $\times$ Normal) 
+
+正規分布 $N(\mu, \sigma^2)$ から得られた標本に基づいて母平均パラメタ $\mu$ を推定する．
+ただし $\sigma^2 = 3.6$ と分かっているものとしよう．
+
+先ほどは事前分布を正規分布にしたが，今回は一様分布にしよう．
+そうすると事後分布は解析的に導出できない（テクニカルに言うと，一様分布は正規分布と異なり指数分布族でないため）．
+このようなケースはMCMCによる事後分布のシミュレートが必要．
+
+事前分布：
+
+$$ \mu \sim U(\min(Y), \max(Y)) $$
+$$ p (\mu) = \frac{1}{\max(Y) - \min(Y)} , \quad \ln p (\mu) = (\mbox{const.}) $$
+
+採択確率：$[\min, \max]$ においては事前分布 $p(\mu)$ が定数なので，次のように簡略化される．
+
+$$ \mbox{Acceptance rate} = \min \left\{ 1, \frac{ L(\theta^*) }{ L(\theta^{(t)}) } \right\} $$
+
+```{r mh_mu_uniformprior}
+# prior: U(min, max) ... U(-100, 100) でもよい
+prior_lower <- min(y)  # lower bound = -3
+prior_upper <- max(y)  # upper bound = 1.5
+# posterior
+log_posterior <- function (mu) {
+  if (mu < prior_lower || mu > prior_upper) return(-Inf)  # [min, max] 外は常に棄却
+  log_likelihood <- -(1/2) * sum((y - mu)^2 / sigma2)
+  return(log_likelihood)
+}
+iter <- 1000  # 繰り返し回数
+mu_history <- numeric(iter)  # 初期化
+accept <- numeric(iter)
+for (t in 2:iter) {  # 先ほどと中身は一緒．違うのは log_posterior の定義だけ．
+  set.seed(t)
+  mu_tmp <- rnorm(n = 1, mean = mu_history[t-1], sd = 2)
+  accept_prob <- log_posterior(mu_tmp) - log_posterior(mu_history[t-1])
+  if (log(runif(1)) < accept_prob) {
+    mu_history[t] <- mu_tmp
+    accept[t] <- 1
+  } else {
+    mu_history[t] <- mu_history[t-1]
+  }
+}
+mean(accept)  # acceptance rate 
+```
+
+後は先ほどとほとんど同じなので省略．
+
+```{r mh_mu_uniformprior_afterburnin, eval = FALSE}
+plot(mu_history, type = "l")
+abline(h = mean(y), col = 2)  # sample mean 
+mu_after_burnin <- mu_history[round(iter/5, 0):iter]
+c(mean(mu_after_burnin), sd(mu_after_burnin))
+hist(mu_after_burnin, breaks = 30, main = "Posterior of mu")
+abline(v = mean(mu_after_burnin), col = "red")
+```
+
+### $\sigma^2$ (Inv Gamma $\propto$ Inv Gamma $\times$ Normal) 
+
+正規分布 $N(\mu, \sigma^2)$ から得られた標本に基づいて母分散パラメタ $\sigma^2$ を推定する．
+ただし $\mu = -0.5$ と分かっているものとしよう．
+
+事前分布：逆ガンマ分布（$\alpha$: shape param., $\beta$: scale param.）
+
+$$ \sigma^2 \sim InvGamma(\alpha, \beta) $$
+$$ p (\sigma^2) = \frac{\beta^\alpha}{\Gamma(\alpha)} \left( \frac{1}{\sigma^2} \right)^{\alpha + 1} \exp \left(- \frac{\beta}{\sigma^2} \right) , \quad \ln p (\sigma^2) = (\mbox{const.}) - (\alpha + 1) \log \sigma^2 - \frac{\beta}{\sigma^2} $$
+
+```{r mh_sigma2_invgprior}
+mu <- -0.5  # 母平均は既知と設定
+# prior 
+prior_alpha <- prior_beta <- 0.001  # 弱情報
+# posterior
+log_posterior <- function (sigma2) {
+  if (sigma2 <= 0) return(-Inf)  # 分散は非負なので，負の値は常に棄却
+  log_prior <- - (prior_alpha + 1) * log(sigma2) - prior_beta / sigma2
+  log_likelihood <- -(n/2) * log(sigma2) -(1/(2 * sigma2)) * sum((y - mu)^2)
+  return(log_prior + log_likelihood)
+}
+iter <- 1000  # 繰り返し回数
+sigma2_history <- numeric(iter)  # 初期化
+sigma2_history[1] <- 1
+accept <- numeric(iter)
+for (t in 2:iter) {
+  set.seed(t)
+  sigma2_tmp <- exp(rnorm(n = 1, mean = log(sigma2_history[t-1]), sd = 1))
+  accept_prob <- log_posterior(sigma2_tmp) - log_posterior(sigma2_history[t-1])
+  if (log(runif(1)) < accept_prob) {
+    sigma2_history[t] <- sigma2_tmp
+    accept[t] <- 1
+  } else {
+    sigma2_history[t] <- sigma2_history[t-1]
+  }
+}
+mean(accept)  # acceptance rate 
+plot(sigma2_history, type = "l")
+abline(h = var(y), col = 2)  # sample variance ≒ 3.6
+```
+
+Burn-in 後の事後分布．
+
+```{r mh_sigma2_invgprior_afterburnin}
+sigma2_after_burnin <- sigma2_history[round(iter/10, 0):iter]
+c(mean(sigma2_after_burnin), sd(sigma2_after_burnin))
+hist(sigma2_after_burnin, breaks = 30, main = "Posterior of sigma2")
+abline(v = mean(sigma2_after_burnin), col = "red")
+```
+
+### $\mu$ and $\sigma^2$ 
+
+正規分布 $N(\mu, \sigma^2)$ から得られた標本に基づいて母平均パラメタ $\mu$ と母分散パラメタ $\sigma^2$ を推定する．
+
+事前分布は，$\mu$ については正規分布，$\sigma^2$ については逆ガンマ分布とする．
+
+```{r mh_mu_sigma2}
+# prior 
+prior_mu <- 0  # for mu ~ N
+prior_sigma2 <- 100
+prior_alpha <- prior_beta <- 0.001  # for sigma2 ~ InvG
+# posterior 
+log_posterior <- function (mu, sigma2) {
+  # prior 
+  if (sigma2 <= 0) return(-Inf)  # 分散は非負
+  log_prior_mu <- -(1/2) * (mu - prior_mu)^2 / prior_sigma2
+  log_prior_sigma2 <- - (prior_alpha + 1) * log(sigma2) - prior_beta / sigma2
+  # likelihood 
+  log_likelihood <- -(n/2) * log(sigma2) -(1/(2 * sigma2)) * sum((y - mu)^2)
+  return(log_prior_mu + log_prior_sigma2 + log_likelihood)
+}
+iter <- 1000  # 繰り返し回数
+mu_history <- sigma2_history <- numeric(iter)  # 初期化
+sigma2_history[1] <- 1
+accept <- numeric(iter)
+for (t in 2:iter) {
+  set.seed(t)
+  mu_tmp <- rnorm(n = 1, mean = mu_history[t-1], sd = 1)
+  sigma2_tmp <- exp(rnorm(n = 1, mean = log(sigma2_history[t-1]), sd = 1))
+  accept_prob <- log_posterior(mu_tmp, sigma2_tmp) - 
+    log_posterior(mu_history[t-1], sigma2_history[t-1])
+  if (log(runif(1)) < accept_prob) {
+    mu_history[t] <- mu_tmp
+    sigma2_history[t] <- sigma2_tmp
+    accept[t] <- 1
+  } else {
+    mu_history[t] <- mu_history[t-1]
+    sigma2_history[t] <- sigma2_history[t-1]
+  }
+}
+mean(accept)  # acceptance rate 
+yl <- range(c(mu_history, sigma2_history))
+plot(mu_history, type = "l", ylim = yl, ylab = "mu, sigma2")
+par(new = TRUE)
+plot(sigma2_history, type = "l", ylim = yl, axes = FALSE, ann = FALSE, col = 2, lty = 2)
+# abline(h = mean(y), col = 1)  # sample mean ≒ -0.5
+# abline(h = var(y), col = 2)  # sample variance ≒ 3.6
+legend(x = "topright", legend = c("mu", "sigma2"), col = 1:2, lty = 1:2)
+```
+
+事後分布が2つあるので，2次元平面にその軌跡（MCMC開始直後のみ）をプロットしてみる．
+
+```{r mh_mu_sigma2_plot}
+mu_beginning <- unique(mu_history[1:20])  # 全く同じ値に偶然戻ってくることはないと仮定
+sigma2_beginning <- unique(sigma2_history[1:20])
+plot(mu_beginning, sigma2_beginning, type = "b")  # chain 
+text(x = mu_beginning + .05, y = sigma2_beginning, labels = 1:length(mu_beginning), col = 8)
+```
+
+<!--
+(mu, sigma2) が逐次的にサンプリングされていく様子を可視化するGIFアニメ作成
+
+```{r gif_animation, eval = FALSE, message = FALSE, warning = FALSE}
+# install.packages("gganimate")
+# install.packages("gifski")
+library(ggplot2)
+library(gganimate)
+library(gifski)
+df <- data.frame(
+  t = 1:length(mu_history[1:300]),  # （burn-iu periodも含めた）最初の300個分
+  mu = mu_history[1:300],
+  sigma2 = sigma2_history[1:300]
+)
+p <- ggplot2::ggplot(df, aes(x = mu, y = sigma2)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_path(color = "gray", alpha = 0.4, lwd = 1.5) +  # 全体の軌跡
+  geom_point(aes(frame = t), color = "red", size = 4) +  # 動く点
+  labs(title = "MH Sampling Path", x = "mu", y = "sigma2") +
+  theme_minimal() +
+  theme(  # theme_minimal の後
+    plot.title = element_text(size = 24),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20)
+  ) +
+  gganimate::transition_reveal(t)
+gganimate::animate(p, duration = 10, fps = 20, width = 600, height = 500, 
+        renderer = gifski_renderer("estimation_mh.gif"))
+```
+-->
+
+```{r mh_path, echo = FALSE, out.width = "80%"}
+knitr::include_graphics("estimation_mh.gif")
+```
+
+Burn-in 後の事後分布．
+
+```{r mh_mu_sigma2_afterburnin}
+mu_after_burnin <- mu_history[round(iter/10, 0):iter]
+sigma2_after_burnin <- sigma2_history[round(iter/10, 0):iter]
+c(mean(mu_after_burnin), sd(mu_after_burnin), 
+  mean(sigma2_after_burnin), sd(sigma2_after_burnin))
+hist(mu_after_burnin, breaks = 20, main = "Posterior", xlab = "", xlim = yl, probability = TRUE)
+hist(sigma2_after_burnin, breaks = 100, add = TRUE, xlim = yl, probability = TRUE, col = rgb(1,0,0,.2))
+# abline(v = mean(mu_after_burnin)); abline(v = mean(sigma2_after_burnin), col = "red")
+legend(x = "topright", legend = c("mu", "sigma2"), fill = c(rgb(0,0,0,.2), rgb(1,0,0,.2)))
+```
+
+### $\beta$ and $\sigma^2$ in linear regression 
+
+線形回帰モデルの係数パラメタ $\beta_0, \beta_1, \beta_2$ および誤差分散 $\sigma^2$ を推定する．
+
+$$ \mbox{Fert} = \beta_0 + \beta_1 \mbox{Agri} + \beta_2 \mbox{Exam} + \epsilon, \quad \epsilon \sim N(0, \sigma^2) $$
+
+事前分布は，$\beta$ については正規分布，$\sigma^2$ については逆ガンマ分布とする．
+
+本来は提案分布からサンプリングされた $(\beta_0, \beta_1, \beta_2, \sigma^2)$ の組に対して採択／棄却を一括判定するものと思われるが，その方法ではこのケースでうまく推定できないため，逐次的に更新する方法を採用する（componentwise MH）．
+
+- Initialize $\beta_0, \beta_1, \beta_2, \sigma^2$ 
+- for $t = 1, \ldots, 10000$ 
+    - Generate $\beta_0^*$. Update $\beta_0 \leftarrow \beta_0^*$ with probability $\min \left\{ 1, \frac{p(\beta_0^*, \beta_1, \beta_2, \sigma^2) \cdot L (\beta_0^*, \beta_1, \beta_2, \sigma^2)}{p(\beta_0, \beta_1, \beta_2, \sigma^2) \cdot L (\beta_0, \beta_1, \beta_2, \sigma^2)} \right\}$. 
+    - Generate $\beta_1^*$. Update $\beta_1 \leftarrow \beta_1^*$ with probability $\min \left\{ 1, \frac{p(\beta_0, \beta_1^*, \beta_2, \sigma^2) \cdot L (\beta_0, \beta_1^*, \beta_2, \sigma^2)}{p \cdot L} \right\}$. 
+    - Generate $\beta_2^*$. Update $\beta_2 \leftarrow \beta_2^*$ with probability $\min \left\{ 1, \frac{p(\beta_0, \beta_1, \beta_2^*, \sigma^2) \cdot L (\beta_0, \beta_1, \beta_2^*, \sigma^2)}{p \cdot L} \right\}$. 
+    - Generate $\sigma^{2*}$. Update $\sigma^2 \leftarrow \sigma^{2*}$ with probability $\min \left\{ 1, \frac{p(\beta_0, \beta_1, \beta_2, \sigma^{2*}) \cdot L (\beta_0, \beta_1, \beta_2, \sigma^{2*})}{p \cdot L} \right\}$. 
+
+```{r mh_linearregression}
+# data 
+Y <- swiss$Fertility
+X <- cbind(1, swiss$Agriculture, swiss$Examination)
+n_swiss <- length(Y)
+k_swiss <- ncol(X)
+# prior 
+prior_beta_mu <- rep(0, k_swiss)  # for beta ~ N
+prior_beta_sigma2 <- rep(1000, k_swiss)  # 値が小さいとうまく推定できない
+prior_alpha <- prior_beta <- 0.001  # for sigma2 ~ InvG
+# posterior 
+log_posterior <- function (param) {
+  betas <- param[1:k_swiss]
+  sigma2 <- param[1+k_swiss]
+  # prior 
+  if (sigma2 <= 0) return(-Inf)  # 分散は非負
+  log_prior_betas <- sum( -(1/2) * (betas - prior_beta_mu)^2 / prior_beta_sigma2 )
+  log_prior_sigma2 <- - (prior_alpha + 1) * log(sigma2) - prior_beta / sigma2
+  # likelihood 
+  SSR <- sum((Y - X %*% betas)^2)  # sum of squared residuals 
+  log_likelihood <- -(n_swiss/2) * log(sigma2) -(1/(2 * sigma2)) * SSR
+  return(log_prior_betas + log_prior_sigma2 + log_likelihood)
+}
+iter <- 10000  # 繰り返し回数
+# マルコフ連鎖を保存する行列の初期化
+# column 1=t, 2=beta0, 3=beta1, 4=beta2, 5=sigma2, 6~9=acceptance(flag)
+param_history <- as.data.frame(matrix(0, ncol = 1+(k_swiss+1)*2, nrow = iter))
+names(param_history) <- c("t", "b0", "b1", "b2", "s", "a0", "a1", "a2", "as")
+betas_current <- rep(0, k_swiss)
+sigma2_current <- 1
+param_history$s[1] <- sigma2_current  # sigma^2 at t=1 
+log_posterior_ref <- log_posterior(c(betas_current, sigma2_current))
+start_time <- proc.time()[3]
+for (t in 2:iter) {
+  set.seed(t)
+  # update beta
+  betas_new <- betas_current
+  sigma2_new <- sigma2_current
+  accept_betas <- rep(0, k_swiss)
+  accept_sigma2 <- 0
+  for (k in 1:k_swiss) {
+    betas_tmp <- betas_new
+    betas_tmp[k] <- rnorm(n = 1, mean = betas_current[k], sd = 1)
+    log_posterior_tmp <- log_posterior(c(betas_tmp, sigma2_current))
+    accept_prob <- log_posterior_tmp - log_posterior_ref
+    if (log(runif(1)) < accept_prob) {
+      betas_new[k] <- betas_tmp[k]
+      accept_betas[k] <- 1
+      log_posterior_ref <- log_posterior_tmp
+    }
+  }
+  # update sigma2
+  sigma2_tmp <- exp(rnorm(n = 1, mean = log(param_history$s[t-1]), sd = 1))
+  log_posterior_tmp <- log_posterior(c(betas_new, sigma2_tmp))
+  accept_prob <- log_posterior_tmp - log_posterior_ref
+  if (log(runif(1)) < accept_prob) {
+    sigma2_new <- sigma2_tmp
+    accept_sigma2 <- 1
+    log_posterior_ref <- log_posterior_tmp
+  }
+  betas_current <- betas_new
+  sigma2_current <- sigma2_new
+  param_history[t, ] <- c(t, betas_new, sigma2_new, accept_betas, accept_sigma2)
+  if (t %% round(iter/2, 0) == 0) {
+    cat(t, ", b0=", betas_new[1], ", b1=", betas_new[2], ", b2=", betas_new[3], 
+        ", s2=", sigma2_new, ", elasped=", proc.time()[3] - start_time, "[s] \n", sep = "")
+  }
+}
+apply(param_history[, 6:9], 2, mean)  # acceptance rate 
+plot(param_history$b0, type = "l")
+abline(h = lm(Fertility ~ Agriculture + Examination, swiss)$coef[1], col = 2)  # OLS estimates 
+# plot(param_history$b1, type = "l")
+# plot(param_history$b2, type = "l")
+# plot(param_history$s, type = "l")
+```
+
+Burn-in 後．
+
+```{r mh_linearregression_afterburnin}
+apply(param_history[(iter/5):iter, 2:(2+k_swiss)], 2, mean)
+# for comparison 
+lm(Fertility ~ Agriculture + Examination, swiss)$coef
+summary(lm(Fertility ~ Agriculture + Examination, swiss))$sigma^2
+```
+
+<!--
+ToDo: Rcpp, 並列計算
+
+
+一括推定（うまくいかなかった）
+
+```{r mh_linearregression_batch, eval = FALSE}
+# data 
+Y <- swiss$Fertility
+X <- cbind(1, swiss$Agriculture, swiss$Examination)
+n_swiss <- length(Y)
+k_swiss <- ncol(X)
+# prior 
+prior_beta_mu <- rep(0, k_swiss)  # for beta ~ N
+prior_beta_sigma2 <- rep(1000, k_swiss)
+prior_alpha <- prior_beta <- 0.001  # for sigma2 ~ InvG
+# posterior 
+log_posterior <- function (param) {
+  betas <- param[1:k_swiss]
+  sigma2 <- param[1+k_swiss]
+  # prior 
+  if (sigma2 <= 0) return(-Inf)  # 分散は非負
+  log_prior_betas <- sum( -(1/2) * (betas - prior_beta_mu)^2 / prior_beta_sigma2 )
+  log_prior_sigma2 <- - (prior_alpha + 1) * log(sigma2) - prior_beta / sigma2
+  # likelihood 
+  SSR <- sum((Y - X %*% betas)^2)  # sum of squared residuals 
+  log_likelihood <- -(n_swiss/2) * log(sigma2) -(1/(2 * sigma2)) * SSR
+  # return(log_prior_betas + log_prior_sigma2 + log_likelihood)
+  return(log_likelihood)
+}
+iter <- 100000  # 繰り返し回数
+# マルコフ連鎖を保存する行列の初期化
+# column 1=t, 2=beta0, 3=beta1, 4=beta2, 5=sigma2, 6=accept
+param_history <- as.data.frame(matrix(0, ncol = 3+k_swiss, nrow = iter))
+names(param_history) <- c("t", "b0", "b1", "b2", "s", "acc")
+param_history$s[1] <- 1  # sigma^2 at t=1
+index_param <- 2:(2+k_swiss)  # index (in param_history) of betas and sigma2
+start_time <- proc.time()[3]
+for (t in 2:iter) {
+  set.seed(t)
+  beta_t1 <- as.numeric(param_history[t-1, 2:(1+k_swiss)])
+  beta_tmp <- rnorm(n = 3, mean = beta_t1, sd = rep(2, k_swiss))
+  sigma2_tmp <- exp(rnorm(n = 1, mean = log(param_history$s[t-1]), sd = 2))
+  accept_prob <- log_posterior(c(beta_tmp, sigma2_tmp)) - 
+    log_posterior(as.numeric(param_history[t-1, index_param]))
+  if (log(runif(1)) < accept_prob) {
+    param_history[t, ] <- c(t, beta_tmp, sigma2_tmp, 1)
+  } else {
+    param_history[t, ] <- c(t, as.numeric(param_history[t-1, index_param]), 0)
+  }
+  if (t %% round(iter/5, 0) == 0) {
+    cat(t, ", b0=", beta_t1[1], ", b1=", beta_t1[2], ", b2=", beta_t1[3], 
+        ", s2=", param_history$s[t], ", elasped=", proc.time()[3] - start_time, "\n", sep = "")
+  }
+}
+mean(param_history$acc)  # acceptance rate 
+
+# cf
+lm(Fertility ~ Agriculture + Examination, swiss)$coef  # 95, -0.1, -1.2
+summary(lm(Fertility ~ Agriculture + Examination, swiss))$sigma^2  # 93
+plot(param_history$b0, type = "l")
+plot(param_history$b1, type = "l")
+plot(param_history$b2, type = "l")
+plot(param_history$s, type = "l")
+apply(param_history[-(1:(iter/10)), 2:(2+k_swiss)], 2, mean)
+```
+-->

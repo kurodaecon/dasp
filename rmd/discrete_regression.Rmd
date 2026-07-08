@@ -1,7 +1,7 @@
 ---
 title: "Data Analysis Using Statistical Packages: Discrete Regression Analysis"
 author: "Sho Kuroda / 黒田翔"
-date: '2024年3月 (Last update: 2024年4月)'
+date: '最終更新：2026年7月'
 output:
   html_document:
     toc: yes
@@ -15,160 +15,24 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r load_tidyverse, message = FALSE}
-library(tidyverse)
-```
+このページに対応するRmdファイル：[GitHub](https://github.com/kurodaecon/dasp/blob/main/rmd/discrete_regression.Rmd)
 
-# Maximum likelihood / 最尤法
+このページでは次を扱う：
 
-## Bernoulli distribution / ベルヌーイ分布
-
-5回の試行で3回成功（成功確率 $p$），2回失敗（失敗確率 $1-p$）した場合の尤度関数と対数尤度関数．
-
-$$ L(p) = \Pr(\mbox{failure})^2 \times \Pr(\mbox{success})^3 = (1-p)^2 p^3, \quad \log L(p) = 2 \log (1-p) + 3 \log (p) $$
-
-一階の条件（$L(\hat{p})' = 0$ または $\log L(\hat{p})' = 0$）より $\hat{p} = 0.6$ が得られる．
-
-$$ \frac{d L(p)}{d p} = \frac{d}{d p} (1-p)^2 p^3 = -2(1-p)p^3 + (1-p)^2 \times 3p^2 = (1-p)p^2[-2p + 3(1-p)] = 0 $$
-
-```{r ml_b}
-l_func <- function (p) (1-p)^2 * p^3  # 尤度関数
-ll_func <- function (p) 2 * log(1-p) +3 * log(p)  # 対数尤度関数
-plot(l_func, xlim = c(0, 1)); abline(v = .6, lty = 2, col = 2)
-plot(ll_func, xlim = c(0, 1)); abline(v = .6, lty = 2, col = 2)
-```
+- 二値回帰モデル：アウトカムが二値 \{0, 1\} の場合のプロビットモデルとロジットモデル．
+- ランダム効用モデルに基づく離散選択モデル：2つ以上のカテゴリー（離散的なアウトカム）から1つを選択する行動モデル．ロジットモデルのみ扱う．
 
 
-## Normal distribution / 正規分布
-
-標本 $\{-3, -2, 0.5, 0.5, 1.5\}$ に基づいて母平均 $\mu$ と母分散 $\sigma^2$ を推定．
-
-この標本が正規母集団からサンプリングされていると仮定すると，対数尤度関数は次のように書ける．
-
-$$ f = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left[- \frac{(y_i - \mu)^2}{2 \sigma^2} \right] , \quad \log f = - \frac{1}{2} \log 2 \pi - \frac{1}{2} \log \sigma^2 - \frac{(y_i - \mu)^2}{2 \sigma^2} $$
-
-$$ \log L = - \frac{n}{2} \log 2 \pi - \frac{n}{2} \log \sigma^2 - \frac{1}{2 \sigma^2} \sum_i (y_i - \mu)^2 $$
-
-よって，最尤推定量は次のように解析的に求められる．
-
-$$ \hat{\mu} = \frac{1}{n} \sum_i y_i , \quad \hat{\sigma}^2 = \frac{1}{n} \sum_i (y_i - \bar{y})^2 $$
-
-```{r ml_n}
-y <- c(-3, -2, 0.5, 0.5, 1.5)  # 標本
-mean(y)  # 標本平均（mu の最尤推定量と同じ）
-var(y)  # 標本分散
-sum((y - mean(y))^2) / length(y)  # 分散（sigma^2 の最尤推定量と同じ）
-```
-
-対数尤度関数を定義する．
-最初の引数がパラメタベクトルになっている（後述の最適化のため）．
-
-```{r ml_norm_func}
-ll_func_n <- function (param, y, n) {  # 対数尤度関数
-  mu <- param[1]
-  sigma2 <- param[2]
-  -n/2*log(2*pi) - n/2*log(sigma2) - 1/(2*sigma2)*sum((y-mu)^2)
-}
-```
-
-$\sigma^2 = 1$ に固定した場合の $\mu$ と対数尤度の関係をプロットする．
-
-```{r ml_n_2d}
-mu_list <- seq(-2, 2, length = 100)
-ll_mu_list <- sapply(X = mu_list, 
-                     FUN = function(x) ll_func_n(param = c(x, 1), y = y, n = length(y)))
-plot(x = mu_list, y = ll_mu_list, xlim = c(-2, 2), type = "l")
-```
-
-3Dで描画する．（`outer` 関数を使って `z` を計算するつもりだったが，なぜか `outer` 関数にかませる尤度関数中で `sum((y-mu)^2)` が評価できないので `for` 文をネストして計算する．）
-
-```{r ml_n_3d}
-grid_mu <- seq(-2, 2, length = 20)  # 探索する範囲を grid で表す
-grid_sigma2 <- seq(1, 10, length = 20)
-z <- matrix(0, nrow = length(grid_mu), ncol = length(grid_sigma2))
-for (i in 1:length(grid_mu)) {  # 探索 grid に対応する対数尤度を計算
-  for (j in 1:length(grid_sigma2)) {
-    z[i, j] <- ll_func_n(param = c(grid_mu[i], grid_sigma2[j]), y = y, n = length(y))
-  }
-}
-which_max_ml <- which(z == max(z), arr.ind = T)  # 尤度を最大化する grid の index
-grid_mu[which_max_ml[1]]; grid_sigma2[which_max_ml[2]]  # ML推定量 （gridが粗いので精度は低い）
-persp(grid_mu, grid_sigma2, z, theta = 50, phi = 20) -> pmat_persp
-points(trans3d(x = grid_mu[which_max_ml[1]], y = grid_sigma2[which_max_ml[2]], 
-               z = z[which_max_ml], pmat = pmat_persp), col = 2, pch = 19)
-```
-
-<!--
-add point
-https://stat.ethz.ch/pipermail/r-help/2009-February/380847.html
-
-outer関数を使う場合：
-ll_func_n2 <- function (mu, sigma2, n = length(y)) {
-  sum_dev2 <- (y[1]-mu)^2 + (y[2]-mu)^2 + (y[3]-mu)^2 + (y[4]-mu)^2 + (y[5]-mu)^2
-  -n/2*log(2*pi) - n/2*log(sigma2) - 1/(2*sigma2)*sum_dev2
-}
-z <- outer(grid_mu, grid_sigma2, FUN = ll_func_n2)
--->
-
-汎用の最適化関数 `optim` を使って最尤推定する．
-
-`$par` が最適化されたパラメタの値（最尤推定値）．
-`$value` は最大化された対数尤度．
-
-`$convergence` は 0 ならば収束したことを意味する．
-
-`optim` はデフォルトでは与えられた関数を最小化するため，最大化するためには目的関数を -1 倍した値を最小化するように設定する（引数 `control = list(fnscale = -1)`）．
-
-```{r ml_n_optim}
-optim(par = c(0, 1), fn = ll_func_n, y = y, n = length(y), control = list(fnscale = -1))
-```
-
-
-## Linear regression / 線形回帰モデル
-
-<!--
-See [Rで推定する回帰モデル入門](https://rpubs.com/kuroda/regression001) > MLE of linear model / 線形モデルの最尤推定
--->
-
-誤差項が正規分布に従うと仮定した場合の回帰モデルの対数尤度関数．
-
-$$ y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + u_i, \quad u_i \sim N(0, \sigma^2) $$
-
-$$ \log L (\beta) = - \frac{n}{2} \log (2 \pi \sigma^2) - \frac{1}{2 \sigma^2} \sum_i (y_i - x_i' \beta)^2 $$
-
-ここで $x_{i}' \beta = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2}$ である．
-
-引数 `param` は k+1 個のパラメタベクトル．
-k は定数項を含めた説明変数の数．
-1 つ目から k 個目までが回帰係数で，k+1 個目は $\sigma^2$．
-
-```{r ml_linear_reg, message = FALSE, warning = FALSE}
-ml_gauss <- function (y_gauss, x_gauss) {
-  LL_gauss <- function (param) {  # 対数尤度関数
-    - (n / 2) * log(2 * pi * param[k+1]) -
-      sum((y_gauss - x_gauss %*% param[1:k])^2) / (2 * param[k+1])
-  }
-  n <- nrow(x_gauss)  # サンプルサイズ
-  k <- ncol(x_gauss)  # 説明変数の数（定数項を含む）
-  optim(par = rep(1, k+1), fn = LL_gauss, control = list(fnscale = -1))  # 尤度最大化
-}
-y_swiss <- swiss$Fertility  # y
-x_swiss <- cbind(1, swiss$Agriculture, swiss$Examination)  # X
-ml_gauss(y_gauss = y_swiss, x_gauss = x_swiss)
-```
-
-答え合わせ．
-
-```{r ml_linear_reg_check}
-lm(Fertility ~ Agriculture + Examination, swiss)
-```
-
-# Discrete regression model / 離散回帰モデル
+# Binary regression model / 二値回帰モデル
 
 Titanic データの読み込み．
 
 ```{r titanic_read}
 titanic <- read.csv("https://raw.githubusercontent.com/kurodaecon/bs/main/data/titanic3_csv.csv")
+```
+
+```{r load_tidyverse, message = FALSE}
+library(tidyverse)
 ```
 
 ## Linear probability model / 線形確率モデル
@@ -189,7 +53,7 @@ summary(lm(survived ~ sex + age + factor(pclass), data = titanic))
 
 ## Binary probit model / 二値プロビット・モデル
 
-$$ p = \Pr (y = 1) = \Phi (\beta_0 + \beta_1 x) $$
+$$ \Pr (Y = 1 \mid X) = \Phi (\beta_0 + \beta_1 X) $$
 
 `glm` 関数で推定．
 
@@ -206,19 +70,21 @@ summary(probit_titanic)
 
 選択確率は以下で与えられる．
 
-$$ \Pr (Y=1) = \Phi (\beta_0 + \beta_1 X) = \frac{1}{2 \pi} \int_{-\infty}^{\beta_0 + \beta_1 X} \exp \left( - \frac{t^2}{2} \right) dt $$
+$$ \Pr (Y=1 \mid X) = \Phi (\beta_0 + \beta_1 X) = \frac{1}{2 \pi} \int_{-\infty}^{\beta_0 + \beta_1 X} \exp \left( - \frac{t^2}{2} \right) dt $$
 
 よって，尤度関数は以下のようになる．
 
-$$ L (\beta_0, \beta_1) = \prod_i \left[ \{ \Pr (Y_i = 1) \}^{Y_i} \times \{ \Pr (Y_i = 0) \}^{1 - Y_i} \right] = \prod_i \left[ \{ \Phi (\beta_0 + \beta_1 x) \}^{Y_i} \times \{ 1 - \Phi (\beta_0 + \beta_1 x) \}^{1 - Y_i} \right] $$
+$$ L (\beta_0, \beta_1) = \prod_i \left[ \{ \Pr (Y_i = 1 \mid X_i) \}^{Y_i} \times \{ \Pr (Y_i = 0 \mid X_i) \}^{1 - Y_i} \right] $$
+$$ = \prod_i \left[ \{ \Phi (\beta_0 + \beta_1 X_i) \}^{Y_i} \times \{ 1 - \Phi (\beta_0 + \beta_1 X_i) \}^{1 - Y_i} \right] $$
 
 対数を取ると対数尤度関数が得られる．
 
-$$ \log L (\beta_0, \beta_1) = \sum_i \left[ Y_i \times \log \{ \Phi (\beta_0 + \beta_1 x) \} + (1 - Y_i) \times \log \{ 1 - \Phi (\beta_0 + \beta_1 x) \} \right] $$
+$$ \log L (\beta_0, \beta_1) = \sum_i \left[ Y_i \times \log \{ \Phi (\beta_0 + \beta_1 X_i) \} + (1 - Y_i) \times \log \{ 1 - \Phi (\beta_0 + \beta_1 X_i) \} \right] $$
 
 これを，$(\beta_0, \beta_1)$ を引数とする関数として定義すればよい．
 
-標準正規分布の分布関数は `pnorm` で与えられる．
+- 標準正規分布の分布関数は `pnorm` で与えられる．
+- 上の式では一つの説明変数を用いて $\beta_0 + \beta_1 X$ と書いているが，一般には複数の説明変数を用いて $\beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_K X_K = \mathbf{X} \boldsymbol{\beta}$ と書ける．<!-- $n \times 1$ ベクトル -->
 
 ```{r probit_ml_func}
 ml_probit <- function (y_probit, x_probit) {
@@ -251,9 +117,13 @@ ml_probit(y_probit = titanic_numeric$survived, x_probit = cbind(1, titanic_x))
 
 ### Marginal effect / 限界効果
 
-説明変数の平均値 $\bar{x}$ を用いる方法．
+定義
 
-$$ ME_{x} = \phi (\hat{\beta_0} + \hat{\beta_1} \bar{x}) \hat{\beta_1} $$
+$$ \frac{d \Pr(Y_i = 1 \mid X_i)}{d X_i} = \frac{d \Phi(\beta_0 + \beta_1 X_i)}{d X_i} = \phi(\beta_0 + \beta_1 X_i) \cdot \beta_1 $$
+
+説明変数の平均値 $\bar{X}$ を用いる方法．
+
+$$ \phi (\hat{\beta_0} + \hat{\beta_1} \bar{X}) \hat{\beta_1} $$
 
 ```{r titanic_probit_me_Xmean}
 xb_mean <- probit_titanic$coef %*% c(1, mean(titanic_numeric$male), mean(titanic$age, na.rm = TRUE), 
@@ -263,7 +133,7 @@ as.numeric(dnorm(x = xb_mean)) * probit_titanic$coef
 
 Individual ごとの限界効果の平均値を計算する方法．
 
-$$ ME_{x} = \frac{1}{n} \sum_i ME_{i, x} = \frac{1}{n} \sum_i \phi (\hat{\beta_0} + \hat{\beta}_1 x_i) \hat{\beta}_1 $$
+$$ \frac{1}{n} \sum_i \phi (\hat{\beta_0} + \hat{\beta}_1 X_i) \hat{\beta}_1 $$
 
 ```{r titanic_probit_me_MEmean}
 xb <- as.matrix(cbind(1, titanic_numeric[, c("male", "age", "pclass2", "pclass3")])) %*% probit_titanic$coef
@@ -284,7 +154,7 @@ probitmfx(formula = survived ~ sex + age + factor(pclass), data = titanic)
 
 ## Binary logit model / 二値ロジット・モデル
 
-$$ p = \Pr (y = 1) = \Lambda (\beta_0 + \beta_1 x) $$
+$$ \Pr (Y = 1) = \Lambda (\beta_0 + \beta_1 X) $$
 
 `glm` 関数で推定．
 
@@ -305,12 +175,271 @@ logitmfx(formula = survived ~ sex + age + factor(pclass), data = titanic)
 余裕がある履修者向けの宿題：プロビットと同様に（`mfx::logitmfx` 関数を使わずに）計算する．
 
 
-## Advanced: Conditional logit
+# Discrete choice based on random utility model / ランダム効用モデルに基づく離散選択
 
-演習では扱わないが，興味がある履修者は [自動車保有の離散選択問題：Conditional logit](https://rpubs.com/kuroda/cond_logit) を試してみよう．
+経済主体（消費者など）の効用最大化を前提とすれば，選択肢が複数（3つ以上でもよい）あるときにそのうち一つを選択するということは，選択した選択肢から得られる効用（≒ 嬉しさ・満足度）が他の選択肢から得られる効用と比較してより大きいことを意味するはず．
 
-3つ以上の選択肢から1つを選ぶ問題も上記を一般化して定式化・推定できることが分かるだろう．
+選択肢 $j (\in \{ 1,\ldots,J \} )$ を選択・消費することから得る間接効用を $u_j$ で表すとき，実際に選択される選択肢 $j^*$ は次のように決まる．
+
+$$ j^* = \arg \max_{j} u_j $$
+
+$u_j$ を分析者にとって観察できる要因によって説明できる部分 $V_j$ と観察できない要因による部分 $\epsilon_j$ に分解する．
+
+$$ u_j = V_j + \epsilon_j $$
+
+これをランダム効用モデルと呼ぶ．
+
+離散選択モデルの選択確率はこのランダム効用モデルに基づいて次のように記述できる．
+
+$$ \Pr (y_j = 1) = \Pr (u_j \ge u_k, \forall k \ne j) \\ = \Pr (V_j + \epsilon_j \ge V_k + \epsilon_k, \forall k \ne j) = \Pr (\epsilon_j - \epsilon_k \ge - V_j + V_k, \forall k \ne j) $$
+
+ここで $y_j$ は選択肢 $j$ を選択した場合に1をとる indicator である．
+
+$\epsilon_j$ に第一種極値分布を仮定すると（このとき，$\epsilon_j - \epsilon_k$ がロジスティック分布に従う），この確率はロジット選択確率で表される（証明は [Train (2009)](https://eml.berkeley.edu/books/choice2.html) §3.10 などを参照）．
+
+$$ \Pr (y_j = 1) = \frac{\exp(V_j)}{\sum_k \exp(V_k)} $$
+
+推定に用いるデータの形式によって $V_{ij}$ は異なる関数形を取る（$i$: 消費者など）．
+
+- たとえば，$x$ が $j$ 間で変分を持つときは $V_{ij} = \sum_{m} \beta_{m} x_{jm}$ のように定式化できる．このとき $\beta$ は $j$ 間で共通のものが推定される．これは conditional logit と呼ばれる．$x_{ijm}$ の場合もこの枠組みで推定できる．
+- $x$ が $j$ 間で変分を持たないとき，すなわち $x$ は $i$ 間でのみ変分を持つとき，$V_{ij} = \sum_{m} \beta_{jm} x_{im}$ のように定式化される．このとき $\beta$ は $j$ ごとに推定される．これは multinomial logit と呼ばれる．
+
+<!-- 上の2つは互いに書き換えることができる． -->
+
+## Data for simulation 
+
+間接効用関数は次のように設定する（$\beta = -2, j = 0$: outside option）：
+
+$$ u_j = - 2 p_j + \epsilon_j, \\ u_0 = \epsilon_0 $$
+
+```{r data_generation, message = FALSE}
+# install.packages("evd")
+library(evd)  # 第一種極値分布からの乱数ドローに必要
+N <- 1000  # i = 1, ..., 1000
+J <- 2  # j = 0 (outside option = not purchase), 1, 2
+param_beta <- -2
+set.seed(0)
+data <- tibble::tibble(
+  id = rep(1:N, each = 1+J),
+  j = rep(0:J, times = N),
+  p = rep(c(0, 0.2, 0.3), times = N),
+  e = evd::rgumbel(N * (1+J)),
+  u = param_beta * p + e,
+  y = 0
+)
+for (i in 1:N) {  # j* = arg max u_j
+  index_i <- data$id == i
+  index_max_ui <- which.max(data$u[index_i])[1]
+  data$y[index_i][index_max_ui] <- 1
+}
+data %>% group_by(j) %>% summarise(n_chosen = sum(y))
+```
+
+## ML estimation / 最尤推定
+
+### `survival::clogit` function 
+
+```{r survival_package, message = FALSE}
+# install.packages("survival")
+library(survival)
+cl0 <- survival::clogit(y ~ p + strata(id), data)
+cl0
+logLik(cl0)  # maximized (ln L)
+```
+
+### `mlogit::mlogit` function 
+
+```{r mlogit_package, message = FALSE}
+# install.packages("mlogit")
+library(mlogit)
+mlogit_data <- mlogit.data(data, shape = "long", choice = "y", chid.var = "id", alt.var = "j")
+summary(mlogit(y ~ p | 0, data = mlogit_data))
+```
+
+### Handmade likelihood function + general-purpose optimizer 
+
+尤度関数と対数尤度関数
+
+$$ L (\beta) = \prod_i \prod_j \Pr(y_{ij}=1)^{y_{ij}}, \\ \ln L (\beta) = \sum_i \sum_j \left[ y_{ij} \times \ln \Pr(y_{ij}=1) \right] $$
+
+- exp の計算で数値計算上の問題が生じにくいように次のような工夫をする（$\max(V) = \max \{ V_0, V_1, V_2 \}$）：
+
+$$ \frac{\exp(V_j)}{\sum_k \exp(V_k)} = \frac{\exp(V_j) \times \exp(-\max(V))}{\sum_k \exp(V_k) \times \exp(-\max(V))} = \frac{\exp(V_j - \max(V))}{\sum_k \exp(V_k - \max(V))} $$
+
+```{r logl}
+lnL <- function (param, d) { # 対数尤度関数
+  d <- d %>% 
+    mutate(v = param * p) %>% 
+    group_by(id) %>% 
+    mutate(max_v = max(v),  # max of {V_i0, V_i1, V_i2}
+           v_minus_max = exp(v - max_v),  # exp V-max
+           sum_v = sum(v_minus_max)) %>%  # sum(exp V-max)
+    ungroup() %>% 
+    mutate(prob = v_minus_max / sum_v,  # exp V-max / sum(exp V-max)
+           y_lnprob = y * log(prob))
+  sum(d$y_lnprob)
+}
+```
+
+#### `optim` function 
+
+デフォルトでは目的関数を最小化するので `control = list(fnscale = -1)` で最大化問題として指定．
+
+```{r logl_optim}
+opt_logit <- optim(par = -1, fn = lnL, d = data,
+ control = list(fnscale = -1), method = "BFGS", hessian = TRUE)
+opt_logit
+```
+
+- `$par`: 推定されたパラメタ $\hat{\beta}$
+- `$value`: 最大化された対数尤度関数の値
+- `$hessian`: Hessian = $\nabla^2 \ln L(\beta)$ （対数尤度関数の二階微分）
+
+推定されたパラメタの標準誤差は Hessian を利用して次のように計算できる．
+
+$$ \mbox{SE} (\beta) = \sqrt{ \mbox{diag} \left( I^{-1} \right) } \quad \mbox{where} \quad I = - \nabla^2 \ln L (\beta) $$
+
+- $I$: フィッシャー情報行列
+
+```{r logl_optim_se}
+opt_se <- - opt_logit$hessian |> solve() |> diag() |> sqrt()  # std. error
+opt_se
+opt_logit$par / opt_se  # z value 
+2 * (1 - pnorm(q = abs(opt_logit$par / opt_se)))  # p value 
+```
+
+#### Note: Counterfactual simulation 
+
+元の変数（価格変数のつもり）は $p = (0, 0.2, 0.3)$ だが，これを $p = (0, 0.1, 0.3)$ に変更したときに，各選択肢の選択確率がどのように変化するかを計算してみる．
+
+このシミュレーションは，「元の価格変数（変数名の suffix：`_act`）」と「反実仮想の価格変数（変数名の suffix：`_cf`）」それぞれについて次を計算することによって実行される．
+
+- $V$ を計算
+- $i$ ごとに $\max V, \exp(V_j - \max V), \sum_k (\exp(V_k - \max V))$ を計算
+- $\Pr(y_{ij} = 1)$ を計算
+- $\Pr(y_{ij} = 1)$ の平均値を $j$ ごとに計算（市場シェアとして解釈可能）
+
+```{r cf}
+data %>%
+  mutate(
+    v_act = opt_logit$par * p,  # act = actual 
+    p_cf = rep(c(0, 0.1, 0.3), times = N),  # cf = counterfactual 
+    v_cf = opt_logit$par * p_cf
+  ) %>% 
+  group_by(id) %>% 
+  mutate(
+    # actual 
+    max_v_act = max(v_act),
+    v_minus_max_act = exp(v_act - max_v_act),
+    sum_v_act = sum(v_minus_max_act),
+    # counterfactual 
+    max_v_cf = max(v_cf),
+    v_minus_max_cf = exp(v_cf - max_v_cf),
+    sum_v_cf = sum(v_minus_max_cf)
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    prob_act = v_minus_max_act / sum_v_act,
+    prob_cf = v_minus_max_cf / sum_v_cf
+  ) %>% 
+  group_by(j) %>%
+  summarise(
+    prob_act = mean(prob_act),
+    prob_cf = mean(prob_cf)
+  )
+```
+
+価格が下がった $j=1$ の選択確率が上昇し，その分 $j=0,2$ の選択確率が低下したことが観察できる．
+
+注：
+
+- 本分析では変数 $p$ の値は $j$ ごとにすべての $i$ 間で一律の値を設定しているので，実際には上をすべての $i$ について計算する必要はなく，特定の $i$ について計算した選択確率がそのまま市場シェアとして解釈できる．
+- 選択確率の平均値の比較ではなく $\epsilon$ を極値分布からドローして $j^*$ を求めて比較することも可能（だが，計算結果は $\epsilon$ のドローによる不確実性を含む）．
+
+<!--
+i=1 のみで計算する場合
+
+```{r cf_id1}
+data %>%
+  dplyr::filter(id == 1) %>% 
+  mutate(
+    v_act = opt_logit$par * p,  # act = actual 
+    p_cf = c(0, 0.1, 0.3),  # cf = counterfactual 
+    v_cf = opt_logit$par * p_cf,
+    v_minus_max_act = exp(v_act - max(v_act)),
+    sum_v_act = sum(v_minus_max_act),
+    v_minus_max_cf = exp(v_cf - max(v_cf)),
+    sum_v_cf = sum(v_minus_max_cf),
+    prob_act = v_minus_max_act / sum_v_act,
+    prob_cf = v_minus_max_cf / sum_v_cf
+  ) %>% 
+  dplyr::select(j, prob_act, prob_cf)
+```
+-->
+
+#### `nlm` function 
+
+こちらも同様にデフォルトでは目的関数を最小化するので，目的関数を $- \ln L$ に置き換えてこの関数の最小化問題とする．
+
+注：
+
+- `$minimum` は $- \ln L$ の最小値なので，最大化された $\ln L$ の値は `$minimum` $\times (-1)$ となる．
+- `$hessian` は計算上の目的関数 $- \ln L$ に対応するものなので，本来の目的関数 $\ln L$ に対応する Hessian は `$hessian` $\times (-1)$ となる．
+
+```{r logl_nlm}
+opt_logit_nl <- nlm(f = function (param) -1 * lnL(param, d = data), 
+                    p = -1, hessian = TRUE)
+opt_logit_nl
+opt_logit_nl$hessian |> solve() |> diag() |> sqrt()  # std. error
+```
+
+## Bayesian estimation: Metropolis 
+
+```{r be_mh}
+iter <- 1000
+beta_old <- beta_tmp <- 0  # 初期値
+beta_history <- numeric(iter)
+ll_old <- lnL(param = beta_tmp, d = data)
+accept <- numeric(iter)  # initialize (=1 if accepted) 
+start_time <- Sys.time()  # 計算時間を確認するため
+for (i in 1:iter) {
+  beta_tmp <- rnorm(n = 1, mean = beta_tmp, sd = 0.5)
+  ll_tmp <- lnL(param = beta_tmp, d = data)
+  accept_prob <- min(0, ll_tmp - ll_old)
+  if (log(runif(n = 1)) < accept_prob) {
+    beta_old <- beta_tmp
+    ll_old <- ll_tmp
+    accept[i] <- 1
+  } else {
+    beta_tmp <- beta_old
+  }
+  beta_history[i] <- beta_tmp
+  if (i %% round(iter/2, 0) == 0) {
+    elapsed_sec <- round(as.numeric(Sys.time() - start_time, units = "secs"), 1)
+    cat("iter=", i, ", lnL=", ll_old, ", beta=", beta_tmp, 
+        ", elapsed=", elapsed_sec,"\n", sep = "")
+  }
+}
+mean(accept)
+plot(beta_history, type = "l")
+abline(h = opt_logit$par, col = 2)  # ML estimate 
+```
+
+Burn-in は最初の20%とする．
+
+```{r be_mh_post}
+beta_after_burnin <- beta_history[round(iter/5, 0):iter]  # 間引かない
+hist(beta_after_burnin, breaks = 20)
+abline(v = opt_logit$par, col = 2)
+c(mean(beta_after_burnin), sd(beta_after_burnin))
+```
 
 
+# Advanced: Conditional logit
 
-.
+興味がある履修者は [自動車保有の離散選択問題：Conditional logit](https://rpubs.com/kuroda/cond_logit) を参照いただきたい．
+
+ランダム効用モデルに基づいて定式化すれば選択者サイドの厚生 (welfare) が計算できることも分かる．
+
+（注：残念ながらコードがところどころ間違っているので，雰囲気だけ感じてください．）
+
