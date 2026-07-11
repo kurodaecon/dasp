@@ -54,7 +54,7 @@ p_vals <- seq(0, 1, by = 0.2)
 par(mfrow = c(2, 3), mar = c(3, 3, 2, 1))
 for (p in p_vals) {
   barplot(c(1 - p, p),
-    names.arg = c("Y = 0", "Y = 1"), ylim = c(0, 1), main = paste0("p = ", p), ylab = "")
+    names.arg = c("X = 0", "X = 1"), ylim = c(0, 1), main = paste0("p = ", p), ylab = "")
 }
 par(mfrow = c(1, 1))
 ```
@@ -90,7 +90,11 @@ $$ \Pr(X=1) = p^1 (1-p)^{1-1} = p = 0.1$$
 $$\Pr(X_1 = 1, X_2 = 1, X_3 = 0) $$
 $$ = p^1 (1-p)^{1-1} \times p^1 (1-p)^{1-1} \times p^0 (1-p)^{1-0} = 0.1 \times 0.1 \times 0.9 = 0.009$$
 
-- 同様に $p=0.9$ で次のようになる：
+- 同様に $p=0.5$ で次のようになる：
+
+$$ \Pr(X_1 = 1, X_2 = 1, X_3 = 0) = 0.5 \times 0.5 \times 0.5 = 0.125 $$
+
+- $p=0.9$ では次のとおり：
 
 $$ \Pr(X_1 = 1, X_2 = 1, X_3 = 0) = 0.9 \times 0.9 \times 0.1 = 0.081 $$
 
@@ -104,19 +108,19 @@ $$ \Pr(X_1 = 1, X_2 = 1, X_3 = 0) = \frac{2}{3} \times \frac{2}{3} \times \frac{
 
 我々はパラメタ $p$ を動かして同時確率を最大化しようとするため，この同時確率を「データ $x$ を所与としたパラメタ $p$ の関数」とみなす．これを尤度関数と呼ぶ．
 
-最尤法とはこの尤度関数（あるいはその対数）を最大化するようにパラメタを推定する方法である．
+最尤法とはこの尤度関数（実際にはその対数）を最大化するようにパラメタを推定する方法である．
 
 #### Visualizing the likelihood function
 
 尤度関数を $L$，対数尤度関数を $\log L$ と表す．
 
-$$ L(p) = \Pr(\mbox{Heads})^2 \times \Pr(\mbox{Tails})^1 = p^2 (1-p)^1, $$
-$$ \log L(p) = 2 \log (p) + \log (1-p) $$
+$$ L(p \mid x) = \Pr(\mbox{Heads})^2 \times \Pr(\mbox{Tails})^1 = p^2 (1-p)^1, $$
+$$ \log L(p \mid x) = 2 \log (p) + \log (1-p) $$
 
-一階の条件（$L(\hat{p})' = 0$ または $\log L(\hat{p})' = 0$）より $\hat{p} = 2/3$ が得られる．
+一階の条件（$L(\hat{p} \mid x)' = 0$ または $\log L(\hat{p} \mid x)' = 0$）より $\hat{p} = 2/3$ が得られる．
 
-$$ \frac{d L(p)}{d p} = 2p (1-p) + p^2 (-1) = p(2-3p) = 0, $$
-$$ \frac{d \log L(p)}{d p} = \frac{2}{p} + \frac{-1}{1-p} = \frac{2(1-p) - p}{p(1-p)} = \frac{2-3p}{p(1-p)} = 0, $$
+$$ \frac{d L(p \mid x)}{d p} = 2p (1-p) + p^2 (-1) = p(2-3p) = 0, $$
+$$ \frac{d \log L(p \mid x)}{d p} = \frac{2}{p} + \frac{-1}{1-p} = \frac{2(1-p) - p}{p(1-p)} = \frac{2-3p}{p(1-p)} = 0, $$
 
 ```{r ml_b}
 l_func <- function (p) p^2 * (1-p)^1  # 尤度関数
