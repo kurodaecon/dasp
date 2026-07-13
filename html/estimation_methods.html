@@ -1532,47 +1532,83 @@ Example: Bernoulli distribution / ベルヌーイ分布</h2>
 を所与としてデータが観察される確率 <span class="math inline">\(\Pr(X = x
 \mid p)\)</span>」である．</p>
 </div>
-<div id="one-observation-x_1-1" class="section level3" number="1.1.3">
-<h3><span class="header-section-number">1.1.3</span> One observation:
-<span class="math inline">\(x_1 = 1\)</span></h3>
-<p>1回だけコイントスを行い <span class="math inline">\(x_1 = 1\)</span>
-だったとしよう．</p>
+<div id="two-observations-x_1-1-x_2-0" class="section level3" number="1.1.3">
+<h3><span class="header-section-number">1.1.3</span> Two observations:
+<span class="math inline">\(x_1 = 1, x_2 = 0\)</span></h3>
+<p>2回コイントスを行い <span class="math inline">\(x_1 = 1, x_2 =
+0\)</span> だったとしよう．</p>
+<p><span class="math display">\[ \Pr(X_1=1, X_2 = 0 \mid p) = p^1
+(1-p)^{1-1} \times p^0 (1-p)^{1-0} = p (1-p) \]</span></p>
 <ul>
-<li>仮に <span class="math inline">\(p=0.1\)</span> だったとき，この
-<span class="math inline">\(p\)</span> のもとで <span class="math inline">\(x_1 = 1\)</span> が観察される確率は次の通り：</li>
+<li>仮に <span class="math inline">\(p=0.1\)</span> だったとすると，この
+<span class="math inline">\(p\)</span> のもとで <span class="math inline">\(x_1 = 1, x_2 = 0\)</span>
+が観察される確率は次の通り：</li>
 </ul>
-<p><span class="math display">\[ \Pr(X=1) = p^1 (1-p)^{1-1} = p =
-0.1\]</span></p>
+<p><span class="math display">\[ \Pr(X_1=1, X_2 = 0 \mid p = 0.1) = 0.1
+\times 0.9 = 0.09 \]</span></p>
 <ul>
-<li>同様に <span class="math inline">\(p=0.9\)</span> であれば，<span class="math inline">\(\Pr(X=1) = 0.9\)</span> である．</li>
-<li>つまり，<span class="math inline">\(\Pr(X = 1) = p\)</span>
-が最大となる <span class="math inline">\(p = 1\)</span>
-が観察されたデータを最も自然に説明する．</li>
+<li><span class="math inline">\(p=0.2\)</span> であれば次のとおり：</li>
 </ul>
+<p><span class="math display">\[ \Pr(X_1=1, X_2 = 0 \mid p = 0.2) = 0.2
+\times 0.8 = 0.16 \]</span></p>
+<p>同様に，<span class="math inline">\(p\)</span> を 0.1
+刻みで増加させると次のようになる．</p>
+<p>各行一つ目の値が <span class="math inline">\(p\)</span>，二つ目が
+<span class="math inline">\(p(1-p)\)</span> を示す．</p>
+<pre class="r"><code>for (p in seq(from = 0.3, to = 0.9, by = 0.1)) {
+  print(c(p, p*(1-p)))
+}</code></pre>
+<pre><code>## [1] 0.30 0.21
+## [1] 0.40 0.24
+## [1] 0.50 0.25
+## [1] 0.60 0.24
+## [1] 0.70 0.21
+## [1] 0.80 0.16
+## [1] 0.90 0.09</code></pre>
+<p>よって，<span class="math inline">\(\Pr(X_1 = 1, X_2 = 0) = p
+(1-p)\)</span> を最大にするのは <span class="math inline">\(p =
+0.5\)</span> あるいはそれに近い値であることが予想される．</p>
+<p>見方を変えれば，<span class="math inline">\(p(1-p)\)</span>
+という関数の最大化問題を解いていることが分かるはずだ．</p>
+<p>（関数 <span class="math inline">\(p (1-p)\)</span>
+の最大化問題を解析的に解けば厳密に <span class="math inline">\(p =
+0.5\)</span>
+で最大化されることが分かる．しかしこの例のポイントは，この関数の最大化問題を厳密に解くことができなかったとしても，数値的に最大化問題を解けば求めたい
+<span class="math inline">\(p\)</span>
+が近似的に得られることである．）</p>
 </div>
-<div id="three-observation-x_1-1-x_2-1-x_3-0" class="section level3" number="1.1.4">
-<h3><span class="header-section-number">1.1.4</span> Three observation:
-<span class="math inline">\(x_1 = 1, x_2= 1, x_3 = 0\)</span></h3>
-<p>続いて <span class="math inline">\(x_1 = 1, x_2 = 1, x_3 = 0\)</span>
+<div id="three-observations-x_1-1-x_2-0-x_3-1" class="section level3" number="1.1.4">
+<h3><span class="header-section-number">1.1.4</span> Three observations:
+<span class="math inline">\(x_1 = 1, x_2= 0, x_3 = 1\)</span></h3>
+<p>続いて <span class="math inline">\(x_1 = 1, x_2 = 0, x_3 = 1\)</span>
 だった場合について，上と同様に考えてみよう．</p>
+<p><span class="math display">\[\Pr(X_1 = 1, X_2 = 0, X_3 = 1 \mid p) =
+p^1 (1-p)^{1-1} \times p^0 (1-p)^{1-0} \times p^1 (1-p)^{1-1} = p^2(1-p)
+\]</span></p>
 <ul>
 <li>仮に <span class="math inline">\(p=0.1\)</span> だったとき，この
 <span class="math inline">\(p\)</span> のもとで <span class="math inline">\(x\)</span> が観察される確率は次の通り：</li>
 </ul>
-<p><span class="math display">\[\Pr(X_1 = 1, X_2 = 1, X_3 = 0) \]</span>
-<span class="math display">\[ = p^1 (1-p)^{1-1} \times p^1 (1-p)^{1-1}
-\times p^0 (1-p)^{1-0} = 0.1 \times 0.1 \times 0.9 = 0.009\]</span></p>
-<ul>
-<li>同様に <span class="math inline">\(p=0.5\)</span>
-で次のようになる：</li>
-</ul>
-<p><span class="math display">\[ \Pr(X_1 = 1, X_2 = 1, X_3 = 0) = 0.5
-\times 0.5 \times 0.5 = 0.125 \]</span></p>
-<ul>
-<li><span class="math inline">\(p=0.9\)</span> では次のとおり：</li>
-</ul>
-<p><span class="math display">\[ \Pr(X_1 = 1, X_2 = 1, X_3 = 0) = 0.9
-\times 0.9 \times 0.1 = 0.081 \]</span></p>
+<p><span class="math display">\[\Pr(X_1 = 1, X_2 = 0, X_3 = 1 \mid p =
+0.1) = 0.1^2 \times 0.9 = 0.009\]</span></p>
+<p>先ほどと同様に計算してみよう． 各行一つ目の値が <span class="math inline">\(p\)</span>，二つ目が <span class="math inline">\(p^2(1-p)\)</span> を示す．</p>
+<pre class="r"><code>for (p in seq(from = 0.2, to = 0.9, by = 0.1)) {
+  print(c(p, p^2*(1-p)))
+}</code></pre>
+<pre><code>## [1] 0.200 0.032
+## [1] 0.300 0.063
+## [1] 0.400 0.096
+## [1] 0.500 0.125
+## [1] 0.600 0.144
+## [1] 0.700 0.147
+## [1] 0.800 0.128
+## [1] 0.900 0.081</code></pre>
+<p>よって，<span class="math inline">\(p^2 (1-p)\)</span>
+を最大化するのは <span class="math inline">\(0.6 &lt; p &lt;
+0.7\)</span> を満たす <span class="math inline">\(p\)</span>
+であると予想される．</p>
+<p>（解析的に解けば <span class="math inline">\(p = 2/3\)</span>
+で最大化される．）</p>
 <!--
 - 試行錯誤すれば，$p = 2/3$ のときにデータが観察される確率が最大となることが分かる：
 
@@ -1615,13 +1651,14 @@ plot(ll_func, xlim = c(0, 1), xlab = &quot;p&quot;); abline(v = 2/3, lty = 2, co
 <p>標本 <span class="math inline">\(\{-3, -2, 0.5, 0.5, 1.5\}\)</span>
 に基づいて母平均 <span class="math inline">\(\mu\)</span> と母分散 <span class="math inline">\(\sigma^2\)</span> を推定．</p>
 <p>この標本が正規母集団からサンプリングされていると仮定すると，対数尤度関数は次のように書ける．</p>
-<p><span class="math display">\[ f = \frac{1}{\sqrt{2 \pi \sigma^2}}
-\exp \left[- \frac{(y_i - \mu)^2}{2 \sigma^2} \right] , \quad \log f = -
-\frac{1}{2} \log 2 \pi - \frac{1}{2} \log \sigma^2 - \frac{(y_i -
-\mu)^2}{2 \sigma^2} \]</span></p>
-<p><span class="math display">\[ \log L = - \frac{n}{2} \log 2 \pi -
-\frac{n}{2} \log \sigma^2 - \frac{1}{2 \sigma^2} \sum_i (y_i - \mu)^2
-\]</span></p>
+<p><span class="math display">\[ f (\mu, \sigma^2 \mid y_i) =
+\frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left[- \frac{(y_i - \mu)^2}{2
+\sigma^2} \right] \]</span> <span class="math display">\[ \log f (\mu,
+\sigma^2 \mid y_i) = - \frac{1}{2} \log 2 \pi - \frac{1}{2} \log
+\sigma^2 - \frac{(y_i - \mu)^2}{2 \sigma^2} \]</span></p>
+<p><span class="math display">\[ \log L (\mu, \sigma^2 \mid y_1, \ldots,
+y_n) = - \frac{n}{2} \log 2 \pi - \frac{n}{2} \log \sigma^2 - \frac{1}{2
+\sigma^2} \sum_i (y_i - \mu)^2 \]</span></p>
 <p>よって，最尤推定量は次のように解析的に求められる．</p>
 <p><span class="math display">\[ \hat{\mu} = \frac{1}{n} \sum_i y_i ,
 \quad \hat{\sigma}^2 = \frac{1}{n} \sum_i (y_i - \bar{y})^2
@@ -1635,17 +1672,31 @@ mean(y)  # 標本平均（mu の最尤推定量と同じ）</code></pre>
 <pre><code>## [1] 2.9</code></pre>
 <p>対数尤度関数を定義する．
 最初の引数がパラメタベクトルになっている（後述の最適化のため）．</p>
-<pre class="r"><code>ll_func_n &lt;- function (param, y, n) {  # 対数尤度関数
+<pre class="r"><code>ll_func_n &lt;- function (param, y) {  # 対数尤度関数
   mu &lt;- param[1]
   sigma2 &lt;- param[2]
+  n &lt;- length(y)  # number of obs. 
   -n/2*log(2*pi) - n/2*log(sigma2) - 1/(2*sigma2)*sum((y-mu)^2)
 }</code></pre>
+<p>様々な値をパラメタの候補として与えてみると，どのあたりに最適値がありそうかが分かるだろう．</p>
+<pre class="r"><code>ll_func_n(param = c(0, 1), y = y)  # まずは sigma2 = 1 に固定して mu を探索する</code></pre>
+<pre><code>## [1] -12.46969</code></pre>
+<pre class="r"><code>ll_func_n(param = c(-1, 1), y = y)</code></pre>
+<pre><code>## [1] -12.46969</code></pre>
+<pre class="r"><code>ll_func_n(param = c(-0.5, 1), y = y)</code></pre>
+<pre><code>## [1] -11.84469</code></pre>
+<pre class="r"><code>ll_func_n(param = c(-0.5, 2), y = y) # 次は mu=-0.5 に固定して sigma2 を探索する</code></pre>
+<pre><code>## [1] -9.952561</code></pre>
+<pre class="r"><code>ll_func_n(param = c(-0.5, 3), y = y)</code></pre>
+<pre><code>## [1] -9.75789</code></pre>
+<pre class="r"><code>ll_func_n(param = c(-0.5, 4), y = y)</code></pre>
+<pre><code>## [1] -9.872929</code></pre>
 <p><span class="math inline">\(\sigma^2 = 1\)</span> に固定した場合の
 <span class="math inline">\(\mu\)</span>
 と対数尤度の関係をプロットする．</p>
 <pre class="r"><code>mu_list &lt;- seq(-2, 2, length = 100)
 ll_mu_list &lt;- sapply(X = mu_list, 
-                     FUN = function(x) ll_func_n(param = c(x, 1), y = y, n = length(y)))
+                     FUN = function(x) ll_func_n(param = c(x, 1), y = y))
 plot(x = mu_list, y = ll_mu_list, xlim = c(-2, 2), type = &quot;l&quot;)</code></pre>
 <p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUAAAAPACAMAAADDuCPrAAAAyVBMVEUAAAAAADoAAGYAOjoAOmYAOpAAZrY6AAA6OgA6Ojo6OmY6ZmY6ZpA6ZrY6kNtmAABmADpmOgBmOjpmZjpmZmZmZpBmkJBmkLZmkNtmtrZmtttmtv+QOgCQZgCQZjqQZmaQkLaQtraQttuQtv+Q29uQ2/+2ZgC2Zjq2kDq2kGa2kLa2tpC2tra2ttu227a229u22/+2///bkDrbkGbbtmbbtpDbtrbb27bb29vb2//b/9vb////tmb/25D/27b/29v//7b//9v////dYIqYAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAgAElEQVR4nO3de2MUZZrw4YqCWTzgC8usuyPjzPq+wrKDC6IoLhHpfP8P9XZ10knn3HXX4Tld1x8jMkmlquu5f3b1Kd0xACFd6h0AKJWAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAkIACBAkoQJCAAgQJKECQgAIECShAUN4B7QAmM32iJt/ihFLf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" width="672" /></p>
 <p>3Dで描画する．（<code>outer</code> 関数を使って <code>z</code>
@@ -1657,7 +1708,7 @@ grid_sigma2 &lt;- seq(1, 10, length = 20)
 z &lt;- matrix(0, nrow = length(grid_mu), ncol = length(grid_sigma2))
 for (i in 1:length(grid_mu)) {  # 探索 grid に対応する対数尤度を計算
   for (j in 1:length(grid_sigma2)) {
-    z[i, j] &lt;- ll_func_n(param = c(grid_mu[i], grid_sigma2[j]), y = y, n = length(y))
+    z[i, j] &lt;- ll_func_n(param = c(grid_mu[i], grid_sigma2[j]), y = y)
   }
 }
 which_max_ml &lt;- which(z == max(z), arr.ind = T)  # 尤度を最大化する grid の index
@@ -1687,7 +1738,7 @@ z <- outer(grid_mu, grid_sigma2, FUN = ll_func_n2)
 はデフォルトでは与えられた関数を最小化するため，最大化するためには目的関数を
 -1 倍した値を最小化するように設定する（引数
 <code>control = list(fnscale = -1)</code>）．</p>
-<pre class="r"><code>optim(par = c(0, 1), fn = ll_func_n, y = y, n = length(y), control = list(fnscale = -1))</code></pre>
+<pre class="r"><code>optim(par = c(0, 1), fn = ll_func_n, y = y, control = list(fnscale = -1))</code></pre>
 <pre><code>## $par
 ## [1] -0.5000029  2.8995297
 ## 
@@ -1713,9 +1764,9 @@ See [Rで推定する回帰モデル入門](https://rpubs.com/kuroda/regression0
 <p>誤差項が正規分布に従うと仮定した場合の回帰モデルの対数尤度関数．</p>
 <p><span class="math display">\[ y_i = \beta_0 + \beta_1 x_{i1} +
 \beta_2 x_{i2} + u_i, \quad u_i \sim N(0, \sigma^2) \]</span></p>
-<p><span class="math display">\[ \log L (\beta) = - \frac{n}{2} \log (2
-\pi \sigma^2) - \frac{1}{2 \sigma^2} \sum_i (y_i - x_i&#39; \beta)^2
-\]</span></p>
+<p><span class="math display">\[ \log L (\beta \mid x_1, \ldots, x_n,
+y_1, \ldots, y_n) = - \frac{n}{2} \log (2 \pi \sigma^2) - \frac{1}{2
+\sigma^2} \sum_i (y_i - x_i&#39; \beta)^2 \]</span></p>
 <p>ここで <span class="math inline">\(x_{i}&#39; \beta = \beta_0 +
 \beta_1 x_{i1} + \beta_2 x_{i2}\)</span> である．</p>
 <p>引数 <code>param</code> は k+1 個のパラメタベクトル． k
@@ -2252,8 +2303,8 @@ for (t in 2:iter) {
         &quot;, s2=&quot;, sigma2_new, &quot;, elasped=&quot;, proc.time()[3] - start_time, &quot;[s] \n&quot;, sep = &quot;&quot;)
   }
 }</code></pre>
-<pre><code>## 5000, b0=96.50189, b1=-0.159943, b2=-1.230562, s2=85.25378, elasped=1.93[s] 
-## 10000, b0=87.6099, b1=-0.04860907, b2=-0.9189937, s2=84.70792, elasped=3.29[s]</code></pre>
+<pre><code>## 5000, b0=96.50189, b1=-0.159943, b2=-1.230562, s2=85.25378, elasped=1.78[s] 
+## 10000, b0=87.6099, b1=-0.04860907, b2=-0.9189937, s2=84.70792, elasped=2.91[s]</code></pre>
 <pre class="r"><code>apply(param_history[, 6:9], 2, mean)  # acceptance rate </code></pre>
 <pre><code>##     a0     a1     a2     as 
 ## 0.7894 0.0356 0.0947 0.2489</code></pre>
